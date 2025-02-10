@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Cliente{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Editar Cliente: {{ cliente.nome }}</h2>
+
+        <form method="POST" class="row g-3">
+            {% csrf_token %}
+
+            <div class="col-md-6">
+                <label for="id_nome" class="form-label">Nome</label>
+                {{ form.nome }}
+            </div>
+
+            <div class="col-md-6">
+                <label for="id_empresa" class="form-label">Empresa</label>
+                {{ form.empresa }}
+            </div>
+
+            <div class="col-md-6">
+                <label for="id_email" class="form-label">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="text-danger">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <label for="id_telefone" class="form-label">Telefone</label>
+                {{ form.telefone }}
+            </div>
+
+            <div class="col-12">
+                <label for="id_endereco" class="form-label">Endereço</label>
+                {{ form.endereco }}
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Atualizar</button>
+                <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

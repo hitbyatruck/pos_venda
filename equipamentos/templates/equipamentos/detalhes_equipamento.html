@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Equipamento{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card shadow-lg">
+            <div class="card-header text-white bg-primary">
+                <h3 class="mb-0">{{ equipamento.nome }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Coluna para a imagem -->
+                    <div class="d-flex justify-content-center mb-4">
+                        {% if equipamento.foto %}
+                        <img src="{{ equipamento.foto.url }}" alt="Imagem do equipamento"
+                            class="img-fluid rounded shadow"
+                            style="max-width: 300px; height: auto; object-fit: cover; padding: 10px;">
+                        {% else %}
+                            <p class="text-muted">Nenhuma imagem disponível.</p>
+                        {% endif %}
+                    </div>
+                    <!-- Coluna para as informações -->
+                    <div class="col-md-8">
+                        <p><strong>Referência Interna:</strong> {{ equipamento.referencia_interna }}</p>
+                        <p><strong>Categoria:</strong> {{ equipamento.categoria }}</p>
+                        <p><strong>Data de Lançamento:</strong> {{ equipamento.data_lancamento|default:"Não especificado" }}</p>
+                        <p><strong>Descrição:</strong> {{ equipamento.descricao }}</p>
+                        <p><strong>Especificações:</strong> {{ equipamento.especificacoes }}</p>
+                    </div>
+                </div>
+                
+                <!-- Seção de Documentos -->
+                <h2>Documentos do Equipamento</h2>
+                <div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome do Ficheiro</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for documento in documentos %}
+                            <tr>
+                                <td>
+                                    <a href="{{ documento.arquivo.url }}" target="_blank">
+                                        {{ documento.arquivo.name|cut:"documentos_equipamento/" }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <form method="post" action="{% url 'excluir_documento' documento.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Nenhum documento disponível.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Botões -->
+                <div class="mt-4">
+                    <a href="{{ origem }}" class="btn btn-secondary">Voltar</a>
+                    <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
+                    <a href="{% url 'excluir_equipamento_fabricado' equipamento.id %}" class="btn btn-danger">Excluir</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

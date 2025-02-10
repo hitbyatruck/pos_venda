@@ -1,0 +1,42 @@
+{% load static %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="row">
+        {% for field in form %}
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="text-danger">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Se o formulário incluir documentos -->
+    {% if form.instance.pk %}
+        <h4 class="mt-4">Documentos Anexados</h4>
+        <ul class="list-group">
+            {% for documento in form.instance.documentosequipamento_set.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
+                    <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                </li>
+            {% empty %}
+                <li class="list-group-item">Nenhum documento anexado.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="mb-3">
+        <label class="form-label">Adicionar Novo Documento</label>
+        <input type="file" name="documentos" multiple class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>
+

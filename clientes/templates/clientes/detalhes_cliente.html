@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Cliente{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
+
+        <ul class="nav nav-tabs" id="tabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#info">Informação</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#equipamentos">Equipamentos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#rmas">RMA's / Assistências</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#notas">Notas de Conversa</a>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+            <!-- Aba de Informação do Cliente -->
+            <div id="info" class="tab-pane fade show active">
+                <p><strong>Nome:</strong> {{ cliente.nome }}</p>
+                <p><strong>Empresa:</strong> {{ cliente.empresa }}</p>
+                <p><strong>Email:</strong> {{ cliente.email }}</p>
+                <p><strong>Telefone:</strong> {{ cliente.telefone }}</p>
+                <p><strong>Endereço:</strong> {{ cliente.endereco }}</p>
+            </div>
+
+            <!-- Aba de Equipamentos -->
+            <div id="equipamentos" class="tab-pane fade">
+                <h3 class="mt-4">Equipamentos do Cliente</h3>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Número de Série</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in cliente.equipamentos.all %}
+                        <tr>
+                            <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+                            <td>{{ equipamento.numero_serie }}</td>
+                            <td>
+                                <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}?origem={% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Ver</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">Nenhum equipamento associado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary">Adicionar Equipamento</a>
+
+            </div>
+
+            <!-- Aba de RMA's e Assistências (Vazia por agora) -->
+            <div id="rmas" class="tab-pane fade">
+                <p>Pedidos de assistência e RMA's do cliente aparecerão aqui.</p>
+            </div>
+
+            <!-- Aba de Notas de Conversa (Vazia por agora) -->
+            <div id="notas" class="tab-pane fade">
+                <p>Notas e histórico de conversas aparecerão aqui.</p>
+            </div>
+        </div>
+
+        <a href="{% url 'lista_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
+    </div>
+{% endblock %}

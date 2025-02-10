@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Equipamento{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Adicionar Equipamento</h2>
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Erro!</strong> Por favor, corrija os seguintes erros:
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li><strong>{{ field }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="POST" class="row g-3">
+            {% csrf_token %}
+
+            <div class="col-md-6">
+                <label class="form-label">Nome do Equipamento</label>
+                {{ form.nome }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Referência Interna</label>
+                {{ form.referencia_interna }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Número de Série</label>
+                {{ form.numero_serie }}
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Descrição</label>
+                {{ form.descricao }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Data de Aquisição</label>
+                {{ form.data_aquisicao }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Cliente</label>
+                {{ form.cliente }}
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{% url 'lista_equipamentos' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+

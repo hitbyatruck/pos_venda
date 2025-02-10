@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Equipamento Fabricado{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Editar Equipamento: {{ equipamento.nome }}</h2>
+
+        <!-- <form method="POST" enctype="multipart/form-data" class="row g-3">
+            {% csrf_token %}
+            
+            <div class="col-md-6">
+                <label class="form-label">Nome do Equipamento</label>
+                {{ form.nome }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Referência Interna</label>
+                {{ form.referencia_interna }}
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Descrição</label>
+                {{ form.descricao }}
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Especificações</label>
+                {{ form.especificacoes }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Categoria</label>
+                {{ form.categoria }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Fotografia</label>
+                {{ form.foto }}
+            
+                {% if form.foto.value %}
+                    <div class="mt-2">
+                        <span class="d-block">{{ form.foto.value.name }}</span>
+                        <div class="mt-1">{{ form.foto.clear }}</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+
+            
+            <h4 class="mt-4">Adicionar Documento</h4>
+            
+            <div class="col-md-6">
+                <label class="form-label">Arquivo</label>
+                <input type="file" name="arquivo" class="form-control">
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-success">Adicionar Documento</button>
+            </div>
+
+
+            
+            <h4 class="mt-4">Documentos Existentes</h4>
+            <ul class="list-group">
+                {% for documento in equipamento.documentosequipamento_set.all %}
+                <div class="d-flex align-items-center mb-2">
+                    <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
+                    <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger btn-sm ms-2">Excluir</a>
+                </div>
+                {% empty %}
+                    <p class="text-muted">Nenhum documento adicionado.</p>
+                {% endfor %}
+            </ul>
+
+            <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form> -->
+        {% include 'partials/form_template.html' %}
+    </div>
+{% endblock %}

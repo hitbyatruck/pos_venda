@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Pedidos de Assistência Técnica</h2>
+<a href="{% url 'adicionar_pedido_assistencia' %}" class="btn btn-primary mb-3">Novo Pedido</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Número</th>
+            <th>Cliente</th>
+            <th>Equipamento</th>
+            <th>Estado</th>
+            <th>Opções</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pat in pats %}
+            <tr>
+                <td>{{ pat.numero_pedido }}</td>
+                <td>{{ pat.cliente.nome }}</td>
+                <td>{{ pat.estado }}</td>
+                <td>
+                    {% if pat.id %}
+                        <a href="{% url 'excluir_pedido_assistencia' pat.id %}" class="btn btn-danger" onclick="return confirm('Tem a certeza que quer excluir este Pedido de Assistência Técnica? Esta ação não pode ser desfeita!')">Excluir</a>
+                    {% else %}
+                        <span class="text-muted">Não disponível</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
