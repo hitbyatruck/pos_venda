@@ -19,13 +19,13 @@ from .views import (
 
 urlpatterns = [
     path('fabricados/adicionar/', adicionar_equipamento_fabricado, name='adicionar_equipamento_fabricado'),
-    path('fabricados/lista/', listar_equipamentos_fabricados, name='lista_equipamentos_fabricados'),
+    path('fabricados/lista/', views.listar_equipamentos_fabricados, name='lista_equipamentos_fabricados'),
     path('fabricados/editar/<int:equipamento_id>/', editar_equipamento_fabricado, name='editar_equipamento_fabricado'),
-    path('fabricados/excluir/<int:equipamento_id>/',excluir_equipamento_fabricado, name='excluir_equipamento_fabricado'),
+    path('fabricados/excluir/<int:equipamento_id>/', views.excluir_equipamento_fabricado, name='excluir_equipamento_fabricado'),
     
     path('cliente/lista/', listar_equipamentos_cliente, name='lista_equipamentos_cliente'),
-    path('<int:equipamento_id>/', detalhes_equipamento, name='detalhes_equipamento'),
-    path('documento/excluir/<int:documento_id>/', excluir_documento, name='excluir_documento'),
+    path('<int:equipamento_id>/', views.detalhes_equipamento, name='detalhes_equipamento'),
+    path('documentos/excluir/<int:documento_id>/', views.excluir_documento, name='excluir_documento'),
     path('cliente/<int:cliente_id>/adicionar/', adicionar_equipamento_ao_cliente, name='adicionar_equipamento_cliente'),
 
     path('categorias/', listar_categorias, name='listar_categorias'),

@@ -49,10 +49,9 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <form method="post" action="{% url 'excluir_documento' documento.id %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger">Excluir</button>
-                                    </form>
+                                    {% if documento.id %}
+                                        <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger" onclick="return confirm('Tem a certeza que deseja excluir este documento?');">Excluir</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}

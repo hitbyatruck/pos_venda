@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from django.contrib import messages
 from .models import EquipamentoFabricado, EquipamentoCliente, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, EquipamentoClienteForm, DocumentoEquipamentoForm, CategoriaEquipamentoForm
 from clientes.models import Cliente
 
 def listar_equipamentos_fabricados(request):
     equipamentos = EquipamentoFabricado.objects.all()
-    return render(request, 'equipamentos/lista_equipamentos_fabricados.html', {'equipamentos': equipamentos})
+    return render(request, "equipamentos/lista_equipamentos_fabricados.html", {
+        "equipamentos": equipamentos,
+    })
 
 def adicionar_equipamento_fabricado(request):
     if request.method == 'POST':
@@ -63,11 +66,10 @@ def detalhes_equipamento(request, equipamento_id):
         'documentos': documentos
     })
 
-def excluir_documento(request, documento_id):
-    documento = get_object_or_404(DocumentoEquipamento, id=documento_id)
-    equipamento_id = documento.equipamento.id
-    documento.delete()
-    return redirect(reverse('detalhes_equipamento', args=[equipamento_id]))
+def excluir_equipamento_fabricado(request, equipamento_id):
+    equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
+    equipamento.delete()
+    return redirect('listar_equipamentos_fabricados')
 
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
@@ -101,10 +103,6 @@ def editar_equipamento_fabricado(request, equipamento_id):
         'documentos': documentos
     })
 
-def excluir_equipamento_fabricado(request, equipamento_id):
-    equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-    equipamento.delete()
-    return redirect('lista_equipamentos_fabricados')
 
 def listar_categorias(request):
     categorias = CategoriaEquipamento.objects.all()
@@ -134,3 +132,10 @@ def adicionar_documento(request, equipamento_id):
         form = DocumentoEquipamentoForm()
 
     return render(request, 'equipamentos/adicionar_documento.html', {'form': form, 'equipamento': equipamento})
+
+def excluir_documento(request, documento_id):
+    documento = get_object_or_404(DocumentoEquipamento, id=documento_id)
+    equipamento_id = documento.equipamento.id  # Guardar o ID do equipamento para redirecionamento
+    documento.delete()
+    messages.success(request, "Documento excluído com sucesso.")
+    return redirect('detalhes_equipamento', equipamento_id=equipamento_id)
