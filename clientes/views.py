@@ -1,6 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Cliente
 from .forms import ClienteForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 # LISTAGEM DE FUNÇÕES DE CLIENTES
@@ -17,8 +19,23 @@ def adicionar_cliente(request):
     return render(request, 'clientes/adicionar_cliente.html', {'form': form})
 
 def listar_clientes(request):
-    clientes = Cliente.objects.all()
-    return render(request, 'clientes/lista_clientes.html', {'clientes': clientes})
+    """ Lista os clientes com opção de ordenação dinâmica, incluindo Empresa. """
+
+    ordenar_por = request.GET.get("ordenar_por", "nome")  # Ordenação padrão: Nome
+    direcao = request.GET.get("direcao", "asc")  # Direção padrão: Ascendente
+
+    # Define a direção correta da ordenação
+    if direcao == "desc":
+        ordenar_por = f"-{ordenar_por}"
+
+    # Obtém os clientes ordenados conforme a seleção
+    clientes = Cliente.objects.all().order_by(ordenar_por)
+
+    return render(request, "clientes/lista_clientes.html", {
+        "clientes": clientes,
+        "ordenar_por": request.GET.get("ordenar_por", ""),
+        "direcao": "asc" if direcao == "desc" else "desc",  # Alternar direção na próxima ordenação
+    })
 
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -36,11 +53,11 @@ def editar_cliente(request, cliente_id):
     
     return render(request, 'clientes/editar_cliente.html', {'form': form, 'cliente': cliente})
 
+@csrf_exempt
 def excluir_cliente(request, cliente_id):
-    cliente = get_object_or_404(Cliente, id=cliente_id)  # Obtém o cliente ou dá erro 404
     if request.method == "POST":
-        cliente.delete()  # Remove o cliente da base de dados
-        return redirect('lista_clientes')  # Redireciona para a lista de clientes
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        cliente.delete()
+        return JsonResponse({"status": "ok"})  # Remove sem erro
 
-    return render(request, 'clientes/excluir_cliente.html', {'cliente': cliente})
-
+    return JsonResponse({"error": "Método não permitido"}, status=400)

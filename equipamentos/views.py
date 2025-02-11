@@ -1,14 +1,29 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from .models import EquipamentoFabricado, EquipamentoCliente, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, EquipamentoClienteForm, DocumentoEquipamentoForm, CategoriaEquipamentoForm
 from clientes.models import Cliente
 
 def listar_equipamentos_fabricados(request):
-    equipamentos = EquipamentoFabricado.objects.all()
+    """ Lista os equipamentos fabricados com opção de ordenação dinâmica. """
+    
+    ordenar_por = request.GET.get("ordenar_por", "nome")  # Ordenação padrão: Nome
+    direcao = request.GET.get("direcao", "asc")  # Direção padrão: Ascendente
+
+    # Define a direção correta da ordenação
+    if direcao == "desc":
+        ordenar_por = f"-{ordenar_por}"
+
+    # Obtém os equipamentos ordenados conforme a seleção
+    equipamentos = EquipamentoFabricado.objects.all().order_by(ordenar_por)
+
     return render(request, "equipamentos/lista_equipamentos_fabricados.html", {
         "equipamentos": equipamentos,
+        "ordenar_por": request.GET.get("ordenar_por", ""),
+        "direcao": "asc" if direcao == "desc" else "desc",  # Alternar direção na próxima ordenação
     })
 
 def adicionar_equipamento_fabricado(request):
@@ -66,10 +81,14 @@ def detalhes_equipamento(request, equipamento_id):
         'documentos': documentos
     })
 
+@csrf_exempt  # Permite requisição POST sem problemas de CSRF
 def excluir_equipamento_fabricado(request, equipamento_id):
-    equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-    equipamento.delete()
-    return redirect('listar_equipamentos_fabricados')
+    if request.method == "POST":
+        equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
+        equipamento.delete()
+        return JsonResponse({"status": "ok"})  # Retorna JSON sem erro
+
+    return JsonResponse({"error": "Método não permitido"}, status=400)
 
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)

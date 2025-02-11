@@ -8,9 +8,10 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Telefone</th>
+                <th><a href="?ordenar_por=nome&direcao={{ direcao }}">Nome</a></th>
+                <th><a href="?ordenar_por=empresa&direcao={{ direcao }}">Empresa</a></th>
+                <th><a href="?ordenar_por=telefone&direcao={{ direcao }}">Telefone</a></th>
+                <th><a href="?ordenar_por=email&direcao={{ direcao }}">Email</a></th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -18,12 +19,16 @@
             {% for cliente in clientes %}
                 <tr>
                     <td>{{ cliente.nome }}</td>
-                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.empresa }}</td>
                     <td>{{ cliente.telefone }}</td>
+                    <td>{{ cliente.email }}</td>
                     <td>
                         <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
                         <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'excluir_cliente' cliente.id %}" class="btn btn-danger btn-sm confirm-delete">Excluir</a>
+                        <button class="btn btn-danger confirm-delete" data-url="{% url 'excluir_cliente' cliente.id %}">
+                            Excluir
+                        </button>
+                        
                     </td>
                 </tr>
             {% empty %}

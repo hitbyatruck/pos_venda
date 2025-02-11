@@ -18,10 +18,11 @@ from .views import (
 )
 
 urlpatterns = [
-    path('fabricados/adicionar/', adicionar_equipamento_fabricado, name='adicionar_equipamento_fabricado'),
+    path("fabricados/adicionar/", adicionar_equipamento_fabricado, name="adicionar_equipamento_fabricado"),
     path('fabricados/lista/', views.listar_equipamentos_fabricados, name='lista_equipamentos_fabricados'),
     path('fabricados/editar/<int:equipamento_id>/', editar_equipamento_fabricado, name='editar_equipamento_fabricado'),
-    path('fabricados/excluir/<int:equipamento_id>/', views.excluir_equipamento_fabricado, name='excluir_equipamento_fabricado'),
+    path('fabricados/excluir/<int:equipamento_id>/', excluir_equipamento_fabricado, name='excluir_equipamento_fabricado'),
+
     
     path('cliente/lista/', listar_equipamentos_cliente, name='lista_equipamentos_cliente'),
     path('<int:equipamento_id>/', views.detalhes_equipamento, name='detalhes_equipamento'),

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar Exclusão{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>Confirmar Exclusão</h2>
+        <p>Tem certeza que deseja excluir o equipamento <strong>{{ equipamento.nome }}</strong>?</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Sim, Excluir</button>
+            <a href="{% url 'lista_equipamentos_fabricados' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+{% endblock %}
