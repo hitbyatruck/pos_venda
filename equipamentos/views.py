@@ -9,21 +9,22 @@ from clientes.models import Cliente
 
 def listar_equipamentos_fabricados(request):
     """ Lista os equipamentos fabricados com opção de ordenação dinâmica. """
-    
+
     ordenar_por = request.GET.get("ordenar_por", "nome")  # Ordenação padrão: Nome
     direcao = request.GET.get("direcao", "asc")  # Direção padrão: Ascendente
 
-    # Define a direção correta da ordenação
-    if direcao == "desc":
-        ordenar_por = f"-{ordenar_por}"
-
-    # Obtém os equipamentos ordenados conforme a seleção
-    equipamentos = EquipamentoFabricado.objects.all().order_by(ordenar_por)
+    # Alternar entre ascendente e descendente
+    if direcao == "asc":
+        equipamentos = EquipamentoFabricado.objects.all().order_by(ordenar_por)
+        nova_direcao = "desc"
+    else:
+        equipamentos = EquipamentoFabricado.objects.all().order_by(f"-{ordenar_por}")
+        nova_direcao = "asc"
 
     return render(request, "equipamentos/lista_equipamentos_fabricados.html", {
         "equipamentos": equipamentos,
-        "ordenar_por": request.GET.get("ordenar_por", ""),
-        "direcao": "asc" if direcao == "desc" else "desc",  # Alternar direção na próxima ordenação
+        "ordenar_por": ordenar_por,
+        "direcao": nova_direcao,  # Alternar direção corretamente
     })
 
 def adicionar_equipamento_fabricado(request):
@@ -81,14 +82,16 @@ def detalhes_equipamento(request, equipamento_id):
         'documentos': documentos
     })
 
-@csrf_exempt  # Permite requisição POST sem problemas de CSRF
 def excluir_equipamento_fabricado(request, equipamento_id):
     if request.method == "POST":
-        equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-        equipamento.delete()
-        return JsonResponse({"status": "ok"})  # Retorna JSON sem erro
+        try:
+            equipamento = EquipamentoFabricado.objects.get(id=equipamento_id)
+            equipamento.delete()
+            return JsonResponse({"success": True})
+        except EquipamentoFabricado.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Equipamento não encontrado"})
+    return JsonResponse({"success": False, "error": "Método inválido"})
 
-    return JsonResponse({"error": "Método não permitido"}, status=400)
 
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
