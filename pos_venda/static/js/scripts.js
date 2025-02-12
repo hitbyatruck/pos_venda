@@ -44,6 +44,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    let confirmDeleteModal = document.getElementById("confirmDeleteModal");
+
+    if (confirmDeleteModal) {
+        confirmDeleteModal.addEventListener("hidden.bs.modal", function () {
+            let backdrop = document.querySelector(".modal-backdrop");
+            if (backdrop) {
+                backdrop.remove(); // Remove o fundo escurecido
+            }
+            document.body.classList.remove("modal-open"); // Garante que a rolagem volta ao normal
+            document.body.style.overflow = "auto"; // Se necessário, força a rolagem normal
+        });
+    }
+});
+
+
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 }
