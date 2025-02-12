@@ -23,6 +23,7 @@ urlpatterns = [
     path('fabricados/editar/<int:equipamento_id>/', editar_equipamento_fabricado, name='editar_equipamento_fabricado'),
     path('fabricados/excluir/<int:equipamento_id>/', excluir_equipamento_fabricado, name='excluir_equipamento_fabricado'),
 
+
     
     path('cliente/lista/', listar_equipamentos_cliente, name='lista_equipamentos_cliente'),
     path('<int:equipamento_id>/', detalhes_equipamento, name='detalhes_equipamento'),

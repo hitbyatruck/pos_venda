@@ -73,6 +73,8 @@ def adicionar_equipamento_ao_cliente(request, cliente_id):
         'cliente': cliente
     })
 
+
+
 def detalhes_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     documentos = equipamento.documentos.all()  # Obtém todos os documentos do equipamento
@@ -82,15 +84,13 @@ def detalhes_equipamento(request, equipamento_id):
         'documentos': documentos
     })
 
+@csrf_exempt
 def excluir_equipamento_fabricado(request, equipamento_id):
     if request.method == "POST":
-        try:
-            equipamento = EquipamentoFabricado.objects.get(id=equipamento_id)
-            equipamento.delete()
-            return JsonResponse({"success": True})
-        except EquipamentoFabricado.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Equipamento não encontrado"})
-    return JsonResponse({"success": False, "error": "Método inválido"})
+        equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
+        equipamento.delete()
+        return JsonResponse({"message": "Equipamento excluído com sucesso!", "redirect_url": "/equipamentos/fabricados/lista/"})
+    return JsonResponse({"error": "Método não permitido"}, status=405)
 
 
 def editar_equipamento_fabricado(request, equipamento_id):

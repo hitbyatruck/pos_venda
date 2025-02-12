@@ -54,12 +54,10 @@ def editar_cliente(request, cliente_id):
     
     return render(request, 'clientes/editar_cliente.html', {'form': form, 'cliente': cliente})
 
+@csrf_exempt  # Permite chamadas AJAX
 def excluir_cliente(request, cliente_id):
     if request.method == "POST":
-        try:
-            cliente = Cliente.objects.get(id=cliente_id)
-            cliente.delete()
-            return JsonResponse({"success": True})
-        except Cliente.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Cliente não encontrado"})
-    return JsonResponse({"success": False, "error": "Método inválido"})
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        cliente.delete()
+        return JsonResponse({"message": "Cliente excluído com sucesso!"})
+    return JsonResponse({"error": "Método não permitido"}, status=405)

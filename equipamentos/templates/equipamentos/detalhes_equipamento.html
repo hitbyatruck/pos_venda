@@ -68,25 +68,10 @@
                     <a href="{{ request.GET.origem|default:'/equipamentos/fabricados/lista/' }}" class="btn btn-secondary">Voltar</a>
 
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
-                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalConfirmarExclusao" data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">Excluir</button>
+                    <button class="btn btn-danger btn-sm confirm-delete" data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">Excluir</button>
+
+
             
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-labelledby="modalConfirmarExclusaoLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalConfirmarExclusaoLabel">Confirmar Exclusão</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    Tem certeza que deseja excluir este equipamento?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <a href="#" class="btn btn-danger" id="btnConfirmarExclusao">Excluir</a>
                 </div>
             </div>
         </div>
