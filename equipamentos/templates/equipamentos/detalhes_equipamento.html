@@ -68,7 +68,13 @@
                     <a href="{{ request.GET.origem|default:'/equipamentos/fabricados/lista/' }}" class="btn btn-secondary">Voltar</a>
 
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
-                    <button class="btn btn-danger btn-sm confirm-delete" data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">Excluir</button>
+                    <button type="button"
+        class="btn btn-danger btn-sm confirm-delete"
+        data-bs-toggle="modal"
+        data-bs-target="#confirmDeleteModal"
+        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+    Excluir
+</button>
 
 
             

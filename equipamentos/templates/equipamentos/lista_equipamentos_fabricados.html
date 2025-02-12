@@ -22,7 +22,12 @@
                 <td>
                     <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-danger btn-sm confirm-delete" data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">Excluir</button>
+                    <button class="btn btn-danger btn-sm confirm-delete"
+        data-id="{{ equipamento.id }}"
+        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+    Excluir
+</button>
+
                 </td>
             </tr>
         {% endfor %}
