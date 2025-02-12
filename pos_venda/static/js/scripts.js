@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         confirmDeleteButton.addEventListener("click", function () {
+            console.log(deleteUrl);
             if (deleteUrl) {
                 fetch(deleteUrl, {
                     method: "POST",
@@ -44,14 +45,5 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function getCSRFToken() {
-    let cookieValue = null;
-    let cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-        let cookie = cookies[i].trim();
-        if (cookie.startsWith("csrftoken=")) {
-            cookieValue = cookie.substring("csrftoken=".length, cookie.length);
-            break;
-        }
-    }
-    return cookieValue;
+    return document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 }

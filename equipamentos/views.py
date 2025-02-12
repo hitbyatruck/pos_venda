@@ -84,12 +84,13 @@ def detalhes_equipamento(request, equipamento_id):
         'documentos': documentos
     })
 
+@csrf_exempt
 def excluir_equipamento_fabricado(request, equipamento_id):
     if request.method == "POST":
         equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
         equipamento.delete()
-        return JsonResponse({"success": True})
-    return JsonResponse({"success": False}, status=400)
+        return JsonResponse({"success": True, "message": "Equipamento excluído com sucesso!"})
+    return JsonResponse({"success": False, "error": "Método não permitido"}, status=405)
 
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
