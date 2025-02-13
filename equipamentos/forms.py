@@ -1,5 +1,6 @@
 from django import forms
-from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento, EquipamentoCliente
+from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
+from clientes.models import EquipamentoCliente
 
 class EquipamentoFabricadoForm(forms.ModelForm):
     class Meta:

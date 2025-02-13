@@ -1,6 +1,5 @@
 from django.db import models
-from clientes.models import Cliente
-from equipamentos.models import EquipamentoCliente
+from clientes.models import Cliente, EquipamentoCliente
 
 class PedidoAssistencia(models.Model):
     ESTADOS = [

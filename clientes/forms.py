@@ -1,14 +1,22 @@
 from django import forms
-from .models import Cliente
+from .models import EquipamentoCliente
 
-#FORMULÁRIO DE CLIENTE
+class EquipamentoClienteForm(forms.ModelForm):
+    data_aquisicao = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        label="Data de Aquisição"
+    )
 
-class ClienteForm(forms.ModelForm):
     class Meta:
-        model = Cliente
-        fields = ['nome', 'empresa', 'telefone', 'email', 'endereco']
-
-    def __init__(self, *args, **kwargs):
-        super(ClienteForm, self).__init__(*args, **kwargs)
-        for field_name, field in self.fields.items():
-            field.widget.attrs.update({'class': 'form-control'})
+        model = EquipamentoCliente
+        fields = ["equipamento_fabricado", "numero_serie", "data_aquisicao"]
+        widgets = {
+            "equipamento_fabricado": forms.Select(attrs={"class": "form-control"}),
+            "numero_serie": forms.TextInput(attrs={"class": "form-control"}),
+        }
+        labels = {
+            "equipamento_fabricado": "Equipamento",
+            "numero_serie": "Número de Série",
+        }
+    # Compare this snippet from clientes/views.py:          

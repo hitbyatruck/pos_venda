@@ -1,6 +1,6 @@
 from django import forms
 from .models import PedidoAssistencia
-from equipamentos.models import EquipamentoCliente
+from clientes.models import EquipamentoCliente
 
 class PedidoAssistenciaForm(forms.ModelForm):
     class Meta:

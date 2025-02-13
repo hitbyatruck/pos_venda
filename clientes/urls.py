@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import adicionar_cliente, listar_clientes, editar_cliente, excluir_cliente, detalhes_cliente
+from .views import adicionar_cliente, listar_clientes, editar_cliente, excluir_cliente, detalhes_cliente, adicionar_equipamento_cliente
+from . import views
 
 urlpatterns = [
     path('adicionar/', adicionar_cliente, name='adicionar_cliente'),
@@ -7,6 +8,6 @@ urlpatterns = [
     path('detalhes/<int:cliente_id>/', detalhes_cliente, name='detalhes_cliente'),
     path('editar/<int:cliente_id>/', editar_cliente, name='editar_cliente'),
     path('excluir/<int:cliente_id>/', excluir_cliente, name='excluir_cliente'),
-
+    path('cliente/adicionar_equipamento/<int:cliente_id>/', views.adicionar_equipamento_cliente, name='adicionar_equipamento_cliente'),
     
 ]

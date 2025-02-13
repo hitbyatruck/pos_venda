@@ -6,8 +6,7 @@ from .views import (
     listar_equipamentos_fabricados, 
     editar_equipamento_fabricado,
     excluir_equipamento_fabricado,
-
-    adicionar_equipamento_ao_cliente, 
+ 
     listar_equipamentos_cliente,
         
     detalhes_equipamento, 
@@ -28,10 +27,9 @@ urlpatterns = [
     path('cliente/lista/', listar_equipamentos_cliente, name='lista_equipamentos_cliente'),
     path('<int:equipamento_id>/', detalhes_equipamento, name='detalhes_equipamento'),
     path('documentos/excluir/<int:documento_id>/', views.excluir_documento, name='excluir_documento'),
-    path('cliente/<int:cliente_id>/adicionar/', adicionar_equipamento_ao_cliente, name='adicionar_equipamento_cliente'),
 
     path('categorias/', listar_categorias, name='listar_categorias'),
     path('categorias/adicionar/', adicionar_categoria, name='adicionar_categoria'),
     
-    path('cliente/<int:cliente_id>/adicionar/', views.adicionar_equipamento_ao_cliente, name='adicionar_equipamento_ao_cliente'),
+
 ]

@@ -3,9 +3,11 @@ from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-from .models import EquipamentoFabricado, EquipamentoCliente, DocumentoEquipamento, CategoriaEquipamento
-from .forms import EquipamentoFabricadoForm, EquipamentoClienteForm, DocumentoEquipamentoForm, CategoriaEquipamentoForm
-from clientes.models import Cliente
+from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
+from .forms import EquipamentoFabricadoForm, DocumentoEquipamentoForm, CategoriaEquipamentoForm
+from clientes.models import EquipamentoCliente
+
+
 
 def listar_equipamentos_fabricados(request):
     """ Lista os equipamentos fabricados com opção de ordenação dinâmica. """
@@ -53,26 +55,6 @@ def adicionar_equipamento_fabricado(request):
 def listar_equipamentos_cliente(request):
     equipamentos = EquipamentoCliente.objects.all()
     return render(request, 'equipamentos/lista_equipamentos_cliente.html', {'equipamentos': equipamentos})
-
-def adicionar_equipamento_ao_cliente(request, cliente_id):
-    cliente = get_object_or_404(Cliente, id=cliente_id)
-
-    if request.method == "POST":
-        form = EquipamentoClienteForm(request.POST)
-        if form.is_valid():
-            equipamento_cliente = form.save(commit=False)
-            equipamento_cliente.cliente = cliente  # Associa o equipamento ao cliente
-            equipamento_cliente.save()
-            return redirect('detalhes_cliente', cliente_id=cliente.id)
-
-    else:
-        form = EquipamentoClienteForm()
-
-    return render(request, 'equipamentos/adicionar_equipamento_cliente.html', {
-        'form': form,
-        'cliente': cliente
-    })
-
 
 
 def detalhes_equipamento(request, equipamento_id):

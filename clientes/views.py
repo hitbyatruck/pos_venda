@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Cliente
-from .forms import ClienteForm
+from .models import Cliente, EquipamentoCliente 
+from .forms import EquipamentoClienteForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -60,3 +60,18 @@ def excluir_cliente(request, cliente_id):
         cliente.delete()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False}, status=400)
+
+def adicionar_equipamento_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    
+    if request.method == "POST":
+        form = EquipamentoClienteForm(request.POST)
+        if form.is_valid():
+            equipamento_cliente = form.save(commit=False)
+            equipamento_cliente.cliente = cliente
+            equipamento_cliente.save()
+            return redirect('detalhes_cliente', cliente_id=cliente.id)  # Redireciona para detalhes do cliente
+    else:
+        form = EquipamentoClienteForm()
+    
+    return render(request, 'clientes/adicionar_equipamento_cliente.html', {'form': form, 'cliente': cliente})

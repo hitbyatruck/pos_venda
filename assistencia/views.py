@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import PedidoAssistencia
 from django.http import JsonResponse
 from .forms import PedidoAssistenciaForm
-from clientes.models import Cliente
-from equipamentos.models import EquipamentoCliente
+from clientes.models import Cliente, EquipamentoCliente
+
 
 def lista_pats(request):
     pats = PedidoAssistencia.objects.all()
