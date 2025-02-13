@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Cliente, EquipamentoCliente 
-from .forms import EquipamentoClienteForm
+from .forms import EquipamentoClienteForm, ClienteForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -12,10 +12,9 @@ def adicionar_cliente(request):
         form = ClienteForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('lista_clientes')  # Redireciona após salvar
+            return redirect('listar_clientes')
     else:
         form = ClienteForm()
-    
     return render(request, 'clientes/adicionar_cliente.html', {'form': form})
 
 def listar_clientes(request):

@@ -9,7 +9,7 @@
     <form method="post" action="{% url 'adicionar_equipamento_cliente' cliente.id %}">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Adicionar Equipamento</button>
+        <button type="submit" class="btn btn-primary">Adicionar Equipamento</button>
     </form>
     
 
