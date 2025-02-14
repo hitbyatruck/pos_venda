@@ -17,26 +17,56 @@
         {% endfor %}
     </div>
 
-    <!-- Se o formulário incluir documentos -->
-    {% if form.instance.pk %}
+    <!-- Lista de documentos já anexados -->
+    {% if documentos %}
         <h4 class="mt-4">Documentos Anexados</h4>
         <ul class="list-group">
-            {% for documento in form.instance.documentosequipamento_set.all %}
+            {% for documento in documentos %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
-                    <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    <a href="{% url 'excluir_documento_equipamento' documento.id %}" class="btn btn-danger btn-sm">Excluir</a>
                 </li>
-            {% empty %}
-                <li class="list-group-item">Nenhum documento anexado.</li>
             {% endfor %}
         </ul>
     {% endif %}
 
+    <!-- Upload de novo documento sem precisar salvar -->
     <div class="mb-3">
         <label class="form-label">Adicionar Novo Documento</label>
-        <input type="file" name="documentos" multiple class="form-control">
+        <input type="file" id="uploadDocumento" class="form-control">
+        <button type="button" id="btnUploadDocumento" class="btn btn-secondary mt-2">Upload</button>
     </div>
 
     <button type="submit" class="btn btn-primary">Salvar</button>
 </form>
+
+<script>
+document.getElementById("btnUploadDocumento").addEventListener("click", function() {
+    let fileInput = document.getElementById("uploadDocumento");
+    let file = fileInput.files[0];
+    if (!file) return;
+
+    let formData = new FormData();
+    formData.append("arquivo", file);
+    
+    fetch("{% url 'upload_documento_equipamento' form.instance.id %}", {
+        method: "POST",
+        body: formData,
+        headers: {"X-CSRFToken": "{{ csrf_token }}"}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let list = document.querySelector(".list-group");
+            let newItem = document.createElement("li");
+            newItem.className = "list-group-item d-flex justify-content-between align-items-center";
+            newItem.innerHTML = `<a href="${data.documento_url}" target="_blank">${file.name}</a>
+                                 <a href="{% url 'excluir_documento' 0 %}".replace('0', data.documento_id) class="btn btn-danger btn-sm">Excluir</a>`;
+            list.appendChild(newItem);
+            fileInput.value = "";
+        }
+    });
+});
+</script>
+
 
