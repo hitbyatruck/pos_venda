@@ -18,55 +18,86 @@
     </div>
 
     <!-- Lista de documentos já anexados -->
-    {% if documentos %}
+    {% if form.instance.id %}
         <h4 class="mt-4">Documentos Anexados</h4>
-        <ul class="list-group">
+        <ul class="list-group" id="documentosLista">
             {% for documento in documentos %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
-                    <a href="{% url 'excluir_documento_equipamento' documento.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    <button type="button" class="btn btn-danger btn-sm excluir-documento"
+                            data-url="{% url 'excluir_documento' documento.id %}">
+                        Excluir
+                    </button>
                 </li>
             {% endfor %}
         </ul>
     {% endif %}
 
-    <!-- Upload de novo documento sem precisar salvar -->
+    <!-- Upload de novo documento -->
     <div class="mb-3">
         <label class="form-label">Adicionar Novo Documento</label>
         <input type="file" id="uploadDocumento" class="form-control">
-        <button type="button" id="btnUploadDocumento" class="btn btn-secondary mt-2">Upload</button>
+        <button type="button" id="btnUploadDocumento" class="btn btn-secondary mt-2" {% if not form.instance.id %}disabled{% endif %}>
+            Upload
+        </button>
+        <small class="form-text text-muted">
+            {% if not form.instance.id %}⚠️ Primeiro, salve o equipamento antes de adicionar documentos.{% endif %}
+        </small>
     </div>
 
     <button type="submit" class="btn btn-primary">Salvar</button>
 </form>
 
 <script>
-document.getElementById("btnUploadDocumento").addEventListener("click", function() {
+document.addEventListener("DOMContentLoaded", function () {
+    let btnUpload = document.getElementById("btnUploadDocumento");
     let fileInput = document.getElementById("uploadDocumento");
-    let file = fileInput.files[0];
-    if (!file) return;
 
-    let formData = new FormData();
-    formData.append("arquivo", file);
-    
-    fetch("{% url 'upload_documento_equipamento' form.instance.id %}", {
-        method: "POST",
-        body: formData,
-        headers: {"X-CSRFToken": "{{ csrf_token }}"}
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            let list = document.querySelector(".list-group");
-            let newItem = document.createElement("li");
-            newItem.className = "list-group-item d-flex justify-content-between align-items-center";
-            newItem.innerHTML = `<a href="${data.documento_url}" target="_blank">${file.name}</a>
-                                 <a href="{% url 'excluir_documento' 0 %}".replace('0', data.documento_id) class="btn btn-danger btn-sm">Excluir</a>`;
-            list.appendChild(newItem);
-            fileInput.value = "";
+    if (btnUpload) {
+        btnUpload.addEventListener("click", function () {
+            let file = fileInput.files[0];
+            if (!file) return;
+
+            let formData = new FormData();
+            formData.append("arquivo", file);
+
+            fetch("{% if form.instance.id %}{% url 'upload_documento_equipamento' form.instance.id %}{% endif %}", {
+                method: "POST",
+                body: formData,
+                headers: { "X-CSRFToken": "{{ csrf_token }}" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let list = document.getElementById("documentosLista");
+                    let newItem = document.createElement("li");
+                    newItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                    newItem.innerHTML = `<a href="${data.documento_url}" target="_blank">${file.name}</a>
+                                         <button type="button" class="btn btn-danger btn-sm excluir-documento"
+                                                 data-url="${data.excluir_url}">
+                                            Excluir
+                                         </button>`;
+                    list.appendChild(newItem);
+                    fileInput.value = "";
+                }
+            });
+        });
+    }
+
+    document.addEventListener("click", function (event) {
+        if (event.target.classList.contains("excluir-documento")) {
+            let url = event.target.getAttribute("data-url");
+            fetch(url, {
+                method: "POST",
+                headers: { "X-CSRFToken": "{{ csrf_token }}" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    event.target.closest("li").remove();
+                }
+            });
         }
     });
 });
 </script>
-
-

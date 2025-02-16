@@ -12,10 +12,10 @@
                 <div class="row">
                     <!-- Coluna para a imagem -->
                     <div class="d-flex justify-content-center mb-4">
-                        {% if equipamento.foto %}
-                        <img src="{{ equipamento.foto.url }}" alt="Imagem do equipamento"
-                            class="img-fluid rounded shadow"
-                            style="max-width: 300px; height: auto; object-fit: cover; padding: 10px;">
+                        {% if equipamento.fotografia %}
+                            <img src="{{ equipamento.fotografia.url }}" alt="Imagem do equipamento"
+                                class="img-fluid rounded shadow"
+                                style="max-width: 300px; height: auto; object-fit: cover; padding: 10px;">
                         {% else %}
                             <p class="text-muted">Nenhuma imagem disponível.</p>
                         {% endif %}
@@ -45,13 +45,14 @@
                             <tr>
                                 <td>
                                     <a href="{{ documento.arquivo.url }}" target="_blank">
-                                        {{ documento.arquivo.name|cut:"documentos_equipamento/" }}
+                                        {{ documento.arquivo.name|cut:"equipamentos_documentos/" }}
                                     </a>
                                 </td>
                                 <td>
-                                    {% if documento.id %}
-                                        <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger" onclick="return confirm('Tem a certeza que deseja excluir este documento?');">Excluir</a>
-                                    {% endif %}
+                                    <button type="button" class="btn btn-danger btn-sm confirm-delete"
+                                        data-url="{% url 'excluir_documento' documento.id %}">
+                                        Excluir
+                                    </button>
                                 </td>
                             </tr>
                             {% empty %}
@@ -66,18 +67,15 @@
                 <!-- Botões -->
                 <div class="mt-4">
                     <a href="{{ request.GET.origem|default:'/equipamentos/fabricados/lista/' }}" class="btn btn-secondary">Voltar</a>
-
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
+
                     <button type="button"
-        class="btn btn-danger btn-sm confirm-delete"
-        data-bs-toggle="modal"
-        data-bs-target="#confirmDeleteModal"
-        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
-    Excluir
-</button>
-
-
-            
+                        class="btn btn-danger btn-sm confirm-delete"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal"
+                        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+                        Excluir
+                    </button>
                 </div>
             </div>
         </div>

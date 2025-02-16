@@ -47,18 +47,30 @@ def editar_cliente(request, cliente_id):
         form = ClienteForm(request.POST, instance=cliente)  # Carrega o formulário com os dados do cliente
         if form.is_valid():
             form.save()
-            return redirect('lista_clientes')  # Redireciona para a lista de clientes
+            return redirect('listar_clientes')  # Redireciona para a lista de clientes
     else:
         form = ClienteForm(instance=cliente)  # Preenche o formulário com os dados atuais do cliente
     
     return render(request, 'clientes/editar_cliente.html', {'form': form, 'cliente': cliente})
 
+@csrf_exempt
 def excluir_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Se for uma requisição para verificar se tem equipamentos, retorna JSON
+    if request.GET.get("verificar"):
+        tem_equipamentos = EquipamentoCliente.objects.filter(cliente=cliente).exists()
+        return JsonResponse({"tem_equipamentos": tem_equipamentos})
+
+    # Se for uma requisição para excluir
     if request.method == "POST":
-        cliente = get_object_or_404(Cliente, id=cliente_id)
+        if EquipamentoCliente.objects.filter(cliente=cliente).exists():
+            return JsonResponse({"success": False, "message": "Este cliente possui equipamentos associados e não pode ser excluído."})
+        
         cliente.delete()
-        return JsonResponse({"success": True})
-    return JsonResponse({"success": False}, status=400)
+        return JsonResponse({"success": True, "message": "Cliente excluído com sucesso."})
+
+    return JsonResponse({"success": False, "message": "Método inválido."})
 
 def adicionar_equipamento_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)

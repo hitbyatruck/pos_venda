@@ -2,19 +2,38 @@ document.addEventListener("DOMContentLoaded", function () {
     let confirmDeleteButtons = document.querySelectorAll(".confirm-delete");
     let confirmDeleteModal = document.getElementById("confirmDeleteModal");
     let confirmDeleteButton = document.getElementById("confirmDeleteButton");
+    let warningDeleteModal = document.getElementById("warningDeleteModal");
     let deleteUrl = "";
+
+    if (!warningDeleteModal) {
+        console.error("Erro: Modal warningDeleteModal não foi encontrado!");
+    }
 
     if (confirmDeleteButtons.length > 0 && confirmDeleteModal) {
         confirmDeleteButtons.forEach(button => {
             button.addEventListener("click", function () {
                 deleteUrl = this.getAttribute("data-url");
-                let modal = new bootstrap.Modal(confirmDeleteModal);
-                modal.show();
+
+                console.log("Verificando se o cliente tem equipamentos associados...");
+
+                fetch(deleteUrl + "?verificar=1", { method: "GET" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.tem_equipamentos) {
+                        console.log("Cliente tem equipamentos! Abrindo warningDeleteModal...");
+                        let modalInstance = new bootstrap.Modal(warningDeleteModal);
+                        modalInstance.show();
+                    } else {
+                        console.log("Cliente não tem equipamentos. Mostrando modal de confirmação.");
+                        let modalInstance = new bootstrap.Modal(confirmDeleteModal);
+                        modalInstance.show();
+                    }
+                })
+                .catch(error => console.error("Erro ao verificar cliente:", error));
             });
         });
 
         confirmDeleteButton.addEventListener("click", function () {
-            console.log(deleteUrl);
             if (deleteUrl) {
                 fetch(deleteUrl, {
                     method: "POST",
@@ -26,16 +45,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        let currentPage = window.location.pathname;
-
-                        // Se estiver na página de detalhes do equipamento, redireciona para a lista
-                        if (currentPage.includes("/equipamentos/") && !currentPage.includes("lista")) {
-                            window.location.href = "/equipamentos/fabricados/lista/";
-                        } else {
-                            location.reload();
-                        }
+                        location.reload();
                     } else {
-                        alert("Erro ao excluir o item.");
+                        alert(data.message || "Erro ao excluir o cliente.");
                     }
                 })
                 .catch(error => console.error("Erro:", error));
@@ -44,22 +56,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    let confirmDeleteModal = document.getElementById("confirmDeleteModal");
-
-    if (confirmDeleteModal) {
-        confirmDeleteModal.addEventListener("hidden.bs.modal", function () {
-            let backdrop = document.querySelector(".modal-backdrop");
-            if (backdrop) {
-                backdrop.remove(); // Remove o fundo escurecido
-            }
-            document.body.classList.remove("modal-open"); // Garante que a rolagem volta ao normal
-            document.body.style.overflow = "auto"; // Se necessário, força a rolagem normal
-        });
-    }
-});
-
-
 function getCSRFToken() {
-    return document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    let cookieValue = null;
+    let cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim();
+        if (cookie.startsWith("csrftoken=")) {
+            cookieValue = cookie.substring("csrftoken=".length, cookie.length);
+            break;
+        }
+    }
+    return cookieValue;
 }
+
+

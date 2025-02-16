@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('clientes/', include('clientes.urls')),
     path('equipamentos/', include('equipamentos.urls')),
-    path('', lambda request: redirect('lista_clientes', permanent=False)), 
+    path('', lambda request: redirect('listar_clientes', permanent=False)), 
     path('assistencia/', include('assistencia.urls')),
 ]
 
