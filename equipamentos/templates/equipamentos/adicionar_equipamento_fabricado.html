@@ -3,77 +3,22 @@
 {% block title %}Adicionar Equipamento Fabricado{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Adicionar Novo Equipamento Fabricado</h2>
+<div class="container">
+    <h2 class="mb-4">Adicionar Novo Equipamento Fabricado</h2>
 
-        {% if form.errors or documento_form.errors %}
-            <div class="alert alert-danger">
-                <strong>Erro!</strong> Por favor, corrija os seguintes erros:
-                <ul>
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <li><strong>{{ field }}:</strong> {{ error }}</li>
-                        {% endfor %}
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Erro!</strong> Por favor, corrija os seguintes erros:
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li><strong>{{ field }}:</strong> {{ error }}</li>
                     {% endfor %}
-                    {% for field, errors in documento_form.errors.items %}
-                        {% for error in errors %}
-                            <li><strong>{{ field }}:</strong> {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        {% include 'partials/form_template.html' %}
-        <!-- <form method="POST" enctype="multipart/form-data" class="row g-3">
-            {% csrf_token %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
 
-            <div class="col-md-6">
-                <label class="form-label">Nome do Equipamento</label>
-                {{ form.nome }}
-            </div>
-
-            <div class="mb-3">
-                <label for="categoria" class="form-label">Categoria</label>
-                {{ form.categoria }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Referência Interna</label>
-                {{ form.referencia_interna }}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Descrição</label>
-                {{ form.descricao }}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Especificações</label>
-                {{ form.especificacoes }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Fotografia</label>
-                {{ form.foto }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Data de Lançamento</label>
-                {{ form.data_lancamento }}
-            </div>
-
-            
-            <div class="col-12">
-                <label class="form-label">Documentos (PDF, JPG, PNG)</label>
-                <input type="file" name="documentos" class="form-control" multiple>
-            </div>
-
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Salvar</button>
-                <a href="{% url 'lista_equipamentos_fabricados' %}" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form> 
-    -->
-
-    </div>
+    {% include 'partials/form_template.html' with form=form %}
+</div>
 {% endblock %}

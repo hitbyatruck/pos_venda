@@ -1,14 +1,10 @@
 from django import forms
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
 from clientes.models import EquipamentoCliente
+from .widgets import CustomClearableFileInput
 
 class EquipamentoFabricadoForm(forms.ModelForm):
-    documentos = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
-
-    )
-
+    
     class Meta:
         model = EquipamentoFabricado
         fields = ['nome', 'referencia_interna', 'descricao', 'especificacoes', 'categoria', 'fotografia']
@@ -18,8 +14,8 @@ class EquipamentoFabricadoForm(forms.ModelForm):
             'descricao': forms.Textarea(attrs={'class': 'form-control'}),
             'especificacoes': forms.Textarea(attrs={'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),
-            'fotografia': forms.ClearableFileInput(attrs={'class': 'form-control'})
-        }
+            'fotografia': CustomClearableFileInput(attrs={'class': 'form-control'}),
+            }
 
 class DocumentoEquipamentoForm(forms.ModelForm):
     class Meta:

@@ -1,72 +1,88 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let confirmDeleteButtons = document.querySelectorAll(".confirm-delete");
-    let confirmDeleteModal = document.getElementById("confirmDeleteModal");
-    let confirmDeleteButton = document.getElementById("confirmDeleteButton");
-    let warningDeleteModal = document.getElementById("warningDeleteModal");
-    let deleteUrl = "";
+document.addEventListener("DOMContentLoaded", function() {
+    let equipamentoIdToDelete = null;
+    let deleteUrl = null;
 
-    if (!warningDeleteModal) {
-        console.error("Erro: Modal warningDeleteModal não foi encontrado!");
+    // Obter os elementos dos modais (confirme que estes IDs estão definidos em seus templates)
+    let confirmModalEl = document.getElementById('confirmModal');
+    let warningModalEl = document.getElementById('warningModal');
+
+    if (!confirmModalEl || !warningModalEl) {
+        console.error("Os modais 'confirmModal' ou 'warningModal' não foram encontrados no DOM.");
+        return;
     }
 
-    if (confirmDeleteButtons.length > 0 && confirmDeleteModal) {
-        confirmDeleteButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                deleteUrl = this.getAttribute("data-url");
+    // Inicializa os modais (Bootstrap 5)
+    let confirmModal = new bootstrap.Modal(confirmModalEl);
+    let warningModal = new bootstrap.Modal(warningModalEl);
 
-                console.log("Verificando se o cliente tem equipamentos associados...");
-
-                fetch(deleteUrl + "?verificar=1", { method: "GET" })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.tem_equipamentos) {
-                        console.log("Cliente tem equipamentos! Abrindo warningDeleteModal...");
-                        let modalInstance = new bootstrap.Modal(warningDeleteModal);
-                        modalInstance.show();
-                    } else {
-                        console.log("Cliente não tem equipamentos. Mostrando modal de confirmação.");
-                        let modalInstance = new bootstrap.Modal(confirmDeleteModal);
-                        modalInstance.show();
-                    }
-                })
-                .catch(error => console.error("Erro ao verificar cliente:", error));
-            });
+    // Ao clicar no botão de exclusão (os botões devem ter a classe "confirm-delete")
+    document.querySelectorAll('.confirm-delete').forEach(function(button) {
+        button.addEventListener('click', function() {
+            equipamentoIdToDelete = this.getAttribute('data-id');
+            deleteUrl = this.getAttribute('data-url');
+            confirmModal.show();
         });
+    });
 
-        confirmDeleteButton.addEventListener("click", function () {
-            if (deleteUrl) {
-                fetch(deleteUrl, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": getCSRFToken(),
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.message || "Erro ao excluir o cliente.");
-                    }
-                })
-                .catch(error => console.error("Erro:", error));
+    // Botão "Confirmar" no primeiro modal
+    document.getElementById('confirmModalBtn').addEventListener('click', function() {
+        excluirEquipamento(false);
+    });
+
+    // Botão "Confirmar Exclusão" no modal de aviso extra
+    document.getElementById('warningModalBtn').addEventListener('click', function() {
+        excluirEquipamento(true);
+    });
+
+    function excluirEquipamento(force) {
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ force: force ? "true" : "false" })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove a linha do equipamento da tabela, assumindo que ela possui ID "row-<equipamentoId>"
+                let row = document.getElementById('row-' + equipamentoIdToDelete);
+                if (row) {
+                    row.remove();
+                }
+                confirmModal.hide();
+                warningModal.hide();
+            } else {
+                if (!force && data.message) {
+                    // Exibe o segundo modal com o aviso extra
+                    document.getElementById('warningModalBody').textContent = data.message;
+                    confirmModal.hide();
+                    warningModal.show();
+                } else {
+                    alert("Erro ao excluir: " + data.message);
+                    confirmModal.hide();
+                    warningModal.hide();
+                }
             }
+        })
+        .catch(error => {
+            console.error("Erro:", error);
+            confirmModal.hide();
+            warningModal.hide();
         });
+    }
+
+    function getCSRFToken() {
+        let cookieValue = null;
+        let cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("csrftoken=")) {
+                cookieValue = cookie.substring("csrftoken=".length);
+                break;
+            }
+        }
+        return cookieValue;
     }
 });
-
-function getCSRFToken() {
-    let cookieValue = null;
-    let cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-        let cookie = cookies[i].trim();
-        if (cookie.startsWith("csrftoken=")) {
-            cookieValue = cookie.substring("csrftoken=".length, cookie.length);
-            break;
-        }
-    }
-    return cookieValue;
-}
-
-

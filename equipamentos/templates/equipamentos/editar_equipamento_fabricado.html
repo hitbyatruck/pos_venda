@@ -3,81 +3,77 @@
 {% block title %}Editar Equipamento Fabricado{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Editar Equipamento: {{ equipamento.nome }}</h2>
-
-        <!-- <form method="POST" enctype="multipart/form-data" class="row g-3">
-            {% csrf_token %}
-            
-            <div class="col-md-6">
-                <label class="form-label">Nome do Equipamento</label>
-                {{ form.nome }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Referência Interna</label>
-                {{ form.referencia_interna }}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Descrição</label>
-                {{ form.descricao }}
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Especificações</label>
-                {{ form.especificacoes }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Categoria</label>
-                {{ form.categoria }}
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Fotografia</label>
-                {{ form.foto }}
-            
-                {% if form.foto.value %}
-                    <div class="mt-2">
-                        <span class="d-block">{{ form.foto.value.name }}</span>
-                        <div class="mt-1">{{ form.foto.clear }}</div>
-                    </div>
-                {% endif %}
-            </div>
-            
-
-            
-            <h4 class="mt-4">Adicionar Documento</h4>
-            
-            <div class="col-md-6">
-                <label class="form-label">Arquivo</label>
-                <input type="file" name="arquivo" class="form-control">
-            </div>
-
-            <div class="col-12">
-                <button type="submit" class="btn btn-success">Adicionar Documento</button>
-            </div>
-
-
-            
-            <h4 class="mt-4">Documentos Existentes</h4>
-            <ul class="list-group">
-                {% for documento in equipamento.documentosequipamento_set.all %}
-                <div class="d-flex align-items-center mb-2">
-                    <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
-                    <a href="{% url 'excluir_documento' documento.id %}" class="btn btn-danger btn-sm ms-2">Excluir</a>
+<div class="container">
+    <h2 class="mb-4">Editar Equipamento: {{ equipamento.nome }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            {% for field in form %}
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="text-danger">{{ error }}</p>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                    <p class="text-muted">Nenhum documento adicionado.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Seção para exibir documentos já anexados -->
+        <h4 class="mt-4">Documentos Anexados</h4>
+        {% if documentos %}
+            <ul class="list-group mb-3">
+                {% for documento in documentos %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
+                        <button type="button" class="btn btn-danger btn-sm excluir-documento" data-url="{% url 'excluir_documento' documento.id %}">
+                            Excluir
+                        </button>
+                    </li>
                 {% endfor %}
             </ul>
+        {% else %}
+            <p class="text-muted">Nenhum documento anexado.</p>
+        {% endif %}
 
-            <div class="col-12 mt-4">
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form> -->
-        {% include 'partials/form_template.html' %}
-    </div>
+        <!-- Campo para upload de novos documentos -->
+        <div class="mb-3">
+            <label class="form-label">Adicionar Novos Documentos (PDF, JPG, PNG)</label>
+            <input type="file" name="documentos" class="form-control" multiple>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+<!-- Script para exclusão de documentos via AJAX -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.excluir-documento').forEach(function(button) {
+        button.addEventListener('click', function () {
+            var url = this.getAttribute('data-url');
+            var btn = this;
+            if (confirm("Tem a certeza que deseja excluir este documento?")) {
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove o item da lista
+                        btn.closest('li').remove();
+                    } else {
+                        alert("Erro ao excluir documento.");
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

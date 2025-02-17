@@ -26,18 +26,21 @@
                 <td>
                     <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <!-- Botão Excluir -->
-                    <button class="btn btn-danger btn-sm confirm-delete"
-        data-id="{{ cliente.id }}"
-        data-url="{% url 'excluir_cliente' cliente.id %}">
-    Excluir
-</button>
+                    <!-- Botão para disparar o modal de exclusão -->
+                    <a href="#"
+                       class="btn btn-danger btn-sm"
+                       data-delete-url="{% url 'excluir_cliente' cliente.id %}"
+                       data-delete-message="{% if cliente.tem_associacoes %}Atenção: este cliente possui equipamentos associados e/ou PAT's. Ao excluir, todas as PAT's relacionadas e os números de série dos equipamentos associados serão removidos. Deseja realmente excluir este cliente?{% else %}Confirma a exclusão deste cliente?{% endif %}"
+                       onclick="showDeleteModal(this); return false;">
+                      Excluir
+                    </a>
                 </td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
 {% endblock %}
+
 
 
 

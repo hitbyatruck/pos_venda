@@ -1,21 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Adicionar Equipamento ao Cliente{% endblock %}
-
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Adicionar Equipamento a {{ cliente.nome }}</h2>
-
-    <form method="post" action="{% url 'adicionar_equipamento_cliente' cliente.id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Adicionar Equipamento</button>
-    </form>
-    
-
-    <div class="mt-3">
-        <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-secondary">Voltar</a>
+  <h1>Adicionar Equipamento ao Cliente</h1>
+  <form method="post">
+    {% csrf_token %}
+    <!-- Drop down dos equipamentos fabricados -->
+    <div class="mb-3">
+      <label for="{{ equipamento_form.equipamento_fabricado.id_for_label }}">Equipamento Fabricado</label>
+      {{ equipamento_form.equipamento_fabricado }}
     </div>
-</div>
+    <!-- Linha única para Número de Série e Data de Aquisição -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="{{ equipamento_form.numero_serie.id_for_label }}">Número de Série</label>
+            {{ equipamento_form.numero_serie }}
+            {% if equipamento_form.numero_serie.errors %}
+              <div class="text-danger">
+                {% for error in equipamento_form.numero_serie.errors %}
+                  <small>{{ error }}</small>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+          
+      <div class="col-md-6">
+        <label for="{{ equipamento_form.data_aquisicao.id_for_label }}">Data de Aquisição</label>
+        {{ equipamento_form.data_aquisicao }}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Adicionar Equipamento</button>
+    <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-secondary">Cancelar</a>
+  </form>
 {% endblock %}
 

@@ -1,11 +1,10 @@
 {% load static %}
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-
     <div class="row">
         {% for field in form %}
             <div class="col-md-6 mb-3">
-                <label class="form-label">{{ field.label }}</label>
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.help_text %}
                     <small class="form-text text-muted">{{ field.help_text }}</small>
@@ -17,11 +16,11 @@
         {% endfor %}
     </div>
 
-    <!-- Lista de documentos já anexados -->
+    <!-- Se o equipamento já estiver salvo, pode exibir a lista de documentos e permitir upload -->
     {% if form.instance.id %}
         <h4 class="mt-4">Documentos Anexados</h4>
         <ul class="list-group" id="documentosLista">
-            {% for documento in documentos %}
+            {% for documento in form.instance.documentosequipamento_set.all %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
                     <button type="button" class="btn btn-danger btn-sm excluir-documento"
@@ -35,18 +34,14 @@
 
     <!-- Upload de novo documento -->
     <div class="mb-3">
-        <label class="form-label">Adicionar Novo Documento</label>
-        <input type="file" id="uploadDocumento" class="form-control">
-        <button type="button" id="btnUploadDocumento" class="btn btn-secondary mt-2" {% if not form.instance.id %}disabled{% endif %}>
-            Upload
-        </button>
-        <small class="form-text text-muted">
-            {% if not form.instance.id %}⚠️ Primeiro, salve o equipamento antes de adicionar documentos.{% endif %}
-        </small>
+        <label class="form-label">Documentos (PDF, JPG, PNG)</label>
+        <input type="file" name="documentos" class="form-control" multiple>
     </div>
 
     <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{% url 'listar_equipamentos_fabricados' %}" class="btn btn-secondary">Cancelar</a>
 </form>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

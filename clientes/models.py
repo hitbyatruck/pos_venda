@@ -13,7 +13,9 @@ class Cliente(models.Model):
 class EquipamentoCliente(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="equipamentos")
     equipamento_fabricado = models.ForeignKey("equipamentos.EquipamentoFabricado", on_delete=models.CASCADE)
-    numero_serie = models.CharField(max_length=100, unique=True)
+    numero_serie = models.CharField(max_length=100, unique=True, error_messages={
+        'unique': "Este número de série já está associado a outro equipamento e/ou cliente."
+    })
     data_aquisicao = models.DateField(null=True, blank=True)  # Campo opcional
 
     def __str__(self):

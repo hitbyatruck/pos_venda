@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Cliente, EquipamentoCliente 
+from django.contrib import messages
 from .forms import EquipamentoClienteForm, ClienteForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -18,24 +19,14 @@ def adicionar_cliente(request):
     return render(request, 'clientes/adicionar_cliente.html', {'form': form})
 
 def listar_clientes(request):
-    """ Lista os clientes com opção de ordenação dinâmica. """
-
-    ordenar_por = request.GET.get("ordenar_por", "nome")  # Ordenação padrão: Nome
-    direcao = request.GET.get("direcao", "asc")  # Direção padrão: Ascendente
-
-    # Alternar entre ascendente e descendente
-    if direcao == "asc":
-        clientes = Cliente.objects.all().order_by(ordenar_por)
-        nova_direcao = "desc"
-    else:
-        clientes = Cliente.objects.all().order_by(f"-{ordenar_por}")
-        nova_direcao = "asc"
-
-    return render(request, "clientes/lista_clientes.html", {
-        "clientes": clientes,
-        "ordenar_por": ordenar_por,
-        "direcao": nova_direcao,  # Alternar direção corretamente
-    })
+    order_by = request.GET.get('order_by', 'nome')
+    clientes = Cliente.objects.all().order_by(order_by)
+    
+    # Adiciona uma propriedade extra para indicar se há associações
+    for cliente in clientes:
+        cliente.tem_associacoes = cliente.equipamentos.exists() or (hasattr(cliente, 'pats') and cliente.pats.exists())
+    
+    return render(request, 'clientes/lista_clientes.html', {'clientes': clientes, 'order_by': order_by})
 
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -56,21 +47,28 @@ def editar_cliente(request, cliente_id):
 @csrf_exempt
 def excluir_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
+    # Verifica se existem equipamentos associados
+    equipamentos_associados = cliente.equipamentos.exists()
+    
+    # Verifica se o objeto 'cliente' possui o atributo 'pats'
+    if hasattr(cliente, 'pats'):
+        pats_associadas = cliente.pats.exists()
+    else:
+        pats_associadas = False
 
-    # Se for uma requisição para verificar se tem equipamentos, retorna JSON
-    if request.GET.get("verificar"):
-        tem_equipamentos = EquipamentoCliente.objects.filter(cliente=cliente).exists()
-        return JsonResponse({"tem_equipamentos": tem_equipamentos})
-
-    # Se for uma requisição para excluir
-    if request.method == "POST":
-        if EquipamentoCliente.objects.filter(cliente=cliente).exists():
-            return JsonResponse({"success": False, "message": "Este cliente possui equipamentos associados e não pode ser excluído."})
-        
+    if request.method == 'POST':
+        # O delete remove o cliente e, devido ao on_delete=models.CASCADE, também remove as associações
         cliente.delete()
-        return JsonResponse({"success": True, "message": "Cliente excluído com sucesso."})
-
-    return JsonResponse({"success": False, "message": "Método inválido."})
+        messages.success(request, "Cliente e todas as suas associações foram excluídos!")
+        return redirect('listar_clientes')
+    else:
+        if equipamentos_associados or pats_associadas:
+            mensagem = ("Atenção: este cliente possui equipamentos associados e/ou PAT's. "
+                        "Ao excluir, todas as PAT's relacionadas e os números de série dos equipamentos associados serão removidos. "
+                        "Deseja realmente excluir este cliente?")
+        else:
+            mensagem = "Confirma a exclusão deste cliente?"
+    return render(request, 'clientes/confirmar_exclusao.html', {'cliente': cliente, 'mensagem': mensagem})
 
 def adicionar_equipamento_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -85,4 +83,4 @@ def adicionar_equipamento_cliente(request, cliente_id):
     else:
         form = EquipamentoClienteForm()
     
-    return render(request, 'clientes/adicionar_equipamento_cliente.html', {'form': form, 'cliente': cliente})
+    return render(request, 'clientes/adicionar_equipamento_cliente.html', {'equipamento_form': form, 'cliente': cliente})

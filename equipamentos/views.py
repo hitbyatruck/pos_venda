@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
-from .forms import EquipamentoFabricadoForm, DocumentoEquipamentoForm, CategoriaEquipamentoForm
+from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
 from clientes.models import EquipamentoCliente
 from assistencia.models import PedidoAssistencia
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 
 # LISTAR EQUIPAMENTOS FABRICADOS
 def listar_equipamentos_fabricados(request):
@@ -37,7 +37,7 @@ def adicionar_equipamento_fabricado(request):
             for arquivo in request.FILES.getlist('documentos'):
                 DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
 
-            return redirect('lista_equipamentos_fabricados')
+            return redirect('listar_equipamentos_fabricados')
     else:
         form = EquipamentoFabricadoForm()
 
@@ -57,29 +57,59 @@ def editar_equipamento_fabricado(request, equipamento_id):
     if request.method == 'POST':
         form = EquipamentoFabricadoForm(request.POST, request.FILES, instance=equipamento)
         if form.is_valid():
-            form.save()
+            equipamento = form.save()
+            # Processa novos documentos enviados
+            for arquivo in request.FILES.getlist('documentos'):
+                DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
             return redirect('detalhes_equipamento', equipamento_id=equipamento.id)
-
-    form = EquipamentoFabricadoForm(instance=equipamento)
-    documento_form = DocumentoEquipamentoForm()
+    else:
+        form = EquipamentoFabricadoForm(instance=equipamento)
 
     return render(request, 'equipamentos/editar_equipamento_fabricado.html', {
-        'form': form, 
-        'documento_form': documento_form,
+        'form': form,
         'documentos': documentos,
         'equipamento': equipamento,
     })
 
+
 # EXCLUIR EQUIPAMENTO FABRICADO (AJAX)
+
+@require_POST
 @csrf_exempt
 def excluir_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
+    force = request.POST.get("force", "false").lower() == "true"
 
-    if EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists() or PedidoAssistencia.objects.filter(equipamento=equipamento).exists():
-        return JsonResponse({"success": False, "message": "O equipamento não pode ser excluído porque está associado a um cliente ou a uma PAT."})
+    # Verifica se há associações usando o campo correto (segundo sua base, o nome é 'equipamento_fabricado')
+    associations_exist = (
+        EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists() or
+        PedidoAssistencia.objects.filter(equipamento=equipamento).exists()
+    )
 
-    equipamento.delete()
+    if associations_exist and not force:
+        return JsonResponse({
+            "success": False,
+            "message": (
+                "Este equipamento está associado a um cliente ou a uma PAT. "
+                "Ao excluir, ele será removido da lista do cliente e as PATs relacionadas serão apagadas. "
+                "Confirma a exclusão?"
+            )
+        })
+
+    if force:
+        # Apaga as associações com base no equipamento
+        EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).delete()
+        PedidoAssistencia.objects.filter(equipamento=equipamento).delete()
+
+    try:
+        equipamento.delete()
+    except ValidationError as e:
+        return JsonResponse({"success": False, "message": str(e)})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
+
     return JsonResponse({"success": True})
+
 
 # UPLOAD DOCUMENTO EQUIPAMENTO (AJAX)
 @csrf_exempt
