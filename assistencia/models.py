@@ -42,10 +42,7 @@ class PedidoAssistencia(models.Model):
         help_text="Marque se o equipamento estiver em garantia."
     )
     data_reparacao = models.DateField(blank=True, null=True, verbose_name="Data de Reparação")
-    data_criacao = models.DateField(
-        null=True,  # Permite migração; no formulário, será obrigatório
-        verbose_name="Data de Criação"
-    )
+  
 
     def __str__(self):
         return f"PAT {self.pat_number or '---'} - {self.cliente.nome}"

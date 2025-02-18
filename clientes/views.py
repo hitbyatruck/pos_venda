@@ -44,7 +44,7 @@ def listar_clientes(request):
 
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    pats = cliente.pats.all().order_by('-data_criacao')
+    pats = cliente.pats.all().order_by('pat_number')
     return render(request, 'clientes/detalhes_cliente.html', {'cliente': cliente, 'pats': pats})
 
 def editar_cliente(request, cliente_id):

@@ -14,7 +14,6 @@ class PedidoAssistenciaForm(forms.ModelForm):
             'relatorio',
             'garantia',
             'data_reparacao',
-            'data_criacao'
         ]
         widgets = {
             'cliente': forms.Select(attrs={'class': 'form-control', 'id': 'id_cliente'}),
@@ -25,7 +24,6 @@ class PedidoAssistenciaForm(forms.ModelForm):
             'relatorio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'garantia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'data_reparacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'data_criacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
         labels = {
             'garantia': 'Em Garantia'

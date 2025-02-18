@@ -23,11 +23,6 @@
             Equipamento
           </a>
         </th>
-        <th>
-          <a href="?ordenar_por=data_criacao&direcao={{ direcao }}">
-            Data de Criação
-          </a>
-        </th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -37,7 +32,6 @@
         <td>{{ pat.pat_number }}</td>
         <td>{{ pat.cliente.nome }}</td>
         <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
-        <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
         <td>
           <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
           <a href="{% url 'editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
