@@ -4,92 +4,66 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
 from clientes.models import EquipamentoCliente
-from assistencia.models import PedidoAssistencia
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 
-# LISTAR EQUIPAMENTOS FABRICADOS
 def listar_equipamentos_fabricados(request):
-    ordenar_por = request.GET.get("ordenar_por", "nome")  
-    direcao = request.GET.get("direcao", "asc")  
-
+    ordenar_por = request.GET.get("ordenar_por", "nome")
+    direcao = request.GET.get("direcao", "asc")
     if direcao == "asc":
         equipamentos = EquipamentoFabricado.objects.all().order_by(ordenar_por)
         nova_direcao = "desc"
     else:
         equipamentos = EquipamentoFabricado.objects.all().order_by(f"-{ordenar_por}")
         nova_direcao = "asc"
-
     return render(request, "equipamentos/lista_equipamentos_fabricados.html", {
         "equipamentos": equipamentos,
         "ordenar_por": ordenar_por,
         "direcao": nova_direcao,
     })
 
-# ADICIONAR EQUIPAMENTO FABRICADO
 def adicionar_equipamento_fabricado(request):
     if request.method == 'POST':
         form = EquipamentoFabricadoForm(request.POST, request.FILES)
         if form.is_valid():
             equipamento = form.save()
-
-            # Verifica e adiciona documentos ao equipamento
             for arquivo in request.FILES.getlist('documentos'):
                 DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
-
             return redirect('listar_equipamentos_fabricados')
     else:
         form = EquipamentoFabricadoForm()
-
     return render(request, 'equipamentos/adicionar_equipamento_fabricado.html', {'form': form})
 
-# DETALHES DO EQUIPAMENTO
 def detalhes_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
     return render(request, 'equipamentos/detalhes_equipamento.html', {'equipamento': equipamento, 'documentos': documentos})
 
-# EDITAR EQUIPAMENTO FABRICADO
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, pk=equipamento_id)
     documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
-
     if request.method == 'POST':
         form = EquipamentoFabricadoForm(request.POST, request.FILES, instance=equipamento)
         if form.is_valid():
             equipamento = form.save()
-            # Processa novos documentos enviados
             for arquivo in request.FILES.getlist('documentos'):
                 DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
             return redirect('detalhes_equipamento', equipamento_id=equipamento.id)
     else:
         form = EquipamentoFabricadoForm(instance=equipamento)
-
     return render(request, 'equipamentos/editar_equipamento_fabricado.html', {
         'form': form,
         'documentos': documentos,
         'equipamento': equipamento,
     })
 
-
-# EXCLUIR EQUIPAMENTO FABRICADO (AJAX)
-
 @require_POST
 @csrf_exempt
 def excluir_equipamento_fabricado(request, equipamento_id):
-    """
-    Exclui um EquipamentoFabricado.
-    Se o equipamento estiver associado a um cliente (via EquipamentoCliente)
-    e o parâmetro force não for 'true', retorna uma mensagem de aviso.
-    Se force for 'true', remove as associações e exclui o equipamento.
-    """
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     force = request.POST.get("force", "false").lower() == "true"
-    
-    # Log simples para verificar se há associação
     associations_exist = EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists()
     print(f"DEBUG: Equipamento {equipamento_id} associations_exist: {associations_exist}")
-    
     if associations_exist and not force:
         return JsonResponse({
             "success": False,
@@ -99,45 +73,33 @@ def excluir_equipamento_fabricado(request, equipamento_id):
                 "Confirma a exclusão?"
             )
         })
-    
     if force:
-        # Remove as associações forçadamente
         EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).delete()
-    
     try:
         equipamento.delete()
     except ValidationError as e:
         return JsonResponse({"success": False, "message": str(e)})
     except Exception as e:
         return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
-    
     return JsonResponse({"success": True})
 
-
-
-# UPLOAD DOCUMENTO EQUIPAMENTO (AJAX)
 @csrf_exempt
 def upload_documento_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-
     if request.method == 'POST' and request.FILES.get('arquivo'):
         documento = DocumentoEquipamento.objects.create(
             equipamento=equipamento,
             arquivo=request.FILES['arquivo']
         )
         return JsonResponse({'success': True, 'documento_id': documento.id, 'documento_url': documento.arquivo.url})
-
     return JsonResponse({'success': False})
 
-# EXCLUIR DOCUMENTO (AJAX)
 @csrf_exempt
 def excluir_documento(request, documento_id):
     documento = get_object_or_404(DocumentoEquipamento, id=documento_id)
-
     if request.method == 'POST':
         documento.delete()
         return JsonResponse({'success': True})
-
     return JsonResponse({'success': False})
 
 def listar_equipamentos_cliente(request):
@@ -149,6 +111,7 @@ def listar_categorias(request):
     return render(request, 'equipamentos/lista_categorias.html', {'categorias': categorias})
 
 def adicionar_categoria(request):
+    from .forms import CategoriaEquipamentoForm
     if request.method == "POST":
         form = CategoriaEquipamentoForm(request.POST)
         if form.is_valid():
@@ -156,5 +119,4 @@ def adicionar_categoria(request):
             return redirect('listar_categorias')
     else:
         form = CategoriaEquipamentoForm()
-    
     return render(request, 'equipamentos/adicionar_categoria.html', {'form': form})

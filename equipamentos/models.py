@@ -20,19 +20,15 @@ class EquipamentoFabricado(models.Model):
         return self.nome
 
     def delete(self, *args, **kwargs):
-        """ Impede a exclusão se houver relações com clientes ou pedidos de assistência """
-        from clientes.models import EquipamentoCliente  # Se necessário, faça a importação local
+        """ Impede a exclusão se houver relações com clientes """
+        from clientes.models import EquipamentoCliente
         if EquipamentoCliente.objects.filter(equipamento_fabricado=self).exists():
             raise ValidationError("Não é possível excluir o equipamento porque está associado a um cliente.")
         super().delete(*args, **kwargs)
-
 
 class DocumentoEquipamento(models.Model):
     equipamento = models.ForeignKey(EquipamentoFabricado, on_delete=models.CASCADE, related_name='documentos')
     arquivo = models.FileField(upload_to='equipamentos_documentos/')
 
-
     def __str__(self):
         return f"Documento: {self.arquivo.name}"
-
-

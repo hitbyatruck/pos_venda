@@ -36,10 +36,7 @@
       <tr id="pat-row-{{ pat.id }}">
         <td>{{ pat.pat_number }}</td>
         <td>{{ pat.cliente.nome }}</td>
-        <td>
-          {{ pat.equipamento.equipamento_fabricado.nome }} 
-          ({{ pat.equipamento.numero_serie }})
-        </td>
+        <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
         <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
         <td>
           <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
@@ -60,4 +57,3 @@
   </table>
 </div>
 {% endblock %}
-

@@ -6,17 +6,17 @@
   <h2 class="mb-4">Criar Pedido de Assistência Técnica (PAT)</h2>
   <form method="post">
     {% csrf_token %}
+    <!-- Linha 1: Cliente e Número da PAT -->
     <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="{{ form.cliente.id_for_label }}">Cliente</label>
-          {{ form.cliente }}  {# Certifique-se de que o select gerado tenha, por exemplo, id="id_cliente" #}
-        </div>
-        <div class="col-md-6 mb-3">
-          <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
-          {{ form.pat_number }}
-        </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+        {{ form.cliente }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
+        {{ form.pat_number }}
+      </div>
     </div>
-
     <!-- Linha 2: Data de Entrada e Data de Reparação -->
     <div class="row">
       <div class="col-md-6 mb-3">
@@ -28,22 +28,27 @@
         {{ form.data_reparacao }}
       </div>
     </div>
-
     <!-- Linha 3: Equipamento e Garantia -->
     <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
-          {{ form.equipamento }}  {# Certifique-se de que o select gerado tenha, por exemplo, id="id_equipamento" #}
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
+        {{ form.equipamento }}
+      </div>
+      <div class="col-md-6 mb-3 d-flex align-items-center">
+        <div class="form-check">
+          {{ form.garantia }}
+          <label class="form-check-label ms-2" for="{{ form.garantia.id_for_label }}">Em Garantia</label>
         </div>
-        <div class="col-md-6 mb-3 d-flex align-items-center">
-          <div class="form-check">
-            {{ form.garantia }}
-            <label class="form-check-label ms-2" for="{{ form.garantia.id_for_label }}">Em Garantia</label>
-          </div>
-        </div>
+      </div>
     </div>
-
-    <!-- Seção Itens: Uma tabela com uma linha para cada item -->
+    <!-- Linha 4: Data de Criação (se desejar, pode ser omitida do layout visual) -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.data_criacao.id_for_label }}">Data de Criação</label>
+        {{ form.data_criacao }}
+      </div>
+    </div>
+    <!-- Seção Itens -->
     <h4 class="mt-4">Itens (Serviços e Componentes)</h4>
     {{ formset.management_form }}
     <table class="table table-bordered" id="itensTable">
@@ -87,26 +92,21 @@
               {% endif %}
             </td>
             <td class="text-center">
-              <!-- Apenas botão para excluir o item -->
               <button type="button" class="btn btn-danger btn-sm item-delete" data-index="{{ forloop.counter0 }}">
                 Excluir
               </button>
-              {# Remova qualquer checkbox de deleção se o formset já estiver renderizando um campo DELETE #}
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
-    <!-- Botão para adicionar um novo item -->
     <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
-
-    <!-- Campo para Relatório -->
+    <!-- Campo Relatório -->
     <div class="mb-4">
       <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
       {{ form.relatorio }}
     </div>
-
-    <!-- Botões para Salvar ou Voltar -->
+    <!-- Botões Salvar/Voltar -->
     <div class="mb-4">
       <button type="submit" class="btn btn-primary">Salvar PAT</button>
       <a href="{% url 'listar_pats' %}" class="btn btn-secondary">Voltar</a>
@@ -134,164 +134,85 @@
 </div>
 
 {% block extra_js %}
-<script>
 
+<script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Obtenha os elementos do select de Cliente e Equipamento
+    // Seleciona os elementos do dropdown de Cliente e Equipamento
     var clienteSelect = document.getElementById("id_cliente");
     var equipamentoSelect = document.getElementById("id_equipamento");
 
-    if (clienteSelect) {
-        clienteSelect.addEventListener("change", function() {
-            var clienteId = this.value;
-            if (clienteId) {
-                // Faça uma requisição AJAX para obter os equipamentos do cliente
-                fetch("{% url 'equipamentos_por_cliente' %}?cliente_id=" + clienteId)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Limpe o dropdown atual
-                        equipamentoSelect.innerHTML = "";
-                        if (data.equipamentos) {
-                            data.equipamentos.forEach(function(eq) {
-                                var option = document.createElement("option");
-                                option.value = eq.id;
-                                option.text = eq.nome + (eq.numero_serie ? " (" + eq.numero_serie + ")" : "");
-                                equipamentoSelect.appendChild(option);
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Erro ao obter equipamentos:", error);
+    // Função para atualizar o dropdown de equipamento com base no cliente selecionado
+    function updateEquipamentoDropdown(clienteId) {
+        if (!equipamentoSelect) return;
+        // Se nenhum cliente válido for selecionado, limpa o dropdown e exibe a mensagem
+        if (!clienteId || clienteId === "adicionar") {
+            equipamentoSelect.innerHTML = "";
+            var opt = document.createElement("option");
+            opt.value = "";
+            opt.text = "Selecione um Cliente Primeiro";
+            equipamentoSelect.appendChild(opt);
+            return;
+        }
+        // Realiza uma requisição AJAX para obter os equipamentos associados ao cliente
+        fetch("{% url 'equipamentos_por_cliente' %}?cliente_id=" + clienteId)
+            .then(response => response.json())
+            .then(data => {
+                equipamentoSelect.innerHTML = "";
+                // Primeira opção: "Adicionar Equipamento Ao Cliente"
+                var addOption = document.createElement("option");
+                addOption.value = "adicionar";
+                addOption.text = "Adicionar Equipamento Ao Cliente";
+                equipamentoSelect.appendChild(addOption);
+                // Adiciona as opções retornadas (se houver)
+                if (data.equipamentos && data.equipamentos.length > 0) {
+                    data.equipamentos.forEach(function(eq) {
+                        var option = document.createElement("option");
+                        option.value = eq.id;
+                        option.text = eq.nome + (eq.numero_serie ? " (" + eq.numero_serie + ")" : "");
+                        equipamentoSelect.appendChild(option);
                     });
-            }
-        });
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao obter equipamentos:", error);
+            });
     }
-});
 
-document.addEventListener("DOMContentLoaded", function() {
-    // CLIENTE: Adiciona a opção "Adicionar Novo Cliente" no início do dropdown
-    var clienteSelect = document.getElementById("id_cliente");
+    // Configura o dropdown de Cliente
     if (clienteSelect) {
-        // Verifica se a primeira opção não é "adicionar"
+        // Insere a opção "Adicionar Novo Cliente" no início, se não estiver presente
         if (clienteSelect.options.length === 0 || clienteSelect.options[0].value !== "adicionar") {
             var opt = document.createElement("option");
             opt.value = "adicionar";
             opt.text = "Adicionar Novo Cliente";
             clienteSelect.insertBefore(opt, clienteSelect.firstChild);
         }
+        // Quando o cliente muda...
         clienteSelect.addEventListener("change", function() {
             if (this.value === "adicionar") {
                 window.location.href = "{% url 'adicionar_cliente' %}";
+                return;
             }
+            updateEquipamentoDropdown(this.value);
         });
     }
 
-    // EQUIPAMENTO: Atualiza o dropdown de equipamento com base no cliente selecionado
-    var equipamentoSelect = document.getElementById("id_equipamento");
-    if (clienteSelect && equipamentoSelect) {
-        clienteSelect.addEventListener("change", function() {
-            var clienteId = this.value;
-            // Se o cliente não estiver selecionado ou se for a opção "adicionar", não atualiza
-            if (!clienteId || clienteId === "adicionar") {
-                equipamentoSelect.innerHTML = "";
-                var option = document.createElement("option");
-                option.value = "";
-                option.text = "Selecione um Cliente Primeiro";
-                equipamentoSelect.appendChild(option);
-                return;
-            }
-            // Caso contrário, faça uma requisição AJAX para obter os equipamentos do cliente
-            fetch("{% url 'equipamentos_por_cliente' %}?cliente_id=" + clienteId)
-                .then(response => response.json())
-                .then(data => {
-                    equipamentoSelect.innerHTML = "";
-                    // A primeira opção será "Adicionar Equipamento Ao Cliente"
-                    var addOption = document.createElement("option");
-                    addOption.value = "adicionar";
-                    addOption.text = "Adicionar Equipamento Ao Cliente";
-                    equipamentoSelect.appendChild(addOption);
-                    if (data.equipamentos && data.equipamentos.length > 0) {
-                        data.equipamentos.forEach(function(eq) {
-                            var option = document.createElement("option");
-                            option.value = eq.id;
-                            option.text = eq.nome + (eq.numero_serie ? " (" + eq.numero_serie + ")" : "");
-                            equipamentoSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error("Erro ao obter equipamentos:", error);
-                });
-        });
-
-        // Quando o usuário selecionar "Adicionar Equipamento Ao Cliente"
+    // Configura o dropdown de Equipamento
+    if (equipamentoSelect) {
         equipamentoSelect.addEventListener("change", function() {
             if (this.value === "adicionar") {
-                var clienteId = clienteSelect.value;
-                if (!clienteId || clienteId === "adicionar") {
+                if (!clienteSelect.value || clienteSelect.value === "adicionar") {
                     alert("Selecione um Cliente Primeiro.");
                     this.selectedIndex = 0;
                 } else {
-                    // Redireciona para os detalhes do cliente, aba Equipamentos
-                    window.location.href = "/clientes/detalhes/" + clienteId + "/#equipamentos";
+                    // Redireciona para a página de detalhes do cliente, aba Equipamentos
+                    window.location.href = "/clientes/detalhes/" + clienteSelect.value + "/#equipamentos";
                 }
             }
         });
     }
 });
-
-// Função para adicionar um novo item ao formset
-document.getElementById("addItemBtn").addEventListener("click", function() {
-    var totalFormsInput = document.querySelector("input[name$='-TOTAL_FORMS']");
-    var currentFormCount = parseInt(totalFormsInput.value);
-    
-    var tbody = document.querySelector("#itensTable tbody");
-    // Clone a última linha, se existir; caso contrário, clone a primeira linha
-    var lastRow = tbody.querySelector("tr:last-child");
-    var newRow = lastRow.cloneNode(true);
-    
-    // Atualiza os índices nos campos do novo formulário
-    var oldIndex = currentFormCount - 1;
-    var newIndex = currentFormCount;
-    newRow.querySelectorAll("input, select, textarea").forEach(function(element) {
-        if (element.name) {
-            element.name = element.name.replace("-" + oldIndex + "-", "-" + newIndex + "-");
-        }
-        if (element.id) {
-            element.id = element.id.replace("-" + oldIndex + "-", "-" + newIndex + "-");
-        }
-        // Limpar os valores
-        if (element.type !== "hidden") {
-            element.value = "";
-        }
-    });
-    tbody.appendChild(newRow);
-    totalFormsInput.value = newIndex + 1;
-});
-
-// Lógica para exclusão de item via modal
-let itemDeleteIndex = null;
-document.querySelectorAll(".item-delete").forEach(function(button) {
-    button.addEventListener("click", function() {
-        itemDeleteIndex = this.getAttribute("data-index");
-        let modal = new bootstrap.Modal(document.getElementById("itemDeleteModal"));
-        modal.show();
-    });
-});
-document.getElementById("itemDeleteConfirmBtn").addEventListener("click", function() {
-    // Marque o campo DELETE do form correspondente
-    var deleteInputs = document.querySelectorAll("input[name$='-DELETE']");
-    if (deleteInputs[itemDeleteIndex]) {
-        deleteInputs[itemDeleteIndex].checked = true;
-        // Opcional: Remova a linha visualmente
-        var rows = document.querySelectorAll("#itensTable tbody tr");
-        if (rows[itemDeleteIndex]) {
-            rows[itemDeleteIndex].style.display = "none";
-        }
-    }
-    let modal = bootstrap.Modal.getInstance(document.getElementById("itemDeleteModal"));
-    modal.hide();
-});
 </script>
 {% endblock %}
 {% endblock %}
+

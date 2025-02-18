@@ -13,17 +13,19 @@ class PedidoAssistenciaForm(forms.ModelForm):
             'equipamento', 
             'relatorio',
             'garantia',
-            'data_reparacao'
+            'data_reparacao',
+            'data_criacao'
         ]
         widgets = {
-            'cliente': forms.Select(attrs={'class': 'form-control'}),
+            'cliente': forms.Select(attrs={'class': 'form-control', 'id': 'id_cliente'}),
             'pat_number': forms.TextInput(attrs={'class': 'form-control'}),
             'data_entrada': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'estado': forms.Select(attrs={'class': 'form-control'}),
-            'equipamento': forms.Select(attrs={'class': 'form-control'}),
+            'equipamento': forms.Select(attrs={'class': 'form-control', 'id': 'id_equipamento'}),
             'relatorio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'garantia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'data_reparacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_criacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
         labels = {
             'garantia': 'Em Garantia'
@@ -40,8 +42,7 @@ class ItemPatForm(forms.ModelForm):
             'tipo': forms.Select(attrs={'class': 'form-control'}),
             'referencia': forms.TextInput(attrs={'class': 'form-control'}),
             'designacao': forms.TextInput(attrs={'class': 'form-control'}),
-            'preco': forms.NumberInput(attrs={'class': 'form-control'}),
+            'preco': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
 ItemPatFormSet = inlineformset_factory(PedidoAssistencia, ItemPat, form=ItemPatForm, extra=1, can_delete=True)
-

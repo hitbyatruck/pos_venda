@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import PedidoAssistencia, Cliente
+from .models import PedidoAssistencia
 from .forms import PedidoAssistenciaForm, ItemPatFormSet
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-
 
 def criar_pat(request):
     if request.method == "POST":
@@ -21,16 +20,14 @@ def criar_pat(request):
     return render(request, 'assistencia/criar_pat.html', {'form': form, 'formset': formset})
     
 def listar_pats(request):
-    ordenar_por = request.GET.get("ordenar_por", "pat_number")  
-    direcao = request.GET.get("direcao", "asc")  
-
+    ordenar_por = request.GET.get("ordenar_por", "pat_number")
+    direcao = request.GET.get("direcao", "asc")
     if direcao == "asc":
         pats = PedidoAssistencia.objects.all().order_by(ordenar_por)
         nova_direcao = "desc"
     else:
         pats = PedidoAssistencia.objects.all().order_by(f"-{ordenar_por}")
         nova_direcao = "asc"
-
     return render(request, 'assistencia/listar_pats.html', {
         'pats': pats,
         'ordenar_por': ordenar_por,
@@ -55,8 +52,6 @@ def editar_pat(request, pat_id):
         formset = ItemPatFormSet(instance=pat)
     return render(request, 'assistencia/editar_pat.html', {'form': form, 'formset': formset, 'pat': pat})
 
-
-
 @require_POST
 @csrf_exempt
 def excluir_pat(request, pat_id):
@@ -76,26 +71,17 @@ def equipamentos_por_cliente(request):
     if not cliente_id:
         return JsonResponse({"error": "cliente_id não fornecido."}, status=400)
     try:
+        from clientes.models import Cliente
         cliente = Cliente.objects.get(id=cliente_id)
     except Cliente.DoesNotExist:
         return JsonResponse({"error": "Cliente não encontrado."}, status=404)
     
-    # Use o nome padrão caso não tenha definido related_name no EquipamentoCliente
-    equipamentos = cliente.equipamentocliente_set.all()
-    
+    equipamentos = cliente.equipamentos.all()
     equipamentos_data = []
     for eq in equipamentos:
         equipamentos_data.append({
             "id": eq.id,
-            "nome": eq.equipamento_fabricado.nome,  # Nome do EquipamentoFabricado associado
+            "nome": eq.equipamento_fabricado.nome,
             "numero_serie": eq.numero_serie,
         })
-    
-    # Se não houver equipamentos, pode-se deixar a lista vazia; o JavaScript já adiciona a opção "Adicionar Equipamento Ao Cliente"
-    return JsonResponse({"equipamentos": equipamentos_data})
-    
-    # Se não houver equipamentos, podemos retornar uma mensagem especial
-    if not equipamentos_data:
-        equipamentos_data = [{"id": "", "nome": "Associar novo equipamento", "numero_serie": ""}]
-    
     return JsonResponse({"equipamentos": equipamentos_data})

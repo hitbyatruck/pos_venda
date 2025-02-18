@@ -106,3 +106,29 @@ def adicionar_equipamento_cliente(request, cliente_id):
         form = EquipamentoClienteForm()
     
     return render(request, 'clientes/adicionar_equipamento_cliente.html', {'equipamento_form': form, 'cliente': cliente})
+
+def equipamentos_por_cliente(request):
+    """
+    Retorna os equipamentos associados a um cliente em formato JSON.
+    Espera um parâmetro GET 'cliente_id'.
+    """
+    cliente_id = request.GET.get("cliente_id")
+    if not cliente_id:
+        return JsonResponse({"error": "cliente_id não fornecido."}, status=400)
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return JsonResponse({"error": "Cliente não encontrado."}, status=404)
+    
+    # Usa o nome padrão para o relacionamento caso não tenha definido related_name
+    equipamentos = cliente.equipamentos.all()
+
+    equipamentos_data = []
+    for eq in equipamentos:
+        equipamentos_data.append({
+            "id": eq.id,
+            "nome": eq.equipamento_fabricado.nome,
+            "numero_serie": eq.numero_serie,
+        })
+    
+    return JsonResponse({"equipamentos": equipamentos_data})

@@ -4,7 +4,6 @@ from clientes.models import EquipamentoCliente
 from .widgets import CustomClearableFileInput
 
 class EquipamentoFabricadoForm(forms.ModelForm):
-    
     class Meta:
         model = EquipamentoFabricado
         fields = ['nome', 'referencia_interna', 'descricao', 'especificacoes', 'categoria', 'fotografia']
@@ -15,14 +14,14 @@ class EquipamentoFabricadoForm(forms.ModelForm):
             'especificacoes': forms.Textarea(attrs={'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'fotografia': CustomClearableFileInput(attrs={'class': 'form-control'}),
-            }
+        }
 
 class DocumentoEquipamentoForm(forms.ModelForm):
     class Meta:
         model = DocumentoEquipamento
         fields = ['arquivo']
         widgets = {
-            'arquivo': forms.FileInput(attrs={'class': 'form-control'})  # Corrigido para suportar um ficheiro de cada vez
+            'arquivo': forms.FileInput(attrs={'class': 'form-control'})
         }
 
 class EquipamentoClienteForm(forms.ModelForm):
