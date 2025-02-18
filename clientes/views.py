@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Cliente, EquipamentoCliente 
-from django.contrib import messages
+from .models import Cliente
 from .forms import EquipamentoClienteForm, ClienteForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 
 # LISTAGEM DE FUNÇÕES DE CLIENTES
@@ -44,31 +44,38 @@ def editar_cliente(request, cliente_id):
     
     return render(request, 'clientes/editar_cliente.html', {'form': form, 'cliente': cliente})
 
+@require_POST
 @csrf_exempt
 def excluir_cliente(request, cliente_id):
+    """
+    Exclui um cliente. Se o cliente tiver equipamentos e/ou PAT's associados e o parâmetro force 
+    não for 'true', retorna um JSON com uma mensagem para exibir o segundo modal.
+    Se force for 'true', procede à exclusão.
+    """
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    # Verifica se existem equipamentos associados
-    equipamentos_associados = cliente.equipamentos.exists()
-    
-    # Verifica se o objeto 'cliente' possui o atributo 'pats'
-    if hasattr(cliente, 'pats'):
-        pats_associadas = cliente.pats.exists()
-    else:
-        pats_associadas = False
+    force = request.POST.get("force", "false").lower() == "true"
 
-    if request.method == 'POST':
-        # O delete remove o cliente e, devido ao on_delete=models.CASCADE, também remove as associações
+    # Verifica se há associações
+    has_equipamentos = cliente.equipamentos.exists()
+    has_pats = cliente.pats.exists() if hasattr(cliente, 'pats') else False
+    associations_exist = has_equipamentos or has_pats
+
+    if associations_exist and not force:
+        return JsonResponse({
+            "success": False,
+            "message": (
+                "Este cliente possui equipamentos e/ou PAT's associados. "
+                "Ao excluir, todos os equipamentos associados e PAT's serão removidos. "
+                "Confirma a exclusão?"
+            )
+        })
+
+    try:
         cliente.delete()
-        messages.success(request, "Cliente e todas as suas associações foram excluídos!")
-        return redirect('listar_clientes')
-    else:
-        if equipamentos_associados or pats_associadas:
-            mensagem = ("Atenção: este cliente possui equipamentos associados e/ou PAT's. "
-                        "Ao excluir, todas as PAT's relacionadas e os números de série dos equipamentos associados serão removidos. "
-                        "Deseja realmente excluir este cliente?")
-        else:
-            mensagem = "Confirma a exclusão deste cliente?"
-    return render(request, 'clientes/confirmar_exclusao.html', {'cliente': cliente, 'mensagem': mensagem})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
+
+    return JsonResponse({"success": True})
 
 def adicionar_equipamento_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)

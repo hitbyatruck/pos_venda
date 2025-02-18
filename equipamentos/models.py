@@ -21,9 +21,11 @@ class EquipamentoFabricado(models.Model):
 
     def delete(self, *args, **kwargs):
         """ Impede a exclusão se houver relações com clientes ou pedidos de assistência """
-        if EquipamentoCliente.objects.filter(equipamento=self).exists():
+        from clientes.models import EquipamentoCliente  # Se necessário, faça a importação local
+        if EquipamentoCliente.objects.filter(equipamento_fabricado=self).exists():
             raise ValidationError("Não é possível excluir o equipamento porque está associado a um cliente.")
         super().delete(*args, **kwargs)
+
 
 class DocumentoEquipamento(models.Model):
     equipamento = models.ForeignKey(EquipamentoFabricado, on_delete=models.CASCADE, related_name='documentos')

@@ -1,24 +1,21 @@
 {% extends "base.html" %}
-
-{% block title %}Lista de Clientes{% endblock %}
-
 {% block content %}
-<h2>Lista de Clientes</h2>
-<a href="{% url 'adicionar_cliente' %}" class="btn btn-success mb-3">Adicionar Cliente</a>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th><a href="?ordenar_por=nome&direcao={{ direcao }}">Nome</a></th>
-            <th><a href="?ordenar_por=empresa&direcao={{ direcao }}">Empresa</a></th>
-            <th><a href="?ordenar_por=telefone&direcao={{ direcao }}">Telefone</a></th>
-            <th><a href="?ordenar_por=email&direcao={{ direcao }}">Email</a></th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for cliente in clientes %}
+<div class="container">
+    <h2>Lista de Clientes</h2>
+    <a href="{% url 'adicionar_cliente' %}" class="btn btn-primary mb-3">Adicionar Cliente</a>
+    <table class="table table-striped">
+        <thead>
             <tr>
+                <th>Nome</th>
+                <th>Empresa</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr id="client-row-{{ cliente.id }}">
                 <td>{{ cliente.nome }}</td>
                 <td>{{ cliente.empresa }}</td>
                 <td>{{ cliente.telefone }}</td>
@@ -26,21 +23,53 @@
                 <td>
                     <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <!-- Botão para disparar o modal de exclusão -->
-                    <a href="#"
-                       class="btn btn-danger btn-sm"
-                       data-delete-url="{% url 'excluir_cliente' cliente.id %}"
-                       data-delete-message="{% if cliente.tem_associacoes %}Atenção: este cliente possui equipamentos associados e/ou PAT's. Ao excluir, todas as PAT's relacionadas e os números de série dos equipamentos associados serão removidos. Deseja realmente excluir este cliente?{% else %}Confirma a exclusão deste cliente?{% endif %}"
-                       onclick="showDeleteModal(this); return false;">
-                      Excluir
-                    </a>
+                    <button class="btn btn-danger btn-sm client-delete"
+                            data-id="{{ cliente.id }}"
+                            data-url="{% url 'excluir_cliente' cliente.id %}">
+                        Excluir
+                    </button>
                 </td>
             </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal de Confirmação Inicial para Clientes -->
+<div class="modal fade" id="clientConfirmModal" tabindex="-1" aria-labelledby="clientConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clientConfirmModalLabel">Confirmar Exclusão do Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        Tem certeza que deseja excluir este cliente?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="clientConfirmModalBtn" class="btn btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Aviso Extra para Clientes -->
+<div class="modal fade" id="clientWarningModal" tabindex="-1" aria-labelledby="clientWarningModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clientWarningModalLabel">Aviso</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="clientWarningModalBody">
+        <!-- Mensagem dinâmica será inserida aqui -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="clientWarningModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
-
-
-
-

@@ -77,38 +77,42 @@ def editar_equipamento_fabricado(request, equipamento_id):
 @require_POST
 @csrf_exempt
 def excluir_equipamento_fabricado(request, equipamento_id):
+    """
+    Exclui um EquipamentoFabricado.
+    Se o equipamento estiver associado a um cliente (via EquipamentoCliente)
+    e o parâmetro force não for 'true', retorna uma mensagem de aviso.
+    Se force for 'true', remove as associações e exclui o equipamento.
+    """
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     force = request.POST.get("force", "false").lower() == "true"
-
-    # Verifica se há associações usando o campo correto (segundo sua base, o nome é 'equipamento_fabricado')
-    associations_exist = (
-        EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists() or
-        PedidoAssistencia.objects.filter(equipamento=equipamento).exists()
-    )
-
+    
+    # Log simples para verificar se há associação
+    associations_exist = EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists()
+    print(f"DEBUG: Equipamento {equipamento_id} associations_exist: {associations_exist}")
+    
     if associations_exist and not force:
         return JsonResponse({
             "success": False,
             "message": (
-                "Este equipamento está associado a um cliente ou a uma PAT. "
-                "Ao excluir, ele será removido da lista do cliente e as PATs relacionadas serão apagadas. "
+                "Este equipamento está associado a um cliente. "
+                "Ao excluir, ele será removido da lista do cliente. "
                 "Confirma a exclusão?"
             )
         })
-
+    
     if force:
-        # Apaga as associações com base no equipamento
+        # Remove as associações forçadamente
         EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).delete()
-        PedidoAssistencia.objects.filter(equipamento=equipamento).delete()
-
+    
     try:
         equipamento.delete()
     except ValidationError as e:
         return JsonResponse({"success": False, "message": str(e)})
     except Exception as e:
         return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
-
+    
     return JsonResponse({"success": True})
+
 
 
 # UPLOAD DOCUMENTO EQUIPAMENTO (AJAX)
