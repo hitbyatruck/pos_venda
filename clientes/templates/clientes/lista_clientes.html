@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 <div class="container">
     <h2>Lista de Clientes</h2>
@@ -73,3 +74,4 @@
   </div>
 </div>
 {% endblock %}
+<script src="{% static 'js/clients_scripts.js' %}"></script>

@@ -2,21 +2,82 @@ from django.db import models
 from clientes.models import Cliente, EquipamentoCliente
 
 class PedidoAssistencia(models.Model):
-    ESTADOS = [
-        ('Recebida', 'Recebida'),
-        ('Em Diagnóstico', 'Em Diagnóstico'),
-        ('Em Curso', 'Em Curso'),
-        ('Concluída', 'Concluída'),
+    cliente = models.ForeignKey(
+        Cliente, 
+        on_delete=models.CASCADE, 
+        related_name="pats",
+        verbose_name="Cliente"
+    )
+    pat_number = models.CharField(
+        max_length=100, 
+        unique=True, 
+        verbose_name="Número da PAT"
+    )
+    data_entrada = models.DateField(
+        verbose_name="Data de Entrada"
+    )
+    ESTADO_CHOICES = [
+        ('aberto', 'Aberto'),
+        ('em_curso', 'Em Curso'),
+        ('concluido', 'Concluído'),
+        ('cancelado', 'Cancelado'),
+        ('em_diagnostico', 'Em Diagnóstico'),
     ]
-
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="pedidos_assistencia")
-    numero_pedido = models.CharField(max_length=50, unique=True)
-    equipamento = models.ForeignKey(EquipamentoCliente, on_delete=models.CASCADE, related_name="pedidos_assistencia")
-    em_garantia = models.BooleanField(default=False)
-    data_entrada = models.DateField()
-    data_reparacao = models.DateField(blank=True, null=True)
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='Recebida')
-    descricao_problema = models.TextField()
+    estado = models.CharField(
+        max_length=20, 
+        choices=ESTADO_CHOICES, 
+        default='aberto',
+        verbose_name="Estado da PAT"
+    )
+    equipamento = models.ForeignKey(
+        EquipamentoCliente, 
+        on_delete=models.CASCADE, 
+        related_name="pats",
+        verbose_name="Equipamento"
+    )
+    relatorio = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name="Relatório"
+    )
+    data_criacao = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data de Criação"
+    )
 
     def __str__(self):
-        return f"Pedido {self.numero_pedido} - {self.cliente.nome} - {self.estado}"
+        return f"PAT {self.pat_number} - {self.cliente.nome}"
+
+
+class ItemPat(models.Model):
+    TIPO_CHOICES = [
+        ('servico', 'Serviço'),
+        ('componente', 'Componente'),
+    ]
+    pat = models.ForeignKey(
+        PedidoAssistencia, 
+        on_delete=models.CASCADE, 
+        related_name="itens",
+        verbose_name="PAT"
+    )
+    tipo = models.CharField(
+        max_length=20, 
+        choices=TIPO_CHOICES,
+        verbose_name="Tipo"
+    )
+    referencia = models.CharField(
+        max_length=100, 
+        verbose_name="Referência"
+    )
+    designacao = models.CharField(
+        max_length=255,
+        verbose_name="Designação"
+    )
+    preco = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        verbose_name="Preço"
+    )
+
+    def __str__(self):
+        return f"{self.get_tipo_display()}: {self.designacao} ({self.referencia})"
