@@ -19,18 +19,33 @@ def adicionar_cliente(request):
     return render(request, 'clientes/adicionar_cliente.html', {'form': form})
 
 def listar_clientes(request):
-    order_by = request.GET.get('order_by', 'nome')
-    clientes = Cliente.objects.all().order_by(order_by)
+    ordenar_por = request.GET.get("ordenar_por", "nome")  
+    direcao = request.GET.get("direcao", "asc")  
+
+    if direcao == "asc":
+        clientes = Cliente.objects.all().order_by(ordenar_por)
+        nova_direcao = "desc"
+    else:
+        clientes = Cliente.objects.all().order_by(f"-{ordenar_por}")
+        nova_direcao = "asc"
+
+
+    
     
     # Adiciona uma propriedade extra para indicar se há associações
     for cliente in clientes:
         cliente.tem_associacoes = cliente.equipamentos.exists() or (hasattr(cliente, 'pats') and cliente.pats.exists())
     
-    return render(request, 'clientes/lista_clientes.html', {'clientes': clientes, 'order_by': order_by})
+    return render(request, "clientes/lista_clientes.html", {
+        "clientes": clientes,
+        "ordenar_por": ordenar_por,
+        "direcao": nova_direcao,
+    })
 
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    return render(request, 'clientes/detalhes_cliente.html', {'cliente': cliente})
+    pats = cliente.pats.all().order_by('-data_criacao')
+    return render(request, 'clientes/detalhes_cliente.html', {'cliente': cliente, 'pats': pats})
 
 def editar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)  # Obtém o cliente ou dá erro 404

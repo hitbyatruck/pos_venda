@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Editar PAT{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Editar Pedido de Assistência Técnica (PAT)</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+        {{ form.cliente }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
+        {{ form.pat_number }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.data_entrada.id_for_label }}">Data de Entrada</label>
+        {{ form.data_entrada }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.estado.id_for_label }}">Estado</label>
+        {{ form.estado }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
+        {{ form.equipamento }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.garantia.id_for_label }}">Em Garantia</label><br>
+        {{ form.garantia }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.data_reparacao.id_for_label }}">Data de Reparação</label>
+        {{ form.data_reparacao }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.data_criacao.id_for_label }}">Data de Criação</label>
+        {{ form.data_criacao }}
+      </div>
+      <div class="col-12 mb-3">
+        <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
+        {{ form.relatorio }}
+      </div>
+    </div>
+
+    <h4>Itens (Serviços e Componentes)</h4>
+    {{ formset.management_form }}
+    {% for form in formset %}
+      <div class="card mb-3">
+        <div class="card-body">
+          {% for field in form %}
+            <div class="mb-3">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}
+                <div class="text-danger">{{ field.errors }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if form.instance.pk %}
+            <div class="form-check">
+              {{ form.DELETE }} <label class="form-check-label">Excluir este item</label>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+    <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

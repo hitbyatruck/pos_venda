@@ -1,59 +1,101 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import PedidoAssistencia
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import PedidoAssistencia, Cliente
+from .forms import PedidoAssistenciaForm, ItemPatFormSet
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .forms import PedidoAssistenciaForm
-from clientes.models import Cliente, EquipamentoCliente
 
 
-def lista_pats(request):
-    pats = PedidoAssistencia.objects.all()
-    return render(request, "assistencia/lista_pats.html", {"pats": pats})
+def criar_pat(request):
+    if request.method == "POST":
+        form = PedidoAssistenciaForm(request.POST)
+        formset = ItemPatFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
+            pat = form.save()
+            formset.instance = pat
+            formset.save()
+            return redirect('detalhes_pat', pat_id=pat.id)
+    else:
+        form = PedidoAssistenciaForm()
+        formset = ItemPatFormSet()
+    return render(request, 'assistencia/criar_pat.html', {'form': form, 'formset': formset})
+    
+def listar_pats(request):
+    ordenar_por = request.GET.get("ordenar_por", "pat_number")  
+    direcao = request.GET.get("direcao", "asc")  
 
-def adicionar_pedido_assistencia(request):
-    clientes = Cliente.objects.all()  # Lista todos os clientes
-    cliente_id = request.GET.get('cliente_id', None)  # Obtém cliente_id da URL
-    equipamentos = EquipamentoCliente.objects.none()  # Inicializa lista vazia
+    if direcao == "asc":
+        pats = PedidoAssistencia.objects.all().order_by(ordenar_por)
+        nova_direcao = "desc"
+    else:
+        pats = PedidoAssistencia.objects.all().order_by(f"-{ordenar_por}")
+        nova_direcao = "asc"
 
-    if cliente_id:
-        equipamentos = EquipamentoCliente.objects.filter(cliente_id=cliente_id)  # Filtra equipamentos do cliente
-
-    form = PedidoAssistenciaForm()
-
-    return render(request, 'assistencia/adicionar_pedido_assistencia.html', {
-        'form': form,
-        'clientes': clientes,
-        'equipamentos': equipamentos,  # Passamos os equipamentos para o template
-        'cliente_id': cliente_id,
+    return render(request, 'assistencia/listar_pats.html', {
+        'pats': pats,
+        'ordenar_por': ordenar_por,
+        'direcao': nova_direcao
     })
 
-def detalhes_pedido_assistencia(request, pedido_id):
-    pedido = get_object_or_404(PedidoAssistencia, id=pedido_id)
-    return render(request, 'assistencia/detalhes_pedido_assistencia.html', {'pedido': pedido})
+def detalhes_pat(request, pat_id):
+    pat = get_object_or_404(PedidoAssistencia, id=pat_id)
+    return render(request, 'assistencia/detalhes_pat.html', {'pat': pat})
 
-def editar_pedido_assistencia(request, pat_id):
-    pedido = get_object_or_404(PedidoAssistencia, id=pat_id)
-    
+def editar_pat(request, pat_id):
+    pat = get_object_or_404(PedidoAssistencia, id=pat_id)
     if request.method == "POST":
-        form = PedidoAssistenciaForm(request.POST, instance=pedido)
-        if form.is_valid():
-            form.save()
-            return redirect("lista_pats")  # Volta para a lista de PATs
+        form = PedidoAssistenciaForm(request.POST, instance=pat)
+        formset = ItemPatFormSet(request.POST, instance=pat)
+        if form.is_valid() and formset.is_valid():
+            pat = form.save()
+            formset.save()
+            return redirect('detalhes_pat', pat_id=pat.id)
     else:
-        form = PedidoAssistenciaForm(instance=pedido)
+        form = PedidoAssistenciaForm(instance=pat)
+        formset = ItemPatFormSet(instance=pat)
+    return render(request, 'assistencia/editar_pat.html', {'form': form, 'formset': formset, 'pat': pat})
+
+
+
+@require_POST
+@csrf_exempt
+def excluir_pat(request, pat_id):
+    pat = get_object_or_404(PedidoAssistencia, id=pat_id)
+    try:
+        pat.delete()
+    except Exception as e:
+        return JsonResponse({"success": False, "message": "Erro ao excluir PAT: " + str(e)})
+    return JsonResponse({"success": True})
+
+def equipamentos_por_cliente(request):
+    """
+    Retorna os equipamentos associados a um cliente em formato JSON.
+    Espera um parâmetro GET 'cliente_id'.
+    """
+    cliente_id = request.GET.get("cliente_id")
+    if not cliente_id:
+        return JsonResponse({"error": "cliente_id não fornecido."}, status=400)
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return JsonResponse({"error": "Cliente não encontrado."}, status=404)
     
-    return render(request, "assistencia/adicionar_pedido_assistencia.html", {"form": form})
-
-def excluir_pedido_assistencia(request, pat_id):
-    pedido = get_object_or_404(PedidoAssistencia, id=pat_id)
+    # Use o nome padrão caso não tenha definido related_name no EquipamentoCliente
+    equipamentos = cliente.equipamentocliente_set.all()
     
-    if request.method == "POST":
-        pedido.delete()
-        return redirect("lista_pats")  # Voltar para a lista após exclusão
-
-    return render(request, "assistencia/confirmar_exclusao.html", {"pedido": pedido})
-
-def get_equipamentos(request, cliente_id):
-    equipamentos = EquipamentoCliente.objects.filter(cliente_id=cliente_id).values("id", "nome", "numero_serie")
-    return JsonResponse({"equipamentos": list(equipamentos)})
-
-# Create your views here.
+    equipamentos_data = []
+    for eq in equipamentos:
+        equipamentos_data.append({
+            "id": eq.id,
+            "nome": eq.equipamento_fabricado.nome,  # Nome do EquipamentoFabricado associado
+            "numero_serie": eq.numero_serie,
+        })
+    
+    # Se não houver equipamentos, pode-se deixar a lista vazia; o JavaScript já adiciona a opção "Adicionar Equipamento Ao Cliente"
+    return JsonResponse({"equipamentos": equipamentos_data})
+    
+    # Se não houver equipamentos, podemos retornar uma mensagem especial
+    if not equipamentos_data:
+        equipamentos_data = [{"id": "", "nome": "Associar novo equipamento", "numero_serie": ""}]
+    
+    return JsonResponse({"equipamentos": equipamentos_data})

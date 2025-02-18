@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Detalhes do PAT{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Detalhes do Pedido de Assistência Técnica (PAT)</h2>
+  <ul class="nav nav-tabs" id="patTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="cliente-tab" data-bs-toggle="tab" data-bs-target="#cliente" type="button" role="tab">Cliente</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="equipamento-tab" data-bs-toggle="tab" data-bs-target="#equipamento" type="button" role="tab">Equipamento</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="pat-info-tab" data-bs-toggle="tab" data-bs-target="#pat-info" type="button" role="tab">Informação da PAT</button>
+    </li>
+  </ul>
+  <div class="tab-content mt-3" id="patTabContent">
+    <div class="tab-pane fade show active" id="cliente" role="tabpanel">
+      <h4>Cliente</h4>
+      <p><strong>Nome:</strong> {{ pat.cliente.nome }}</p>
+      <p><strong>Email:</strong> {{ pat.cliente.email }}</p>
+      <p><strong>Telefone:</strong> {{ pat.cliente.telefone }}</p>
+    </div>
+    <div class="tab-pane fade" id="equipamento" role="tabpanel">
+      <h4>Equipamento</h4>
+      <p><strong>Equipamento:</strong> {{ pat.equipamento.equipamento_fabricado.nome }}</p>
+      <p><strong>Número de Série:</strong> {{ pat.equipamento.numero_serie }}</p>
+    </div>
+    <div class="tab-pane fade" id="pat-info" role="tabpanel">
+      <h4>Informação da PAT</h4>
+      <p><strong>Número da PAT:</strong> {{ pat.pat_number }}</p>
+      <p><strong>Data de Entrada:</strong> {{ pat.data_entrada|date:"d/m/Y" }}</p>
+      <p><strong>Estado:</strong> {{ pat.get_estado_display }}</p>
+      <p><strong>Em Garantia:</strong> {{ pat.garantia|yesno:"Sim,Não" }}</p>
+      <p><strong>Data de Reparação:</strong> {% if pat.data_reparacao %}{{ pat.data_reparacao|date:"d/m/Y" }}{% else %}N/A{% endif %}</p>
+      <p><strong>Relatório:</strong></p>
+      <p>{{ pat.relatorio }}</p>
+      <h5>Itens</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Referência</th>
+            <th>Designação</th>
+            <th>Preço</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in pat.itens.all %}
+          <tr>
+            <td>{{ item.get_tipo_display }}</td>
+            <td>{{ item.referencia }}</td>
+            <td>{{ item.designacao }}</td>
+            <td>{{ item.preco }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

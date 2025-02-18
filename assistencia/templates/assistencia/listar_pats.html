@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Lista de PAT's{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Lista de Pedidos de Assistência Técnica (PAT's) Globais</h2>
+  <a href="{% url 'criar_pat' %}" class="btn btn-primary mb-3">Criar Novo PAT</a>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>
+          <a href="?ordenar_por=pat_number&direcao={{ direcao }}">
+            Número da PAT
+          </a>
+        </th>
+        <th>
+          <a href="?ordenar_por=cliente__nome&direcao={{ direcao }}">
+            Cliente
+          </a>
+        </th>
+        <th>
+          <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}">
+            Equipamento
+          </a>
+        </th>
+        <th>
+          <a href="?ordenar_por=data_criacao&direcao={{ direcao }}">
+            Data de Criação
+          </a>
+        </th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pat in pats %}
+      <tr id="pat-row-{{ pat.id }}">
+        <td>{{ pat.pat_number }}</td>
+        <td>{{ pat.cliente.nome }}</td>
+        <td>
+          {{ pat.equipamento.equipamento_fabricado.nome }} 
+          ({{ pat.equipamento.numero_serie }})
+        </td>
+        <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
+        <td>
+          <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+          <a href="{% url 'editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+          <button class="btn btn-danger btn-sm pat-delete" 
+                  data-id="{{ pat.id }}"
+                  data-url="{% url 'excluir_pat' pat.id %}">
+            Excluir
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">Nenhum PAT encontrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

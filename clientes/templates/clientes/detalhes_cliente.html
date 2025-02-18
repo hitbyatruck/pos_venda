@@ -65,9 +65,41 @@
             </div>
 
             <!-- Aba de RMA's e Assistências (Vazia por agora) -->
-            <div id="rmas" class="tab-pane fade">
-                <p>Pedidos de assistência e RMA's do cliente aparecerão aqui.</p>
+            
+            <div class="tab-pane fade" id="pats" role="tabpanel">
+                <h3>PAT's</h3>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Número da PAT</th>
+                        <th>Equipamento</th>
+                        <th>Data de Criação</th>
+                        <th>Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {% for pat in pats %}
+                        <tr>
+                            <td>{{ pat.pat_number }}</td>
+                            <td>
+                              {{ pat.equipamento.equipamento_fabricado.nome }}
+                              ({{ pat.equipamento.numero_serie }})
+                            </td>
+                            <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
+                            <td>
+                              <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                              <!-- Botões para editar ou excluir a PAT podem ser adicionados aqui -->
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">Nenhum PAT associado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            
 
             <!-- Aba de Notas de Conversa (Vazia por agora) -->
             <div id="notas" class="tab-pane fade">

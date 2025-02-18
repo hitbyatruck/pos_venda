@@ -1,18 +1,47 @@
 from django import forms
-from .models import PedidoAssistencia
-from clientes.models import EquipamentoCliente
+from .models import PedidoAssistencia, ItemPat
+from django.forms import inlineformset_factory
 
 class PedidoAssistenciaForm(forms.ModelForm):
     class Meta:
         model = PedidoAssistencia
-        fields = ['cliente', 'numero_pedido', 'equipamento', 'em_garantia', 'data_entrada', 'data_reparacao', 'estado']
+        fields = [
+            'cliente', 
+            'pat_number', 
+            'data_entrada', 
+            'estado', 
+            'equipamento', 
+            'relatorio',
+            'garantia',
+            'data_reparacao'
+        ]
+        widgets = {
+            'cliente': forms.Select(attrs={'class': 'form-control'}),
+            'pat_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'data_entrada': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'estado': forms.Select(attrs={'class': 'form-control'}),
+            'equipamento': forms.Select(attrs={'class': 'form-control'}),
+            'relatorio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'garantia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'data_reparacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+        labels = {
+            'garantia': 'Em Garantia'
+        }
+        help_texts = {
+            'garantia': 'Marque se o equipamento estiver em garantia.',
+        }
 
-    def __init__(self, *args, **kwargs):
-        cliente_id = kwargs.pop('cliente_id', None)  # Obtém cliente_id passado da view
-        super().__init__(*args, **kwargs)
-        
-        # Inicializa o campo equipamento apenas se houver cliente selecionado
-        if cliente_id:
-            self.fields['equipamento'].queryset = EquipamentoCliente.objects.filter(cliente_id=cliente_id)
-        else:
-            self.fields['equipamento'].queryset = EquipamentoCliente.objects.none()
+class ItemPatForm(forms.ModelForm):
+    class Meta:
+        model = ItemPat
+        fields = ['tipo', 'referencia', 'designacao', 'preco']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'referencia': forms.TextInput(attrs={'class': 'form-control'}),
+            'designacao': forms.TextInput(attrs={'class': 'form-control'}),
+            'preco': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+ItemPatFormSet = inlineformset_factory(PedidoAssistencia, ItemPat, form=ItemPatForm, extra=1, can_delete=True)
+
