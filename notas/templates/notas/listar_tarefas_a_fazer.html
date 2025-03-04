@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Tarefas - A Fazer{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Tarefas</h2>
+  <!-- Abas do Bootstrap para separar Tarefas a Fazer e Concluídas -->
+  <ul class="nav nav-tabs" id="tarefasTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="a-fazer-tab" data-bs-toggle="tab" data-bs-target="#a-fazer" type="button" role="tab" aria-controls="a-fazer" aria-selected="true">
+        Tarefas a Fazer
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="concluidas-tab" data-bs-toggle="tab" data-bs-target="#concluidas" type="button" role="tab" aria-controls="concluidas" aria-selected="false">
+        Tarefas Concluídas
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content mt-3" id="tarefasTabsContent">
+    <!-- Aba Tarefas a Fazer -->
+    <div class="tab-pane fade show active" id="a-fazer" role="tabpanel" aria-labelledby="a-fazer-tab">
+      {% if tarefas_a_fazer %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Cliente</th>
+            <th>PAT</th>
+            <th>Data de Criação</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tarefa in tarefas_a_fazer %}
+          <tr>
+            <td>{{ tarefa.descricao }}</td>
+            <td>{% if tarefa.cliente %}{{ tarefa.cliente.nome }}{% else %}—{% endif %}</td>
+            <td>{% if tarefa.pat %}{{ tarefa.pat.pat_number }}{% else %}—{% endif %}</td>
+            <td>{{ tarefa.data_criacao|date:"d/m/Y H:i" }}</td>
+            <td>
+              {# Se a tarefa estiver associada a uma nota, os botões direcionam para as views da nota; caso contrário, para as views da tarefa. #}
+              {% if tarefa.nota %}
+                <a href="{% url 'notas:detalhes_nota' tarefa.nota.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                <a href="{% url 'notas:editar_nota' tarefa.nota.id %}" class="btn btn-warning btn-sm">Editar</a>
+              {% else %}
+                <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                <a href="{% url 'notas:editar_tarefa' tarefa.id %}" class="btn btn-warning btn-sm">Editar</a>
+              {% endif %}
+              <button class="btn btn-danger btn-sm tarefa-delete" data-id="{{ tarefa.id }}">Excluir</button>
+              {# Botão para fechar a tarefa (muda status para 'concluido') #}
+              <form action="{% url 'notas:fechar_tarefa' tarefa.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm">Fechar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>Nenhuma tarefa a fazer encontrada.</p>
+      {% endif %}
+      <a href="{% url 'notas:criar_tarefa' %}" class="btn btn-primary">Criar Nova Tarefa</a>
+    </div>
+
+    <!-- Aba Tarefas Concluídas -->
+    <div class="tab-pane fade" id="concluidas" role="tabpanel" aria-labelledby="concluidas-tab">
+      {% if tarefas_concluidas %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Cliente</th>
+            <th>PAT</th>
+            <th>Data de Criação</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tarefa in tarefas_concluidas %}
+          <tr class="concluido">
+            <td>{{ tarefa.descricao }}</td>
+            <td>{% if tarefa.cliente %}{{ tarefa.cliente.nome }}{% else %}—{% endif %}</td>
+            <td>{% if tarefa.pat %}{{ tarefa.pat.pat_number }}{% else %}—{% endif %}</td>
+            <td>{{ tarefa.data_criacao|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if tarefa.nota %}
+                <a href="{% url 'notas:detalhes_nota' tarefa.nota.id %}" class="btn btn-info btn-sm">Detalhes</a>
+              {% else %}
+                <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-info btn-sm">Detalhes</a>
+              {% endif %}
+              <button class="btn btn-danger btn-sm tarefa-delete" data-id="{{ tarefa.id }}">Excluir</button>
+              {# Botão para reabrir a tarefa (muda status para 'a_fazer') #}
+              <form action="{% url 'notas:reabrir_tarefa' tarefa.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm">Reabrir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>Nenhuma tarefa concluída encontrada.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

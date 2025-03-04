@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar Nota de Conversa{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Editar Nota de Conversa</h2>
+    <form method="post">
+        {% csrf_token %}
+        <!-- Linha com Cliente, PAT e Equipamento -->
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+                {{ form.cliente }}
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
+                {{ form.pat }}
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
+                {{ form.equipamento }}
+            </div>
+        </div>
+        <!-- Título -->
+        <div class="mb-3">
+            <label for="{{ form.titulo.id_for_label }}">Título</label>
+            {{ form.titulo }}
+        </div>
+        <!-- Conteúdo -->
+        <div class="mb-3">
+            <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
+            {{ form.conteudo }}
+        </div>
+        
+        <!-- Tarefas Associadas -->
+        <h4>Tarefas Associadas</h4>
+        {{ tarefa_formset.management_form }}
+        <table class="table table-bordered" id="tarefasTable">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Concluída</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in tarefa_formset %}
+                <tr class="tarefa-row">
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    <td>{{ form.descricao }}</td>
+                    <td>{{ form.concluida }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="tarefa-row template-row" style="display:none;">
+                    <td>{{ tarefa_formset.empty_form.descricao }}</td>
+                    <td>{{ tarefa_formset.empty_form.concluida }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="button" id="addTarefaBtn" class="btn btn-outline-primary mb-3">Adicionar Tarefa</button>
+        
+        <button type="submit" class="btn btn-primary">Atualizar Nota</button>
+        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // (Mesmo código JavaScript de gerenciamento das tarefas, idêntico ao do criar_nota.html)
+    let addTarefaBtn = document.getElementById("addTarefaBtn");
+    let totalFormsInput = document.getElementById("id_tarefas-TOTAL_FORMS");
+    let tbody = document.querySelector("#tarefasTable tbody");
+    let templateRow = tbody.querySelector("tr.template-row");
+
+    function updateTotalForms() {
+        let totalRows = tbody.querySelectorAll("tr.tarefa-row:not(.template-row)").length;
+        totalFormsInput.value = totalRows;
+    }
+
+    function addNewTarefaRow() {
+        let currentFormCount = parseInt(totalFormsInput.value);
+        if (!templateRow) {
+            console.error("Template row for tarefa not found.");
+            return;
+        }
+        let newRow = templateRow.cloneNode(true);
+        newRow.style.display = "";
+        newRow.classList.remove("template-row");
+        newRow.querySelectorAll("input, select, textarea").forEach(function(element) {
+            element.name = element.name.replace("__prefix__", currentFormCount);
+            element.id = element.id.replace("__prefix__", currentFormCount);
+            element.value = "";
+        });
+        tbody.insertBefore(newRow, null);
+        totalFormsInput.value = currentFormCount + 1;
+        updateTotalForms();
+        newRow.querySelector(".tarefa-delete").addEventListener("click", function() {
+            newRow.remove();
+            updateTotalForms();
+        });
+    }
+
+    if (addTarefaBtn) {
+        addTarefaBtn.addEventListener("click", function() {
+            addNewTarefaRow();
+        });
+    }
+
+    tbody.querySelectorAll(".tarefa-delete").forEach(function(button) {
+        button.addEventListener("click", function() {
+            let row = this.closest("tr.tarefa-row");
+            row.remove();
+            updateTotalForms();
+        });
+    });
+
+    updateTotalForms();
+});
+</script>
+{% endblock %}

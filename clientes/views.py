@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Cliente
+from .models import Cliente, EquipamentoCliente
 from .forms import EquipamentoClienteForm, ClienteForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -126,3 +126,9 @@ def equipamentos_por_cliente(request):
             "numero_serie": eq.numero_serie,
         })
     return JsonResponse({"equipamentos": equipamentos_data})
+
+def desassociar_equipamento(request, equipamento_cliente_id):
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_cliente_id)
+    cliente_id = equipamento.cliente.id
+    equipamento.delete()
+    return redirect('detalhes_cliente', cliente_id=cliente_id)

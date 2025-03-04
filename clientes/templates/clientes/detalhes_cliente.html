@@ -3,110 +3,250 @@
 {% block title %}Detalhes do Cliente{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
+<div class="container">
+    <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
 
-        <ul class="nav nav-tabs" id="tabs">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#info">Informação</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#equipamentos">Equipamentos</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#rmas">RMA's / Assistências</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#notas">Notas de Conversa</a>
-            </li>
-        </ul>
+    <ul class="nav nav-tabs" id="tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" data-bs-toggle="tab" href="#info" role="tab">Informação</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#equipamentos" role="tab">Equipamentos</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#pats" role="tab">PAT's</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#notas" role="tab">Notas de Conversa</a>
+        </li>
+    </ul>
 
-        <div class="tab-content mt-3">
-            <!-- Aba de Informação do Cliente -->
-            <div id="info" class="tab-pane fade show active">
-                <p><strong>Nome:</strong> {{ cliente.nome }}</p>
-                <p><strong>Empresa:</strong> {{ cliente.empresa }}</p>
-                <p><strong>Email:</strong> {{ cliente.email }}</p>
-                <p><strong>Telefone:</strong> {{ cliente.telefone }}</p>
-                <p><strong>Endereço:</strong> {{ cliente.endereco }}</p>
-            </div>
+    <div class="tab-content mt-3">
+        <!-- Aba Informação do Cliente -->
+        <div id="info" class="tab-pane fade show active" role="tabpanel">
+            <p><strong>Nome:</strong> {{ cliente.nome }}</p>
+            <p><strong>Empresa:</strong> {{ cliente.empresa }}</p>
+            <p><strong>Email:</strong> {{ cliente.email }}</p>
+            <p><strong>Telefone:</strong> {{ cliente.telefone }}</p>
+            <p><strong>Endereço:</strong> {{ cliente.endereco }}</p>
+        </div>
 
-            <!-- Aba de Equipamentos -->
-            <div id="equipamentos" class="tab-pane fade">
-                <h3 class="mt-4">Equipamentos do Cliente</h3>
-
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Número de Série</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for equipamento in cliente.equipamentos.all %}
-                        <tr>
-                            <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                            <td>{{ equipamento.numero_serie }}</td>
-                            <td>
-                                <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}?origem={% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Ver</a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center">Nenhum equipamento associado.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary">Adicionar Equipamento</a>
-
-            </div>
-
-            <!-- Aba de RMA's e Assistências (Vazia por agora) -->
-            
-            <div class="tab-pane fade" id="pats" role="tabpanel">
-                <h3>PAT's</h3>
-                <table class="table table-striped">
-                    <thead>
+        <!-- Aba Equipamentos -->
+        <div id="equipamentos" class="tab-pane fade" role="tabpanel">
+            <h3 class="mt-4">Equipamentos do Cliente</h3>
+            <table class="table table-striped">
+                <thead>
                     <tr>
-                        <th>Número da PAT</th>
+                        <th>Nome</th>
+                        <th>Número de Série</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipamento in cliente.equipamentos.all %}
+                    <tr>
+                        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+                        <td>{{ equipamento.numero_serie }}</td>
+                        <td>
+                            <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}?origem={% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Ver</a>
+                            <a href="{% url 'desassociar_equipamento' equipamento.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja desassociar este equipamento?');">Desassociar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">Nenhum equipamento associado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary">Adicionar Equipamento</a>
+        </div>
+
+        <!-- Aba PAT's -->
+        <div id="pats" class="tab-pane fade" role="tabpanel">
+            <h3 class="mt-4">PAT's</h3>
+            <a href="{% url 'criar_pat' %}" class="btn btn-primary mb-3">Criar PAT</a>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="?ordenar_por=pat_number&direcao={{ direcao }}">
+                                Número da PAT
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}">
+                                Equipamento
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">
+                                Data de Reparação
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?ordenar_por=estado&direcao={{ direcao }}">
+                                Estado
+                            </a>
+                        </th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pat in pats %}
+                    <tr id="pat-row-{{ pat.id }}">
+                        <td>{{ pat.pat_number }}</td>
+                        <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
+                        <td>
+                          {% if pat.data_reparacao %}
+                            {{ pat.data_reparacao|date:"d/m/Y" }}
+                          {% else %}
+                            N/A
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if pat.estado == 'aberto' %}
+                            <span class="badge bg-danger">Aberto</span>
+                          {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
+                            <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
+                          {% elif pat.estado == 'concluido' %}
+                            <span class="badge bg-success">Concluído</span>
+                          {% elif pat.estado == 'cancelado' %}
+                            <span class="badge bg-danger text-white">Cancelado</span>
+                          {% else %}
+                            {{ pat.get_estado_display }}
+                          {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                            <a href="{% url 'editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+                            <button class="btn btn-danger btn-sm pat-delete" 
+                                    data-id="{{ pat.id }}"
+                                    data-url="{% url 'excluir_pat' pat.id %}">
+                              Excluir
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Nenhum PAT associado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Aba Notas de Conversa -->
+        <div id="notas" class="tab-pane fade" role="tabpanel">
+            <div id="notas" class="tab-pane">
+                <h3>Notas de Conversa</h3>
+                <div class="mb-3">
+                    <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-primary">Criar Nova Nota</a>
+                </div>
+                <!-- Aqui a listagem das notas do cliente -->
+                <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Título</th>
+                        <th>PAT</th>
                         <th>Equipamento</th>
                         <th>Data de Criação</th>
                         <th>Ações</th>
-                    </tr>
+                      </tr>
                     </thead>
                     <tbody>
-                        {% for pat in pats %}
-                        <tr>
-                            <td>{{ pat.pat_number }}</td>
-                            <td>
-                              {{ pat.equipamento.equipamento_fabricado.nome }}
-                              ({{ pat.equipamento.numero_serie }})
-                            </td>
-                            <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
-                            <td>
-                              <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                              <!-- Botões para editar ou excluir a PAT podem ser adicionados aqui -->
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center">Nenhum PAT associado.</td>
-                        </tr>
-                        {% endfor %}
+                      {% for nota in cliente.notas.all %}
+                      <tr>
+                        <td>{{ nota.titulo }}</td>
+                        <td>{% if nota.pat %}{{ nota.pat.pat_number }}{% else %}—{% endif %}</td>
+                        <td>{% if nota.equipamento %}{{ nota.equipamento.equipamento_fabricado.nome }} ({{ nota.equipamento.numero_serie }}){% else %}—{% endif %}</td>
+                        <td>{{ nota.data_criacao|date:"d/m/Y H:i" }}</td>
+                        <td>
+                          <a href="{% url 'notas:detalhes_nota' nota.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                          <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning btn-sm">Editar</a>
+                          <form action="{% url 'notas:excluir_nota' nota.id %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza?');">Excluir</button>
+                          </form>
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="5" class="text-center">Nenhuma nota encontrada.</td>
+                      </tr>
+                      {% endfor %}
                     </tbody>
-                </table>
-            </div>
-            
-
-            <!-- Aba de Notas de Conversa (Vazia por agora) -->
-            <div id="notas" class="tab-pane fade">
-                <p>Notas e histórico de conversas aparecerão aqui.</p>
-            </div>
+                  </table>
+              </div>
         </div>
-
-        <a href="{% url 'listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
     </div>
+   
+      
+    <a href="{% url 'listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
+</div>
 {% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Função para obter o CSRF Token dos cookies
+    function getCSRFToken() {
+        let cookieValue = null;
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("csrftoken=")) {
+                cookieValue = cookie.substring("csrftoken=".length);
+                break;
+            }
+        }
+        return cookieValue;
+    }
+
+    // Configura o evento de clique para os botões "Excluir" na aba de PAT’s
+    document.querySelectorAll(".pat-delete").forEach(function(button) {
+        button.addEventListener("click", function() {
+            if (!confirm("Tem certeza que deseja excluir esta PAT?")) {
+                return;
+            }
+            let patId = this.getAttribute("data-id");
+            let url = this.getAttribute("data-url");
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken(),
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let row = document.getElementById("pat-row-" + patId);
+                    if (row) {
+                        row.remove();
+                    }
+                } else {
+                    alert(data.message || "Erro ao excluir a PAT.");
+                }
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+            });
+        });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Verifica se há um hash na URL e se é "#notas"
+    if (window.location.hash === "#notas") {
+        // Seleciona o link da aba que ativa a seção de Notas de Conversa
+        var notasTabTrigger = document.querySelector('a[data-bs-toggle="tab"][href="#notas"]');
+        if (notasTabTrigger) {
+            // Cria um objeto Tab do Bootstrap e mostra a aba
+            var tab = new bootstrap.Tab(notasTabTrigger);
+            tab.show();
+        }
+    }
+});
+</script>
+{% endblock %}
+

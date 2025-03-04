@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalhes da Tarefa{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Detalhes da Tarefa</h2>
+  <div class="card">
+    <div class="card-body">
+      <p><strong>Descrição:</strong> {{ tarefa.descricao }}</p>
+      <p><strong>Status:</strong> {{ tarefa.get_status_display }}</p>
+      <p><strong>Cliente:</strong> {% if tarefa.cliente %}{{ tarefa.cliente.nome }}{% else %}—{% endif %}</p>
+      <p><strong>PAT:</strong> {% if tarefa.pat %}{{ tarefa.pat.pat_number }}{% else %}—{% endif %}</p>
+      <p><strong>Data de Criação:</strong> {{ tarefa.data_criacao|date:"d/m/Y H:i" }}</p>
+      {% if tarefa.nota %}
+      <p><strong>Nota Associada:</strong> <a href="{% url 'notas:detalhes_nota' tarefa.nota.id %}">Ver Nota</a></p>
+      {% else %}
+      <p><strong>Nota Associada:</strong> Nenhuma</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="mt-3">
+    <a href="{% url 'notas:listar_tarefas_a_fazer' %}" class="btn btn-secondary">Voltar</a>
+    <a href="{% url 'notas:editar_tarefa' tarefa.id %}" class="btn btn-warning">Editar</a>
+    <form action="{% url 'notas:excluir_tarefa' tarefa.id %}" method="post" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta tarefa?');">Excluir</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

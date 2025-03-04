@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Lista de PAT's{% endblock %}
+
 {% block content %}
 <div class="container">
   <h2>Lista de Pedidos de Assistência Técnica (PAT's) Globais</h2>
@@ -23,6 +24,16 @@
             Equipamento
           </a>
         </th>
+        <th>
+          <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">
+            Data de Reparação
+          </a>
+        </th>
+        <th>
+          <a href="?ordenar_por=estado&direcao={{ direcao }}">
+            Estado
+          </a>
+        </th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -31,7 +42,29 @@
       <tr id="pat-row-{{ pat.id }}">
         <td>{{ pat.pat_number }}</td>
         <td>{{ pat.cliente.nome }}</td>
-        <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
+        <td>
+          {{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})
+        </td>
+        <td>
+          {% if pat.data_reparacao %}
+            {{ pat.data_reparacao|date:"d/m/Y" }}
+          {% else %}
+            N/A
+          {% endif %}
+        </td>
+        <td>
+          {% if pat.estado == 'aberto' %}
+            <span class="badge bg-danger">Aberto</span>
+          {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
+            <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
+          {% elif pat.estado == 'concluido' %}
+            <span class="badge bg-success">Concluído</span>
+          {% elif pat.estado == 'cancelado' %}
+            <span class="badge bg-danger text-white">Cancelado</span>
+          {% else %}
+            {{ pat.get_estado_display }}
+          {% endif %}
+        </td>
         <td>
           <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
           <a href="{% url 'editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
@@ -44,10 +77,59 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="5" class="text-center">Nenhum PAT encontrado.</td>
+        <td colspan="6" class="text-center">Nenhum PAT encontrado.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Função para obter o CSRF Token dos cookies
+    function getCSRFToken() {
+        let cookieValue = null;
+        let cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("csrftoken=")) {
+                cookieValue = cookie.substring("csrftoken=".length);
+                break;
+            }
+        }
+        return cookieValue;
+    }
+
+    // Configura o evento de clique para os botões "Excluir" das PAT's
+    document.querySelectorAll(".pat-delete").forEach(function(button) {
+        button.addEventListener("click", function() {
+            if (!confirm("Tem certeza que deseja excluir esta PAT?")) {
+                return;
+            }
+            let patId = this.getAttribute("data-id");
+            let url = this.getAttribute("data-url");
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken(),
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("pat-row-" + patId).remove();
+                } else {
+                    alert(data.message || "Erro ao excluir a PAT.");
+                }
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

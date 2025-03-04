@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Criar Nota de Conversa{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Criar Nota de Conversa</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="{{ form.titulo.id_for_label }}">Título</label>
+      {{ form.titulo }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+      {{ form.cliente }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
+      {{ form.pat }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
+      {{ form.equipamento }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
+      {{ form.conteudo }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.status.id_for_label }}">Status</label>
+      {{ form.status }}
+    </div>
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary">Salvar Nota</button>
+      <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

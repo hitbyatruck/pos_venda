@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Lista de Notas de Conversa{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Notas de Conversa</h2>
+  <a href="{% url 'notas:criar_nota' %}" class="btn btn-primary mb-3">Criar Nova Nota</a>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Cliente</th>
+        <th>PAT</th>
+        <th>Equipamento</th>
+        <th>Status</th>
+        <th>Data de Criação</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nota in notas %}
+      <tr>
+        <td>{{ nota.titulo }}</td>
+        <td>{{ nota.cliente.nome }}</td>
+        <td>{% if nota.pat %}{{ nota.pat.pat_number }}{% else %}-{% endif %}</td>
+        <td>{% if nota.equipamento %}{{ nota.equipamento.equipamento_fabricado.nome }}{% else %}-{% endif %}</td>
+        <td>{{ nota.get_status_display }}</td>
+        <td>{{ nota.data_criacao|date:"d/m/Y H:i" }}</td>
+        <td>
+          <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning btn-sm">Editar</a>
+          <button class="btn btn-danger btn-sm nota-delete" data-id="{{ nota.id }}" data-url="{% url 'notas:excluir_nota' nota.id %}">Excluir</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center">Nenhuma nota encontrada.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

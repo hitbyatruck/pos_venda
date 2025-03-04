@@ -32,15 +32,44 @@ class PedidoAssistenciaForm(forms.ModelForm):
             'garantia': 'Marque se o equipamento estiver em garantia.',
         }
 
-class ItemPatForm(forms.ModelForm):
+class ItemPatFormSet(forms.ModelForm):
     class Meta:
         model = ItemPat
-        fields = ['tipo', 'referencia', 'designacao', 'preco']
+        fields = ['tipo', 'referencia', 'designacao', 'quantidade', 'preco']
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-control'}),
             'referencia': forms.TextInput(attrs={'class': 'form-control'}),
             'designacao': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantidade': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'preco': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
-ItemPatFormSet = inlineformset_factory(PedidoAssistencia, ItemPat, form=ItemPatForm, extra=1, can_delete=True)
+class ItemPatForm(forms.ModelForm):
+    class Meta:
+        model = ItemPat
+        fields = ['tipo', 'referencia', 'designacao', 'quantidade', 'preco']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'referencia': forms.TextInput(attrs={'class': 'form-control'}),
+            'designacao': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantidade': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'preco': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+# Formset para criação (pode ter um extra)
+PedidoAssistenciaFormSet = inlineformset_factory(
+    PedidoAssistencia, 
+    ItemPat, 
+    form=ItemPatFormSet, 
+    extra=1, 
+    can_delete=True
+)
+
+# Formset para edição: não renderiza formulário extra
+EditItemPatFormSet = inlineformset_factory(
+    PedidoAssistencia, 
+    ItemPat, 
+    form=ItemPatFormSet, 
+    extra=1, 
+    can_delete=True
+)

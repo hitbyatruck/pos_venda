@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Editar PAT{% endblock %}
+
 {% block content %}
 <div class="container">
-  <h2>Editar Pedido de Assistência Técnica (PAT)</h2>
+  <h2 class="mb-4">Editar Pedido de Assistência Técnica (PAT)</h2>
   <form method="post">
     {% csrf_token %}
+    <!-- Linha 1: Cliente e Número da PAT -->
     <div class="row">
       <div class="col-md-6 mb-3">
         <label for="{{ form.cliente.id_for_label }}">Cliente</label>
@@ -15,58 +17,361 @@
         <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
         {{ form.pat_number }}
       </div>
-      <div class="col-md-6 mb-3">
+    </div>
+
+    <!-- Linha 2: Data de Entrada, Estado e Data de Reparação -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
         <label for="{{ form.data_entrada.id_for_label }}">Data de Entrada</label>
         {{ form.data_entrada }}
       </div>
-      <div class="col-md-6 mb-3">
-        <label for="{{ form.estado.id_for_label }}">Estado</label>
+      <div class="col-md-4 mb-3">
+        <label for="{{ form.estado.id_for_label }}">Estado da PAT</label>
         {{ form.estado }}
       </div>
-      <div class="col-md-6 mb-3">
-        <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
-        {{ form.equipamento }}
-      </div>
-      <div class="col-md-6 mb-3">
-        <label for="{{ form.garantia.id_for_label }}">Em Garantia</label><br>
-        {{ form.garantia }}
-      </div>
-      <div class="col-md-6 mb-3">
+      <div class="col-md-4 mb-3">
         <label for="{{ form.data_reparacao.id_for_label }}">Data de Reparação</label>
         {{ form.data_reparacao }}
       </div>
-      
-      <div class="col-12 mb-3">
-        <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
-        {{ form.relatorio }}
+    </div>
+
+    <!-- Linha 3: Equipamento e Garantia -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
+        {# Renderiza o campo normalmente; o JS cuidará de repovoá-lo e definir o valor salvo #}
+        {{ form.equipamento }}
+      </div>
+      <div class="col-md-6 mb-3 d-flex align-items-center">
+        <div class="form-check">
+          {{ form.garantia }}
+          <label class="form-check-label ms-2" for="{{ form.garantia.id_for_label }}">Em Garantia</label>
+        </div>
       </div>
     </div>
 
-    <h4>Itens (Serviços e Componentes)</h4>
-    {{ formset.management_form }}
+    <!-- Seção Itens -->
+<h4 class="mt-4">Itens (Serviços e Componentes)</h4>
+{{ formset.management_form }}
+<table class="table table-bordered" id="itensTable">
+  <thead>
+    <tr>
+      <th style="width: 10%;">Tipo</th>
+      <th style="width: 10%;">Referência</th>
+      <th style="width: 30%;">Designação</th>
+      <th style="width: 10%;">Quantidade</th>
+      <th style="width: 10%;">Preço (€)</th>
+      <th style="width: 10%;">Total (€)</th>
+      <th style="width: 10%;">Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {# Render only forms with an existing instance #}
     {% for form in formset %}
-      <div class="card mb-3">
-        <div class="card-body">
-          {% for field in form %}
-            <div class="mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field }}
-              {% if field.errors %}
-                <div class="text-danger">{{ field.errors }}</div>
-              {% endif %}
-            </div>
+      {% if form.instance.pk %}
+        <tr class="item-row">
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
           {% endfor %}
-          {% if form.instance.pk %}
-            <div class="form-check">
-              {{ form.DELETE }} <label class="form-check-label">Excluir este item</label>
+          <td>{{ form.tipo }}</td>
+          <td>{{ form.referencia }}</td>
+          <td>{{ form.designacao }}</td>
+          <td>{{ form.quantidade }}</td>
+          <td>
+            <div class="input-group">
+              <span class="input-group-text">€</span>
+              {{ form.preco }}
             </div>
-          {% endif %}
-        </div>
-      </div>
+          </td>
+          <td class="row-total">0.00</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm item-delete" data-index="{{ forloop.counter0 }}">Excluir</button>
+          </td>
+        </tr>
+      {% endif %}
     {% endfor %}
+    {# Hidden template row for new items – use the empty_form #}
+    <tr class="item-row template-row" style="display: none;">
+      {% with form=formset.empty_form %}
+      <td>{{ form.tipo }}</td>
+      <td>{{ form.referencia }}</td>
+      <td>{{ form.designacao }}</td>
+      <td>{{ form.quantidade }}</td>
+      <td>
+        <div class="input-group">
+          <span class="input-group-text">€</span>
+          {{ form.preco }}
+        </div>
+      </td>
+      <td class="row-total">0.00</td>
+      <td class="text-center">
+        <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+      </td>
+      {% endwith %}
+    </tr>
+    <tr id="grandTotalRow">
+      <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
+      <td class="text-end" id="grandTotalValue">0.00</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+<button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
 
-    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-    <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-secondary">Cancelar</a>
+
+    <!-- Campo para Relatório -->
+    <div class="mb-4">
+      <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
+      {{ form.relatorio }}
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="mb-4">
+      <button type="submit" class="btn btn-primary">Atualizar PAT</button>
+      <a href="{% url 'listar_pats' %}" class="btn btn-secondary">Voltar</a>
+    </div>
   </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    console.log("Extra JS carregado em editar_pat.html");
+
+    // Save the current selected equipment ID before we modify the dropdown
+    var clienteSelect = document.getElementById("id_cliente");
+    var equipamentoSelect = document.getElementById("id_equipamento");
+    var currentEquipamentoId = equipamentoSelect ? equipamentoSelect.value : null;
+    console.log("Valor inicial do equipamento:", currentEquipamentoId);
+
+    // --- Dropdown handling code ---
+    if (equipamentoSelect) {
+        // Clear but preserve selected value temporarily
+        var tempSelected = equipamentoSelect.value;
+        equipamentoSelect.innerHTML = "";
+        var initialOpt = document.createElement("option");
+        initialOpt.value = "";
+        initialOpt.text = "----------";
+        equipamentoSelect.appendChild(initialOpt);
+    }
+    
+    if (clienteSelect) {
+        if (clienteSelect.options.length === 0 || clienteSelect.options[0].value !== "adicionar") {
+            var addClienteOpt = document.createElement("option");
+            addClienteOpt.value = "adicionar";
+            addClienteOpt.text = "Adicionar Novo Cliente";
+            clienteSelect.insertBefore(addClienteOpt, clienteSelect.firstChild);
+        }
+        
+        clienteSelect.addEventListener("change", function() {
+            console.log("Cliente selecionado (change event):", this.value);
+            if (this.value === "adicionar") {
+                window.open("{% url 'adicionar_cliente' %}", "_blank");
+                this.selectedIndex = 0;
+            } else {
+                updateEquipamentoDropdown(this.value, currentEquipamentoId);
+            }
+        });
+    }
+    
+    function updateEquipamentoDropdown(clienteId, selectedEquipamentoId) {
+        console.log("updateEquipamentoDropdown chamado com clienteId:", clienteId, "selectedEquipamentoId:", selectedEquipamentoId);
+        if (!equipamentoSelect) return;
+        
+        if (!clienteId || clienteId.trim() === "" || clienteId === "adicionar") {
+            equipamentoSelect.innerHTML = "";
+            var opt = document.createElement("option");
+            opt.value = "";
+            opt.text = "Selecione um Cliente Primeiro";
+            equipamentoSelect.appendChild(opt);
+            return;
+        }
+        
+        fetch("{% url 'equipamentos_por_cliente' %}?cliente_id=" + clienteId)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Dados recebidos:", data);
+                equipamentoSelect.innerHTML = "";
+                
+                var placeholderOpt = document.createElement("option");
+                placeholderOpt.value = "";
+                placeholderOpt.text = "----------";
+                equipamentoSelect.appendChild(placeholderOpt);
+                
+                var addOption = document.createElement("option");
+                addOption.value = "adicionar";
+                addOption.text = "Adicionar Equipamento ao Cliente";
+                equipamentoSelect.appendChild(addOption);
+                
+                if (data.equipamentos && data.equipamentos.length > 0) {
+                    data.equipamentos.forEach(function(eq) {
+                        let option = document.createElement("option");
+                        option.value = eq.id;
+                        option.text = eq.nome + (eq.numero_serie ? " (" + eq.numero_serie + ")" : "");
+                        // Set selected if this was the previously saved equipment
+                        if (eq.id == selectedEquipamentoId) {
+                            option.selected = true;
+                        }
+                        equipamentoSelect.appendChild(option);
+                        console.log("Opção adicionada: id=", eq.id, "texto=", option.text, 
+                                   "selected=", (eq.id == selectedEquipamentoId));
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao obter equipamentos:", error);
+            });
+    }
+    
+    if (equipamentoSelect) {
+        equipamentoSelect.addEventListener("change", function() {
+            console.log("Dropdown Equipamento alterado. Novo valor:", this.value);
+            if (this.value === "adicionar") {
+                if (!clienteSelect.value || clienteSelect.value === "adicionar" || clienteSelect.value.trim() === "") {
+                    alert("Selecione um Cliente Primeiro.");
+                    this.selectedIndex = 0;
+                } else {
+                    let url = "/clientes/cliente/adicionar_equipamento/" + clienteSelect.value;
+                    window.open(url, "_blank");
+                    this.selectedIndex = 0;
+                }
+            }
+        });
+    }
+    
+    // Initial load of equipment dropdown
+    if (clienteSelect && clienteSelect.value && clienteSelect.value !== "adicionar") {
+        console.log("Cliente já selecionado:", clienteSelect.value, "- Atualizando dropdown de equipamento.");
+        updateEquipamentoDropdown(clienteSelect.value, currentEquipamentoId);
+    }
+    // --- End of dropdown code ---
+
+    // --- Formset for Items section ---
+    let totalFormsInput = document.getElementById("id_itens-TOTAL_FORMS");
+    let tbody = document.querySelector("#itensTable tbody");
+    let grandTotalValueElem = document.getElementById("grandTotalValue");
+    let templateRow = tbody.querySelector("tr.template-row");
+
+    function updateTotalForms() {
+        let totalRows = tbody.querySelectorAll("tr.item-row:not(.template-row)").length;
+        totalFormsInput.value = totalRows;
+    }
+
+    function calculateRowTotal(row) {
+        let quantidadeInput = row.querySelector("input[name$='-quantidade']");
+        let precoInput = row.querySelector("input[name$='-preco']");
+        let totalCell = row.querySelector(".row-total");
+        let quantidade = parseFloat(quantidadeInput.value) || 0;
+        let preco = parseFloat(precoInput.value) || 0;
+        let total = quantidade * preco;
+        if (totalCell) {
+            totalCell.textContent = total.toFixed(2);
+        }
+        return total;
+    }
+
+    function updateGrandTotal() {
+        let total = 0;
+        tbody.querySelectorAll("tr.item-row:not(.template-row)").forEach(row => {
+            // Skip deleted rows
+            let deleteInput = row.querySelector("input[name$='-DELETE']");
+            if (deleteInput && deleteInput.checked) return;
+            total += calculateRowTotal(row);
+        });
+        if (grandTotalValueElem) {
+            grandTotalValueElem.textContent = total.toFixed(2);
+        }
+    }
+
+    function addCalculationListeners(row) {
+        let quantidadeInput = row.querySelector("input[name$='-quantidade']");
+        let precoInput = row.querySelector("input[name$='-preco']");
+        if (quantidadeInput) {
+            quantidadeInput.addEventListener("input", function() {
+                calculateRowTotal(row);
+                updateGrandTotal();
+            });
+        }
+        if (precoInput) {
+            precoInput.addEventListener("input", function() {
+                calculateRowTotal(row);
+                updateGrandTotal();
+            });
+        }
+    }
+
+    // Add listeners to existing rows
+    tbody.querySelectorAll("tr.item-row:not(.template-row)").forEach(row => {
+        addCalculationListeners(row);
+        calculateRowTotal(row); // Calculate initial row totals
+    });
+
+    function addNewItemRow() {
+        let currentFormCount = parseInt(totalFormsInput.value);
+        if (!templateRow) {
+            console.error("Template row not found. Please ensure your template row is present in the HTML.");
+            return;
+        }
+        let newRow = templateRow.cloneNode(true);
+        newRow.style.display = "";
+        newRow.classList.remove("template-row");
+        // Update field indices in the new row
+        newRow.querySelectorAll("input, select, textarea").forEach(function(element) {
+            if (element.name) {
+                element.name = element.name.replace("__prefix__", currentFormCount);
+                element.id = element.id.replace("__prefix__", currentFormCount);
+                element.value = "";
+            }
+        });
+        // Insert before total row
+        let grandTotalRow = document.getElementById("grandTotalRow");
+        tbody.insertBefore(newRow, grandTotalRow);
+        totalFormsInput.value = currentFormCount + 1;
+        addCalculationListeners(newRow);
+        // Configure delete button
+        newRow.querySelector(".item-delete").addEventListener("click", function() {
+            let deleteInput = newRow.querySelector("input[name$='-DELETE']");
+            if (deleteInput) {
+                deleteInput.checked = true;
+                newRow.style.display = "none";
+            } else {
+                newRow.remove();
+            }
+            updateTotalForms();
+            updateGrandTotal();
+        });
+        updateTotalForms();
+        updateGrandTotal();
+    }
+
+    // Add item button event
+    let addItemBtn = document.getElementById("addItemBtn");
+    if (addItemBtn && !window.addItemListenerAttached) {
+        addItemBtn.addEventListener("click", function() {
+            addNewItemRow();
+        });
+        window.addItemListenerAttached = true;
+    }
+
+    // Configure delete buttons
+    tbody.querySelectorAll(".item-delete").forEach(function(button) {
+        button.addEventListener("click", function() {
+            let row = this.closest("tr.item-row");
+            let deleteInput = row.querySelector("input[name$='-DELETE']");
+            if (deleteInput) {
+                deleteInput.checked = true;
+                row.style.display = "none";
+            } else {
+                row.remove();
+            }
+            updateTotalForms();
+            updateGrandTotal();
+        });
+    });
+
+    updateTotalForms();
+    updateGrandTotal();
+});
+</script>
 {% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Criar Nota de Conversa{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Criar Nota de Conversa</h2>
+  <form method="post">
+    {% csrf_token %}
+    
+    <!-- Seção Nota -->
+    <div class="mb-3">
+      <label for="{{ form.titulo.id_for_label }}">Título</label>
+      {{ form.titulo }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+      {{ form.cliente }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
+      {{ form.pat }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
+      {{ form.equipamento }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
+      {{ form.conteudo }}
+    </div>
+    
+    <!-- Seção Tarefas Associadas -->
+    <h4>Tarefas Associadas</h4>
+    {{ tarefa_formset.management_form }}
+    <table class="table table-bordered" id="tarefasTable">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in tarefa_formset %}
+        <tr class="tarefa-row">
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
+          <td>{{ form.descricao }}</td>
+          <td>{{ form.status }}</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+          </td>
+        </tr>
+        {% endfor %}
+        {# Linha template para adição dinâmica de tarefas (deve ficar oculta) #}
+        <tr class="tarefa-row tarefa-template" style="display: none;">
+          <td>{{ tarefa_formset.empty_form.descricao }}</td>
+          <td>{{ tarefa_formset.empty_form.status }}</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="button" id="addTarefaBtn" class="btn btn-outline-primary mb-3">Adicionar Tarefa</button>
+    
+    <!-- Botões de Ação -->
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary">Salvar Nota</button>
+      <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    console.log("Extra JS carregado em criar_nota.html");
+
+    // --- Configuração do formset de Tarefas ---
+    let addTarefaBtn = document.getElementById("addTarefaBtn");
+    let tarefaTableBody = document.querySelector("#tarefasTable tbody");
+    let tarefaTotalForms = document.getElementById("id_tarefas-TOTAL_FORMS");
+    let tarefaTemplateRow = document.querySelector("tr.tarefa-template");
+
+    function updateTarefaTotalForms() {
+        let totalRows = tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)").length;
+        tarefaTotalForms.value = totalRows;
+    }
+
+    function addNewTarefaRow() {
+        let currentFormCount = parseInt(tarefaTotalForms.value);
+        if (!tarefaTemplateRow) {
+            console.error("Template row for tarefa not found.");
+            return;
+        }
+        let newRow = tarefaTemplateRow.cloneNode(true);
+        newRow.style.display = "";
+        newRow.classList.remove("tarefa-template");
+        newRow.querySelectorAll("input, select, textarea").forEach(function(el) {
+            if (el.name) {
+                el.name = el.name.replace("__prefix__", currentFormCount);
+                el.id = el.id.replace("__prefix__", currentFormCount);
+                el.value = "";
+            }
+        });
+        tarefaTableBody.appendChild(newRow);
+        tarefaTotalForms.value = currentFormCount + 1;
+        updateTarefaTotalForms();
+        // Configura o botão "Excluir" da nova linha
+        newRow.querySelector(".tarefa-delete").addEventListener("click", function() {
+            newRow.remove();
+            updateTarefaTotalForms();
+        });
+    }
+
+    if (addTarefaBtn) {
+        addTarefaBtn.addEventListener("click", function() {
+            addNewTarefaRow();
+        });
+    }
+
+    // Configura os botões "Excluir" para as linhas já existentes
+    tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)").forEach(function(row) {
+        row.querySelector(".tarefa-delete").addEventListener("click", function() {
+            row.remove();
+            updateTarefaTotalForms();
+        });
+    });
+});
+</script>
+{% endblock %}

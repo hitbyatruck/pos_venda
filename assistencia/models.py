@@ -9,10 +9,8 @@ class PedidoAssistencia(models.Model):
         verbose_name="Cliente"
     )
     pat_number = models.CharField(
-        max_length=100, 
+        max_length=10, 
         unique=True, 
-        null=True,  # Permite migração; no formulário, será obrigatório
-        blank=True,
         verbose_name="Número da PAT"
     )
     data_entrada = models.DateField(verbose_name="Data de Entrada")
@@ -65,7 +63,13 @@ class ItemPat(models.Model):
     )
     referencia = models.CharField(max_length=100, verbose_name="Referência")
     designacao = models.CharField(max_length=255, verbose_name="Designação")
+    quantidade = models.PositiveIntegerField(default=1, verbose_name="Quantidade")
     preco = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Preço")
 
     def __str__(self):
         return f"{self.get_tipo_display()}: {self.designacao} ({self.referencia})"
+    
+    @property
+    def total(self):
+        return self.quantidade * self.preco
+

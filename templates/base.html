@@ -51,9 +51,13 @@
                         </ul>
                     </li>
 
-                    <!-- Menu RMA (para futuras implementações) -->
+                    <!-- Menu RMA -->
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'listar_pats' %}">Pedidos de Assistência</a>
+                    </li>
+                    <!-- Menu Notas  -->
+                    <li class="nav-item">
+                      <a class="nav-link" href="{% url 'notas:listar_tarefas_a_fazer' %}">A Fazer</a>
                     </li>
                 </ul>
             </div>
@@ -71,7 +75,7 @@
 
     {% block extra_js %}{% endblock %}
 
-    <script src="{% static 'js/clients_scripts.js' %}"></script>
+    <!-- <script src="{% static 'js/clients_scripts.js' %}"></script> -->
     <!-- <script src="{% static 'js/scripts.js' %}"></script> -->
 
     <!-- Modal de Confirmação Inicial -->
