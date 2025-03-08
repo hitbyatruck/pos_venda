@@ -1,8 +1,8 @@
 # notas/forms.py
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Nota, Tarefa
-from clientes.models import Cliente  # Para filtrar o campo PAT
+from .models import Nota, Tarefa, PedidoAssistencia
+from clientes.models import Cliente, EquipamentoCliente # Para filtrar o campo PAT
 # Note: Não fazemos uma importação de PedidoAssistencia no nível do módulo
 # para evitar problemas de escopo; ela será importada localmente no __init__.
 
@@ -10,8 +10,6 @@ from clientes.models import Cliente  # Para filtrar o campo PAT
 class NotaForm(forms.ModelForm):
     class Meta:
         model = Nota
-        # Os campos que o usuário preenche; 'cliente' é obrigatório no modelo,
-        # mas a partir dos detalhes do cliente já virá pré-definido.
         fields = ['titulo', 'cliente', 'pat', 'equipamento', 'conteudo']
         widgets = {
             'titulo': forms.TextInput(attrs={'class': 'form-control'}),
@@ -23,27 +21,31 @@ class NotaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(NotaForm, self).__init__(*args, **kwargs)
-        # Garanta que o campo 'cliente' seja obrigatório (já que na criação vem da página de detalhes)
         self.fields['cliente'].required = True
         self.fields['pat'].required = False  # PAT é opcional
+        self.fields['equipamento'].required = False  # Equipamento também pode ser opcional
 
-        # Tente obter o cliente a partir da instância (se já salva) ou dos dados iniciais
-        cliente = None
-        if self.instance and self.instance.pk:
-            cliente = self.instance.cliente
-        elif 'cliente' in self.initial and self.initial['cliente']:
-            try:
-                cliente = Cliente.objects.get(id=self.initial['cliente'])
-            except Cliente.DoesNotExist:
-                cliente = None
+        cliente = self.initial.get('cliente') or (self.instance.cliente if self.instance.pk else None)
 
-        # Importação local de PedidoAssistencia com alias para evitar conflitos
-        from assistencia.models import PedidoAssistencia as PA
+        from assistencia.models import PedidoAssistencia
         if cliente:
-            # Limitar o queryset do campo PAT às PAT's associadas ao cliente
-            self.fields['pat'].queryset = PA.objects.filter(cliente=cliente)
+            self.fields['pat'].queryset = PedidoAssistencia.objects.filter(cliente=cliente)
         else:
-            self.fields['pat'].queryset = PA.objects.none()
+            self.fields['pat'].queryset = PedidoAssistencia.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cliente = cleaned_data.get('cliente')
+        pat = cleaned_data.get('pat')
+        equipamento = cleaned_data.get('equipamento')
+
+        if pat and cliente and pat.cliente != cliente:
+            self.add_error('pat', 'A PAT selecionada não pertence ao cliente escolhido.')
+
+        if equipamento and cliente and equipamento.cliente != cliente:
+            self.add_error('equipamento', 'O Equipamento selecionado não pertence ao cliente escolhido.')
+
+        return cleaned_data
 
 
 # --- Formulário para Tarefa (associada a uma Nota) ---
@@ -66,6 +68,15 @@ TarefaFormSet = inlineformset_factory(
     can_delete=True
 )
 
+EditTarefaFormSet = inlineformset_factory(
+    Nota,
+    Tarefa,
+    form=TarefaForm,
+    extra=0,   # Na edição, não queremos formulário extra
+    can_delete=True
+)
+
+
 # --- Formulário para Tarefa Independente ---
 class TarefaIndependenteForm(forms.ModelForm):
     class Meta:
@@ -80,9 +91,9 @@ class TarefaIndependenteForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super(TarefaIndependenteForm, self).__init__(*args, **kwargs)
-        # Torna os campos 'cliente' e 'pat' opcionais
-        self.fields['cliente'].required = False
+        self.fields['cliente'].required = True  # 🔹 Torna o cliente obrigatório
         self.fields['pat'].required = False
+
         cliente = None
         if self.instance and self.instance.pk:
             cliente = self.instance.cliente
@@ -92,8 +103,9 @@ class TarefaIndependenteForm(forms.ModelForm):
                 cliente = Cliente.objects.get(id=self.initial['cliente'])
             except Cliente.DoesNotExist:
                 cliente = None
-        from assistencia.models import PedidoAssistencia as PA
+        
+        from assistencia.models import PedidoAssistencia
         if cliente:
-            self.fields['pat'].queryset = PA.objects.filter(cliente=cliente)
+            self.fields['pat'].queryset = PedidoAssistencia.objects.filter(cliente=cliente)
         else:
-            self.fields['pat'].queryset = PA.objects.none()
+            self.fields['pat'].queryset = PedidoAssistencia.objects.none()

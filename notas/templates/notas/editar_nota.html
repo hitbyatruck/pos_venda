@@ -5,128 +5,177 @@
 
 {% block content %}
 <div class="container">
-    <h2>Editar Nota de Conversa</h2>
-    <form method="post">
-        {% csrf_token %}
-        <!-- Linha com Cliente, PAT e Equipamento -->
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.cliente.id_for_label }}">Cliente</label>
-                {{ form.cliente }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
-                {{ form.pat }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
-                {{ form.equipamento }}
-            </div>
-        </div>
-        <!-- Título -->
-        <div class="mb-3">
-            <label for="{{ form.titulo.id_for_label }}">Título</label>
-            {{ form.titulo }}
-        </div>
-        <!-- Conteúdo -->
-        <div class="mb-3">
-            <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
-            {{ form.conteudo }}
-        </div>
-        
-        <!-- Tarefas Associadas -->
-        <h4>Tarefas Associadas</h4>
-        {{ tarefa_formset.management_form }}
-        <table class="table table-bordered" id="tarefasTable">
-            <thead>
-                <tr>
-                    <th>Descrição</th>
-                    <th>Concluída</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for form in tarefa_formset %}
-                <tr class="tarefa-row">
-                    {% for hidden in form.hidden_fields %}
-                        {{ hidden }}
-                    {% endfor %}
-                    <td>{{ form.descricao }}</td>
-                    <td>{{ form.concluida }}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
-                    </td>
-                </tr>
-                {% endfor %}
-                <tr class="tarefa-row template-row" style="display:none;">
-                    <td>{{ tarefa_formset.empty_form.descricao }}</td>
-                    <td>{{ tarefa_formset.empty_form.concluida }}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <button type="button" id="addTarefaBtn" class="btn btn-outline-primary mb-3">Adicionar Tarefa</button>
-        
-        <button type="submit" class="btn btn-primary">Atualizar Nota</button>
-        <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
-    </form>
+  <h2>Editar Nota de Conversa</h2>
+  <form method="post">
+    {% csrf_token %}
+    
+    <!-- Seção Nota -->
+    <div class="mb-3">
+      <label for="{{ form.titulo.id_for_label }}">Título</label>
+      {{ form.titulo }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+      {{ form.cliente }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
+      {{ form.pat }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
+      {{ form.equipamento }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
+      {{ form.conteudo }}
+    </div>
+    
+    <!-- Seção Tarefas Associadas -->
+    <h4>Tarefas Associadas</h4>
+    {{ tarefa_formset.management_form }}
+    <table class="table table-bordered" id="tarefasTable">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in tarefa_formset %}
+        <tr class="tarefa-row">
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
+          <td>{{ form.descricao }}</td>
+          <td>{{ form.status }}</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="tarefa-row tarefa-template" style="display: none;">
+          <td>{{ tarefa_formset.empty_form.descricao }}</td>
+          <td>{{ tarefa_formset.empty_form.status }}</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm tarefa-delete">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="button" id="addTarefaBtn" class="btn btn-outline-primary mb-3">Adicionar Tarefa</button>
+    
+    <!-- Botões de Ação -->
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary">Atualizar Nota</button>
+      <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // (Mesmo código JavaScript de gerenciamento das tarefas, idêntico ao do criar_nota.html)
-    let addTarefaBtn = document.getElementById("addTarefaBtn");
-    let totalFormsInput = document.getElementById("id_tarefas-TOTAL_FORMS");
-    let tbody = document.querySelector("#tarefasTable tbody");
-    let templateRow = tbody.querySelector("tr.template-row");
+document.addEventListener("DOMContentLoaded", function () {
+    const clienteSelect = document.getElementById("id_cliente");
+    const patSelect = document.getElementById("id_pat");
+    const equipamentoSelect = document.getElementById("id_equipamento");
 
-    function updateTotalForms() {
-        let totalRows = tbody.querySelectorAll("tr.tarefa-row:not(.template-row)").length;
-        totalFormsInput.value = totalRows;
+    function limparDropdown(campo, textoPadrao = "Selecione uma opção") {
+        campo.innerHTML = `<option value="">${textoPadrao}</option>`;
     }
 
-    function addNewTarefaRow() {
-        let currentFormCount = parseInt(totalFormsInput.value);
-        if (!templateRow) {
-            console.error("Template row for tarefa not found.");
+    function atualizarPATs(clienteId) {
+        if (!clienteId) {
+            limparDropdown(patSelect, "Selecione uma PAT");
             return;
         }
-        let newRow = templateRow.cloneNode(true);
-        newRow.style.display = "";
-        newRow.classList.remove("template-row");
-        newRow.querySelectorAll("input, select, textarea").forEach(function(element) {
-            element.name = element.name.replace("__prefix__", currentFormCount);
-            element.id = element.id.replace("__prefix__", currentFormCount);
-            element.value = "";
-        });
-        tbody.insertBefore(newRow, null);
-        totalFormsInput.value = currentFormCount + 1;
-        updateTotalForms();
-        newRow.querySelector(".tarefa-delete").addEventListener("click", function() {
-            newRow.remove();
-            updateTotalForms();
-        });
+
+        fetch(`/notas/api/pats/?cliente=${clienteId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(patSelect, "Selecione uma PAT");
+                data.forEach(pat => {
+                    let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    patSelect.add(option);
+                });
+            });
     }
 
-    if (addTarefaBtn) {
-        addTarefaBtn.addEventListener("click", function() {
-            addNewTarefaRow();
-        });
+    function atualizarEquipamentos(clienteId, patId = null) {
+        if (!clienteId) {
+            limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+            return;
+        }
+
+        let url = `/notas/api/equipamentos/?cliente=${clienteId}`;
+        if (patId) {
+            url += `&pat=${patId}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+                data.forEach(equipamento => {
+                    let option = new Option(equipamento.nome, equipamento.id);
+                    equipamentoSelect.add(option);
+                });
+            });
     }
 
-    tbody.querySelectorAll(".tarefa-delete").forEach(function(button) {
-        button.addEventListener("click", function() {
-            let row = this.closest("tr.tarefa-row");
-            row.remove();
-            updateTotalForms();
-        });
+    function atualizarClienteAoSelecionarEquipamento(equipamentoId) {
+        if (!equipamentoId) return;
+
+        fetch(`/notas/api/clientes/?equipamento=${equipamentoId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 1) {
+                    clienteSelect.value = data[0].id;
+                    atualizarPATs(data[0].id);
+                    atualizarEquipamentos(data[0].id);
+                }
+            });
+    }
+
+    function atualizarPATsAoSelecionarEquipamento(equipamentoId) {
+        if (!equipamentoId) return;
+
+        fetch(`/notas/api/pats/?equipamento=${equipamentoId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(patSelect, "Selecione uma PAT");
+                data.forEach(pat => {
+                    let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    patSelect.add(option);
+                });
+            });
+    }
+
+    clienteSelect.addEventListener("change", function () {
+        const clienteId = this.value;
+        atualizarPATs(clienteId);
+        atualizarEquipamentos(clienteId);
     });
 
-    updateTotalForms();
+    patSelect.addEventListener("change", function () {
+        const clienteId = clienteSelect.value;
+        const patId = this.value;
+        atualizarEquipamentos(clienteId, patId);
+    });
+
+    equipamentoSelect.addEventListener("change", function () {
+        const equipamentoId = this.value;
+        atualizarClienteAoSelecionarEquipamento(equipamentoId);
+        atualizarPATsAoSelecionarEquipamento(equipamentoId);
+    });
+
+    // Atualiza os dropdowns assim que a página carregar, se já houver um cliente selecionado.
+    if (clienteSelect.value) {
+        atualizarPATs(clienteSelect.value);
+        atualizarEquipamentos(clienteSelect.value);
+    }
 });
 </script>
 {% endblock %}

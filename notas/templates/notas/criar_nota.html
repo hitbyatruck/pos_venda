@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}Criar Nota de Conversa{% endblock %}
 
 {% block content %}
@@ -7,30 +8,29 @@
   <h2>Criar Nota de Conversa</h2>
   <form method="post">
     {% csrf_token %}
-    
-    <!-- Seção Nota -->
-    <div class="mb-3">
-      <label for="{{ form.titulo.id_for_label }}">Título</label>
-      {{ form.titulo }}
-    </div>
+
+    <!-- Cliente -->
     <div class="mb-3">
       <label for="{{ form.cliente.id_for_label }}">Cliente</label>
       {{ form.cliente }}
     </div>
+    <!-- PAT -->
     <div class="mb-3">
       <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
       {{ form.pat }}
     </div>
+    <!-- Equipamento -->
     <div class="mb-3">
       <label for="{{ form.equipamento.id_for_label }}">Equipamento (opcional)</label>
       {{ form.equipamento }}
     </div>
+    <!-- Conteúdo -->
     <div class="mb-3">
       <label for="{{ form.conteudo.id_for_label }}">Conteúdo</label>
       {{ form.conteudo }}
     </div>
-    
-    <!-- Seção Tarefas Associadas -->
+
+    <!-- Tarefas Associadas -->
     <h4>Tarefas Associadas</h4>
     {{ tarefa_formset.management_form }}
     <table class="table table-bordered" id="tarefasTable">
@@ -65,7 +65,7 @@
       </tbody>
     </table>
     <button type="button" id="addTarefaBtn" class="btn btn-outline-primary mb-3">Adicionar Tarefa</button>
-    
+
     <!-- Botões de Ação -->
     <div class="mb-3">
       <button type="submit" class="btn btn-primary">Salvar Nota</button>
@@ -77,14 +77,90 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    console.log("Extra JS carregado em criar_nota.html");
+document.addEventListener("DOMContentLoaded", function () {
+    const clienteSelect = document.getElementById("id_cliente");
+    const patSelect = document.getElementById("id_pat");
+    const equipamentoSelect = document.getElementById("id_equipamento");
 
-    // --- Configuração do formset de Tarefas ---
-    let addTarefaBtn = document.getElementById("addTarefaBtn");
-    let tarefaTableBody = document.querySelector("#tarefasTable tbody");
-    let tarefaTotalForms = document.getElementById("id_tarefas-TOTAL_FORMS");
-    let tarefaTemplateRow = document.querySelector("tr.tarefa-template");
+    function limparDropdown(campo, textoPadrao = "Selecione uma opção") {
+        campo.innerHTML = `<option value="">${textoPadrao}</option>`;
+    }
+
+    function atualizarPATs(clienteId) {
+        if (!clienteId) return;
+        fetch(`/notas/api/pats/?cliente=${clienteId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(patSelect, "Selecione uma PAT");
+                data.forEach(pat => {
+                    let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    patSelect.add(option);
+                });
+            });
+    }
+
+    function atualizarEquipamentos(clienteId) {
+        if (!clienteId) return;
+        fetch(`/notas/api/equipamentos/?cliente=${clienteId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+                data.forEach(equip => {
+                    let option = new Option(equip.nome, equip.id);
+                    equipamentoSelect.add(option);
+                });
+            });
+    }
+
+    function atualizarEquipamentosPorPAT(patId) {
+        if (!patId) return;
+        fetch(`/notas/api/equipamentos/?pat=${patId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+                data.forEach(equip => {
+                    let option = new Option(equip.nome, equip.id);
+                    equipamentoSelect.add(option);
+                });
+            });
+    }
+
+    function atualizarPATsPorEquipamento(equipamentoId) {
+        if (!equipamentoId) return;
+        fetch(`/notas/api/pats/?equipamento=${equipamentoId}`)
+            .then(response => response.json())
+            .then(data => {
+                limparDropdown(patSelect, "Selecione uma PAT");
+                data.forEach(pat => {
+                    let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    patSelect.add(option);
+                });
+            });
+    }
+
+    clienteSelect.addEventListener("change", function () {
+        atualizarPATs(this.value);
+        atualizarEquipamentos(this.value);
+    });
+
+    patSelect.addEventListener("change", function () {
+        atualizarEquipamentosPorPAT(this.value);
+    });
+
+    equipamentoSelect.addEventListener("change", function () {
+        atualizarPATsPorEquipamento(this.value);
+    });
+
+    if (clienteSelect.value) {
+        atualizarPATs(clienteSelect.value);
+        atualizarEquipamentos(clienteSelect.value);
+    }
+
+    // Configurar adição de Tarefas
+    const addTarefaBtn = document.getElementById("addTarefaBtn");
+    const tarefaTableBody = document.querySelector("#tarefasTable tbody");
+    const tarefaTotalForms = document.getElementById("id_tarefas-TOTAL_FORMS");
+    const tarefaTemplateRow = document.querySelector("tr.tarefa-template");
 
     function updateTarefaTotalForms() {
         let totalRows = tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)").length;
@@ -93,24 +169,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function addNewTarefaRow() {
         let currentFormCount = parseInt(tarefaTotalForms.value);
-        if (!tarefaTemplateRow) {
-            console.error("Template row for tarefa not found.");
-            return;
-        }
         let newRow = tarefaTemplateRow.cloneNode(true);
         newRow.style.display = "";
         newRow.classList.remove("tarefa-template");
-        newRow.querySelectorAll("input, select, textarea").forEach(function(el) {
-            if (el.name) {
-                el.name = el.name.replace("__prefix__", currentFormCount);
-                el.id = el.id.replace("__prefix__", currentFormCount);
-                el.value = "";
-            }
+        newRow.querySelectorAll("input, select, textarea").forEach(el => {
+            el.name = el.name.replace("__prefix__", currentFormCount);
+            el.id = el.id.replace("__prefix__", currentFormCount);
+            el.value = "";
         });
         tarefaTableBody.appendChild(newRow);
         tarefaTotalForms.value = currentFormCount + 1;
         updateTarefaTotalForms();
-        // Configura o botão "Excluir" da nova linha
         newRow.querySelector(".tarefa-delete").addEventListener("click", function() {
             newRow.remove();
             updateTarefaTotalForms();
@@ -123,13 +192,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Configura os botões "Excluir" para as linhas já existentes
-    tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)").forEach(function(row) {
-        row.querySelector(".tarefa-delete").addEventListener("click", function() {
-            row.remove();
-            updateTarefaTotalForms();
-        });
-    });
 });
 </script>
 {% endblock %}

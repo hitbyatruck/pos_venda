@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Excluir Tarefa{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Excluir Tarefa</h2>
+  <p>Tem certeza que deseja excluir a tarefa: "<strong>{{ tarefa.descricao }}</strong>"?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Excluir Tarefa</button>
+    <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

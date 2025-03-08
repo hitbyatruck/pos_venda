@@ -16,4 +16,7 @@ urlpatterns = [
     path('excluir_tarefa/<int:tarefa_id>/', views.excluir_tarefa, name='excluir_tarefa'),
     path('fechar_tarefa/<int:tarefa_id>/', views.fechar_tarefa, name='fechar_tarefa'),
     path('reabrir_tarefa/<int:tarefa_id>/', views.reabrir_tarefa, name='reabrir_tarefa'),
+    path('api/pats/', views.api_pats, name='api_pats'),
+    path('api/equipamentos/', views.api_equipamentos, name='api_equipamentos'),
+    path('api/clientes/', views.api_clientes, name='api_clientes'),
 ]

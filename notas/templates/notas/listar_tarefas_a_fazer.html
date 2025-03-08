@@ -4,18 +4,14 @@
 
 {% block content %}
 <div class="container">
-  <h2>Tarefas</h2>
-  <!-- Abas do Bootstrap para separar Tarefas a Fazer e Concluídas -->
+  <h2>Tarefas - A Fazer</h2>
+  <!-- Abas para Tarefas a Fazer e Tarefas Concluídas -->
   <ul class="nav nav-tabs" id="tarefasTabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="a-fazer-tab" data-bs-toggle="tab" data-bs-target="#a-fazer" type="button" role="tab" aria-controls="a-fazer" aria-selected="true">
-        Tarefas a Fazer
-      </button>
+      <button class="nav-link active" id="a-fazer-tab" data-bs-toggle="tab" data-bs-target="#a-fazer" type="button" role="tab" aria-controls="a-fazer" aria-selected="true">Tarefas a Fazer</button>
     </li>
     <li class="nav-item" role="presentation">
-      <button class="nav-link" id="concluidas-tab" data-bs-toggle="tab" data-bs-target="#concluidas" type="button" role="tab" aria-controls="concluidas" aria-selected="false">
-        Tarefas Concluídas
-      </button>
+      <button class="nav-link" id="concluidas-tab" data-bs-toggle="tab" data-bs-target="#concluidas" type="button" role="tab" aria-controls="concluidas" aria-selected="false">Tarefas Concluídas</button>
     </li>
   </ul>
 
@@ -41,16 +37,21 @@
             <td>{% if tarefa.pat %}{{ tarefa.pat.pat_number }}{% else %}—{% endif %}</td>
             <td>{{ tarefa.data_criacao|date:"d/m/Y H:i" }}</td>
             <td>
-              {# Se a tarefa estiver associada a uma nota, os botões direcionam para as views da nota; caso contrário, para as views da tarefa. #}
               {% if tarefa.nota %}
+                {# Se a tarefa está associada a uma nota, os botões apontam para os detalhes/edição da nota #}
                 <a href="{% url 'notas:detalhes_nota' tarefa.nota.id %}" class="btn btn-info btn-sm">Detalhes</a>
                 <a href="{% url 'notas:editar_nota' tarefa.nota.id %}" class="btn btn-warning btn-sm">Editar</a>
               {% else %}
+                {# Caso contrário, os botões apontam para as views específicas de tarefa #}
                 <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-info btn-sm">Detalhes</a>
                 <a href="{% url 'notas:editar_tarefa' tarefa.id %}" class="btn btn-warning btn-sm">Editar</a>
               {% endif %}
-              <button class="btn btn-danger btn-sm tarefa-delete" data-id="{{ tarefa.id }}">Excluir</button>
-              {# Botão para fechar a tarefa (muda status para 'concluido') #}
+              {# Botão para excluir tarefa #}
+              <form action="{% url 'notas:excluir_tarefa' tarefa.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+              {# Botão para fechar (marcar como concluída) #}
               <form action="{% url 'notas:fechar_tarefa' tarefa.id %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-secondary btn-sm">Fechar</button>
@@ -92,8 +93,11 @@
               {% else %}
                 <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-info btn-sm">Detalhes</a>
               {% endif %}
-              <button class="btn btn-danger btn-sm tarefa-delete" data-id="{{ tarefa.id }}">Excluir</button>
-              {# Botão para reabrir a tarefa (muda status para 'a_fazer') #}
+              <form action="{% url 'notas:excluir_tarefa' tarefa.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+              {# Botão para reabrir a tarefa (volta a ficar 'a_fazer') #}
               <form action="{% url 'notas:reabrir_tarefa' tarefa.id %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-secondary btn-sm">Reabrir</button>
@@ -110,3 +114,4 @@
   </div>
 </div>
 {% endblock %}
+
