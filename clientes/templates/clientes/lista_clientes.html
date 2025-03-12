@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block content %}
 <div class="container">
     <h2>Lista de Clientes</h2>
@@ -7,10 +8,10 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th><a href="?ordenar_por=nome&direcao={{ direcao }}">Nome</a></th>
-                <th><a href="?ordenar_por=empresa&direcao={{ direcao }}">Empresa</a></th>
-                <th><a href="?ordenar_por=telefone&direcao={{ direcao }}">Telefone</a></th>
-                <th><a href="?ordenar_por=email&direcao={{ direcao }}">Email</a></th>
+                <th>Nome</th>
+                <th>Empresa</th>
+                <th>Telefone</th>
+                <th>Email</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -24,7 +25,7 @@
                 <td>
                     <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-danger btn-sm client-delete"
+                    <button class="btn btn-danger btn-sm confirm-delete"
                             data-id="{{ cliente.id }}"
                             data-url="{% url 'excluir_cliente' cliente.id %}">
                         Excluir
@@ -35,43 +36,46 @@
         </tbody>
     </table>
 </div>
+{% endblock %}
 
-<!-- Modal de Confirmação Inicial para Clientes -->
-<div class="modal fade" id="clientConfirmModal" tabindex="-1" aria-labelledby="clientConfirmModalLabel" aria-hidden="true">
+{% block extra_modals %}
+<!-- Modal de Confirmação Inicial -->
+<div class="modal fade" id="clientConfirmModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="clientConfirmModalLabel">Confirmar Exclusão do Cliente</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <h5 class="modal-title">Confirmar Exclusão</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        Tem certeza que deseja excluir este cliente?
+        Tem a certeza que deseja excluir este cliente?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="clientConfirmModalBtn" class="btn btn-primary">Confirmar</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="clientConfirmModalBtn" class="btn btn-danger">Confirmar</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal de Aviso Extra para Clientes -->
-<div class="modal fade" id="clientWarningModal" tabindex="-1" aria-labelledby="clientWarningModalLabel" aria-hidden="true">
+<!-- Modal de Aviso Extra -->
+<div class="modal fade" id="clientWarningModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="clientWarningModalLabel">Aviso</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <h5 class="modal-title">Aviso</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="clientWarningModalBody">
-        <!-- Mensagem dinâmica será inserida aqui -->
-      </div>
+      <div class="modal-body" id="clientWarningModalBody"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="clientWarningModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="clientWarningModalBtn" class="btn btn-danger">Confirmar Exclusão</button>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
-<script src="{% static 'js/clients_scripts.js' %}"></script>
+
+{% block scripts %}
+<script src="{% static 'clientes/js/clients_scripts.js' %}"></script>
+{% endblock %}

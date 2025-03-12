@@ -7,16 +7,17 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
 def criar_pat(request):
+    """Cria um novo Pedido de Assistência Técnica (PAT)"""
     if request.method == "POST":
         form = PedidoAssistenciaForm(request.POST)
-        formset = PedidoAssistenciaFormSet(request.POST)  # ✅ Voltamos ao nome correto
+        formset = PedidoAssistenciaFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
             pat = form.save()
             formset.instance = pat
             formset.save()
             messages.success(request, "PAT criada com sucesso.")
-            return redirect('listar_pats')
+            return redirect('assistencia:listar_pats')
 
     else:
         form = PedidoAssistenciaForm()
@@ -25,14 +26,17 @@ def criar_pat(request):
     return render(request, 'assistencia/criar_pat.html', {'form': form, 'formset': formset})
 
 def listar_pats(request):
+    """Lista todas as PATs com ordenação dinâmica"""
     ordenar_por = request.GET.get("ordenar_por", "pat_number")
     direcao = request.GET.get("direcao", "asc")
+
     if direcao == "asc":
         pats = PedidoAssistencia.objects.all().order_by(ordenar_por)
         nova_direcao = "desc"
     else:
         pats = PedidoAssistencia.objects.all().order_by(f"-{ordenar_por}")
         nova_direcao = "asc"
+
     return render(request, 'assistencia/listar_pats.html', {
         'pats': pats,
         'ordenar_por': ordenar_por,
@@ -40,44 +44,53 @@ def listar_pats(request):
     })
 
 def detalhes_pat(request, pat_id):
+    """Exibe os detalhes de um Pedido de Assistência Técnica (PAT)"""
     pat = get_object_or_404(PedidoAssistencia, id=pat_id)
     total_geral = sum(item.total for item in pat.itens.all())
-    return render(request, 'assistencia/detalhes_pat.html', {'pat': pat, 'total_geral': total_geral})
+    
+    return render(request, 'assistencia/detalhes_pat.html', {
+        'pat': pat,
+        'total_geral': total_geral
+    })
 
 def editar_pat(request, pat_id):
+    """Edita uma PAT e os seus itens"""
     pat = get_object_or_404(PedidoAssistencia, id=pat_id)
+
     if request.method == "POST":
         form = PedidoAssistenciaForm(request.POST, instance=pat)
-        formset = EditItemPatFormSet(request.POST, instance=pat)  # <-- Não passe extra aqui
+        formset = EditItemPatFormSet(request.POST, instance=pat)
+
         if form.is_valid() and formset.is_valid():
             pat = form.save()
             formset.save()
             messages.success(request, "PAT atualizada com sucesso.")
             return redirect('assistencia:detalhes_pat', pat_id=pat.id)
         else:
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
-            messages.error(request, "Erro na validação. Veja os logs do servidor.")
+            messages.error(request, "Erro na validação. Verifique os dados.")
+
     else:
         form = PedidoAssistenciaForm(instance=pat)
-        formset = EditItemPatFormSet(instance=pat)  # <-- Apenas instancia o formset normalmente
+        formset = EditItemPatFormSet(instance=pat)
+
     return render(request, 'assistencia/editar_pat.html', {'form': form, 'formset': formset, 'pat': pat})
-
-
-
 
 @require_POST
 @csrf_exempt
 def excluir_pat(request, pat_id):
+    """Exclui uma PAT com confirmação dupla"""
     pat = get_object_or_404(PedidoAssistencia, id=pat_id)
+
     try:
         pat.delete()
+        return JsonResponse({"success": True})
     except Exception as e:
-        return JsonResponse({"success": False, "message": "Erro ao excluir PAT: " + str(e)})
-    return JsonResponse({"success": True})
+        return JsonResponse({"success": False, "message": f"Erro ao excluir PAT: {str(e)}"})
 
 def equipamentos_por_cliente(request):
+    """Retorna os equipamentos associados ao cliente selecionado"""
     cliente_id = request.GET.get("cliente_id")
+    
     if not cliente_id:
         return JsonResponse({"error": "cliente_id não fornecido."}, status=400)
 
@@ -92,8 +105,11 @@ def equipamentos_por_cliente(request):
         {
             "id": eq.id,
             "nome": eq.equipamento_fabricado.nome,
-            "numero_serie": eq.numero_serie,
+            "numero_serie": eq.numero_serie
         }
         for eq in equipamentos
     ]
+
     return JsonResponse({"equipamentos": equipamentos_data})
+
+
