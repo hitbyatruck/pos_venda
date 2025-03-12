@@ -1,7 +1,10 @@
 # notas/models.py
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from clientes.models import Cliente, EquipamentoCliente
 from assistencia.models import PedidoAssistencia
+
 
 STATUS_TAREFA = [
     ('a_fazer', 'A Fazer'),
@@ -73,5 +76,13 @@ class Nota(models.Model):
     conteudo = models.TextField(verbose_name="Conteúdo")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
 
+    
+
     def __str__(self):
         return self.titulo
+
+@receiver(post_save, sender=Nota)
+def update_titulo(sender, instance, created, **kwargs):
+    if created and (not instance.titulo or instance.titulo.strip() == "Nota de Conversa"):
+        instance.titulo = f"Nota de Conversa {instance.id}"
+        instance.save(update_fields=["titulo"])

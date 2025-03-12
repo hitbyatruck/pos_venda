@@ -1,4 +1,176 @@
-.concluido td {
-    text-decoration: line-through;
-    color: gray;
+/* Tipografia: Carregar fonte do Google Fonts (exemplo: Roboto) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Botões personalizados */
+.btn {
+    font-size: 0.9rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Botões no modo escuro */
+body.dark-mode .btn {
+    border: none;
+}
+
+/* Ajuste para o botão de pesquisa */
+.navbar form.d-flex .form-control {
+    border: none;
+    border-radius: 0.25rem 0 0 0.25rem;
+    background-color: #444;
+    color: #ccc;
+}
+.navbar form.d-flex .btn {
+    border: none;
+    background-color: #555;
+    color: #ccc;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+.navbar form.d-flex .btn:hover {
+    background-color: #666;
+}
+
+/* Modo Escuro Global */
+body.dark-mode {
+    background-color: #2C2C2C; /* Fundo em cinza escuro */
+    color: #e0e0e0;
+}
+
+/* Navbar no modo escuro */
+body.dark-mode .navbar {
+    background-color: #333;
+}
+body.dark-mode .navbar .nav-link,
+body.dark-mode .navbar .navbar-brand {
+    color: #e0e0e0 !important;
+}
+body.dark-mode .dropdown-menu {
+    background-color: #333;
+}
+body.dark-mode .dropdown-menu a {
+    color: #e0e0e0 !important;
+}
+
+/* Tabelas (incluindo striped) */
+body.dark-mode table {
+    background-color: #2C2C2C;
+    color: #e0e0e0;
+    border: 1px solid #444;
+}
+body.dark-mode table th,
+body.dark-mode table td {
+    border-color: #444;
+}
+body.dark-mode table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #3A3A3A;
+}
+body.dark-mode table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #333;
+}
+body.dark-mode table.table-striped tbody tr:hover {
+    background-color: #444;
+}
+
+/* Inputs e formulários no modo escuro */
+body.dark-mode .form-control {
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+
+/* Links e hover */
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Garante que as tabelas em modo dark tenham fundo escuro e texto claro */
+body.dark-mode .table {
+    background-color: #2C2C2C !important;  /* Fundo cinza escuro */
+    color: #e0e0e0 !important;             /* Texto claro */
+    border-color: #444 !important;
+}
+
+/* Cabeçalhos e células da tabela */
+body.dark-mode .table > thead > tr > th,
+body.dark-mode .table > tbody > tr > th,
+body.dark-mode .table > tfoot > tr > th,
+body.dark-mode .table > thead > tr > td,
+body.dark-mode .table > tbody > tr > td,
+body.dark-mode .table > tfoot > tr > td {
+    background-color: #2C2C2C !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+/* Linhas striped */
+body.dark-mode table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #3A3A3A !important;
+}
+body.dark-mode table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #333 !important;
+}
+
+/* Efeito hover */
+body.dark-mode table.table-striped tbody tr:hover {
+    background-color: #444 !important;
+}
+/* Outras sugestões:
+   - Ajuste de margens, paddings e espaçamentos para uma aparência mais "clean".
+   - Se necessário, defina variáveis CSS (custom properties) para cores, facilitando a manutenção do tema. */
+
+body.dark-mode .navbar #darkModeToggle {
+    background-color: #979696d5 !important;  /* fundo cinza escuro que contraste com o menu preto */
+    border: none;
+    color: #f0f0f0 !important;            /* ícone ou texto claro */
+}
+
+/* Estilos para abas no modo escuro */
+body.dark-mode .nav-tabs {
+    background-color: #3a3a3a; /* Fundo das abas: um cinza mais claro que o fundo geral */
+    border-bottom: 1px solid #444;
+}
+
+body.dark-mode .nav-tabs .nav-link {
+    color: #e0e0e0;
+    background-color: transparent; /* Mantém transparente para herdar o fundo das abas */
+    border: 1px solid transparent;
+}
+
+body.dark-mode .nav-tabs .nav-link.active,
+body.dark-mode .nav-tabs .nav-link.active:hover {
+    color: #fff;
+    background-color: #4a4a4a; /* Fundo ativo: um cinza um pouco mais claro */
+    border-color: #444 #444 #4a4a4a; /* Ajuste das bordas para suavizar */
+}
+
+/* Exemplo para o contêiner de detalhes do equipamento */
+body.dark-mode .detalhes-equipamento {
+    background-color: #2C2C2C !important; /* Fundo em cinza escuro */
+    color: #e0e0e0 !important;            /* Texto claro */
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+/* Se o template usar apenas a classe container, você pode especificar: */
+body.dark-mode .container.detalhes-equipamento,
+body.dark-mode .detalhes-equipamento-container {
+    background-color: #2C2C2C !important;
+    color: #e0e0e0 !important;
+}
+
+/* Ajustes para outros elementos internos, como tabelas ou parágrafos */
+body.dark-mode .detalhes-equipamento table {
+    background-color: #2C2C2C !important;
+    color: #e0e0e0 !important;
 }

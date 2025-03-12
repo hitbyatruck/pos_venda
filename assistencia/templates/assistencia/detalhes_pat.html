@@ -118,8 +118,9 @@
       
       <!-- Botões de Ação -->
       <div class="mt-3">
-        <a href="{% url 'listar_pats' %}" class="btn btn-secondary">Voltar</a>
-        <a href="{% url 'editar_pat' pat.id %}" class="btn btn-primary">Editar PAT</a>
+        <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">Voltar</a>
+
+        <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-primary">Editar PAT</a>
       </div>
     </div>
   </div>

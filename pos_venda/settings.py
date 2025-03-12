@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'equipamentos',
     'assistencia',
     'notas',
+    'search',
 ]
 
 MIDDLEWARE = [

@@ -25,8 +25,9 @@ urlpatterns = [
     path('clientes/', include('clientes.urls')),
     path('equipamentos/', include('equipamentos.urls')),
     path('', lambda request: redirect('listar_clientes', permanent=False)), 
-    path('assistencia/', include('assistencia.urls')),
+    path('assistencia/', include(('assistencia.urls', 'assistencia'), namespace='assistencia')),
     path('notas/', include(('notas.urls', 'notas'), namespace='notas')),
+    path('search/', include('search.urls')),
 ]
 
 if settings.DEBUG:

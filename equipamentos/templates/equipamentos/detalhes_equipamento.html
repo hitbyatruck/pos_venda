@@ -8,7 +8,7 @@
             <div class="card-header text-white bg-primary">
                 <h3 class="mb-0">{{ equipamento.nome }}</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body container detalhes-equipamento">
                 <div class="row">
                     <!-- Coluna para a imagem -->
                     <div class="d-flex justify-content-center mb-4">
@@ -25,8 +25,8 @@
                         <p><strong>Referência Interna:</strong> {{ equipamento.referencia_interna }}</p>
                         <p><strong>Categoria:</strong> {{ equipamento.categoria }}</p>
                         <p><strong>Data de Lançamento:</strong> {{ equipamento.data_lancamento|default:"Não especificado" }}</p>
-                        <p><strong>Descrição:</strong> {{ equipamento.descricao }}</p>
-                        <p><strong>Especificações:</strong> {{ equipamento.especificacoes }}</p>
+                        <p><strong>Descrição:</strong> {{ equipamento.descricao|linebreaks }}</p>
+                        <p><strong>Especificações:</strong> {{ equipamento.especificacoes|linebreaks }}</p>
                     </div>
                 </div>
                 

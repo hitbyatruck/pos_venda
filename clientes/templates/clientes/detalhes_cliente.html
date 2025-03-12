@@ -34,6 +34,7 @@
         <!-- Aba Equipamentos -->
         <div id="equipamentos" class="tab-pane fade" role="tabpanel">
             <h3 class="mt-4">Equipamentos do Cliente</h3>
+            <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary mb-3">Adicionar Equipamento</a>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -59,13 +60,13 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary">Adicionar Equipamento</a>
+            
         </div>
 
         <!-- Aba PAT's -->
         <div id="pats" class="tab-pane fade" role="tabpanel">
             <h3 class="mt-4">PAT's</h3>
-            <a href="{% url 'criar_pat' %}" class="btn btn-primary mb-3">Criar PAT</a>
+            <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary mb-3">Criar PAT</a>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -118,11 +119,11 @@
                           {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                            <a href="{% url 'editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+                            <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                            <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
                             <button class="btn btn-danger btn-sm pat-delete" 
                                     data-id="{{ pat.id }}"
-                                    data-url="{% url 'excluir_pat' pat.id %}">
+                                    data-url="{% url 'assistencia:excluir_pat' pat.id %}">
                               Excluir
                             </button>
                         </td>

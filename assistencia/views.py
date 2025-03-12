@@ -53,7 +53,7 @@ def editar_pat(request, pat_id):
             pat = form.save()
             formset.save()
             messages.success(request, "PAT atualizada com sucesso.")
-            return redirect('detalhes_pat', pat_id=pat.id)
+            return redirect('assistencia:detalhes_pat', pat_id=pat.id)
         else:
             print("Form errors:", form.errors)
             print("Formset errors:", formset.errors)

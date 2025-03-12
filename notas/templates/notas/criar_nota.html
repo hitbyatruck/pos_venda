@@ -9,6 +9,12 @@
   <form method="post">
     {% csrf_token %}
 
+    <!-- Título (opcional) -->
+    <div class="mb-3">
+      <label for="{{ form.titulo.id_for_label }}">Título (opcional)</label>
+      {{ form.titulo }}
+    </div>
+    
     <!-- Cliente -->
     <div class="mb-3">
       <label for="{{ form.cliente.id_for_label }}">Cliente</label>
@@ -78,77 +84,127 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    // Elementos dos dropdowns (IDs gerados automaticamente pelo Django)
     const clienteSelect = document.getElementById("id_cliente");
     const patSelect = document.getElementById("id_pat");
     const equipamentoSelect = document.getElementById("id_equipamento");
+    const tituloInput = document.getElementById("id_titulo");
+
+    // Remove o atributo "required" do campo título para permitir a submissão sem preenchê-lo
+    if (tituloInput) {
+        tituloInput.removeAttribute("required");
+    }
 
     function limparDropdown(campo, textoPadrao = "Selecione uma opção") {
         campo.innerHTML = `<option value="">${textoPadrao}</option>`;
     }
 
+    // Atualiza o dropdown de PATs para o cliente, preservando a seleção se possível
     function atualizarPATs(clienteId) {
         if (!clienteId) return;
+        const currentPat = patSelect.value;
         fetch(`/notas/api/pats/?cliente=${clienteId}`)
             .then(response => response.json())
             .then(data => {
                 limparDropdown(patSelect, "Selecione uma PAT");
+                let found = false;
                 data.forEach(pat => {
                     let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    if (pat.id == currentPat) {
+                        option.selected = true;
+                        found = true;
+                    }
                     patSelect.add(option);
                 });
+                if (!found) {
+                    patSelect.value = "";
+                }
             });
     }
 
+    // Atualiza o dropdown de Equipamentos para o cliente, preservando a seleção se possível
     function atualizarEquipamentos(clienteId) {
         if (!clienteId) return;
+        const currentEquip = equipamentoSelect.value;
         fetch(`/notas/api/equipamentos/?cliente=${clienteId}`)
             .then(response => response.json())
             .then(data => {
                 limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+                let found = false;
                 data.forEach(equip => {
                     let option = new Option(equip.nome, equip.id);
+                    if (equip.id == currentEquip) {
+                        option.selected = true;
+                        found = true;
+                    }
                     equipamentoSelect.add(option);
                 });
+                if (!found) {
+                    equipamentoSelect.value = "";
+                }
             });
     }
 
-    function atualizarEquipamentosPorPAT(patId) {
-        if (!patId) return;
-        fetch(`/notas/api/equipamentos/?pat=${patId}`)
+    // Atualiza os Equipamentos filtrados pela PAT (para o cliente) e preserva a seleção se possível
+    function atualizarEquipamentosPorPAT(patId, clienteId) {
+        if (!patId || !clienteId) return;
+        const currentEquip = equipamentoSelect.value;
+        fetch(`/notas/api/equipamentos/?cliente=${clienteId}&pat=${patId}`)
             .then(response => response.json())
             .then(data => {
                 limparDropdown(equipamentoSelect, "Selecione um Equipamento");
+                let found = false;
                 data.forEach(equip => {
                     let option = new Option(equip.nome, equip.id);
+                    if (equip.id == currentEquip) {
+                        option.selected = true;
+                        found = true;
+                    }
                     equipamentoSelect.add(option);
                 });
+                if (!found) {
+                    equipamentoSelect.value = "";
+                }
             });
     }
 
-    function atualizarPATsPorEquipamento(equipamentoId) {
-        if (!equipamentoId) return;
-        fetch(`/notas/api/pats/?equipamento=${equipamentoId}`)
+    // Atualiza os PATs filtrados pelo Equipamento (para o cliente) e preserva a seleção se possível
+    function atualizarPATsPorEquipamento(equipamentoId, clienteId) {
+        if (!equipamentoId || !clienteId) return;
+        const currentPat = patSelect.value;
+        fetch(`/notas/api/pats/?cliente=${clienteId}&equipamento=${equipamentoId}`)
             .then(response => response.json())
             .then(data => {
                 limparDropdown(patSelect, "Selecione uma PAT");
+                let found = false;
                 data.forEach(pat => {
                     let option = new Option(`PAT #${pat.numero}`, pat.id);
+                    if (pat.id == currentPat) {
+                        option.selected = true;
+                        found = true;
+                    }
                     patSelect.add(option);
                 });
+                if (!found) {
+                    patSelect.value = "";
+                }
             });
     }
 
+    // Eventos dos dropdowns
     clienteSelect.addEventListener("change", function () {
         atualizarPATs(this.value);
         atualizarEquipamentos(this.value);
+        // Remover parâmetros da URL para evitar complicações ao salvar
+        history.replaceState(null, "", window.location.pathname);
     });
 
     patSelect.addEventListener("change", function () {
-        atualizarEquipamentosPorPAT(this.value);
+        atualizarEquipamentosPorPAT(this.value, clienteSelect.value);
     });
 
     equipamentoSelect.addEventListener("change", function () {
-        atualizarPATsPorEquipamento(this.value);
+        atualizarPATsPorEquipamento(this.value, clienteSelect.value);
     });
 
     if (clienteSelect.value) {
@@ -156,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
         atualizarEquipamentos(clienteSelect.value);
     }
 
-    // Configurar adição de Tarefas
+    // -------------------- Configurar Tarefas --------------------
     const addTarefaBtn = document.getElementById("addTarefaBtn");
     const tarefaTableBody = document.querySelector("#tarefasTable tbody");
     const tarefaTotalForms = document.getElementById("id_tarefas-TOTAL_FORMS");
@@ -187,11 +243,48 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (addTarefaBtn) {
-        addTarefaBtn.addEventListener("click", function() {
-            addNewTarefaRow();
+        addTarefaBtn.addEventListener("click", function () {
+            let valido = true;
+            let tarefaRows = tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)");
+            tarefaRows.forEach(function(row) {
+                let descricaoInput = row.querySelector("input[name$='-descricao']");
+                if (descricaoInput && descricaoInput.value.trim() === "") {
+                    valido = false;
+                }
+            });
+            if (!valido) {
+                alert("Preencha a descrição de todas as tarefas antes de adicionar uma nova.");
+            } else {
+                addNewTarefaRow();
+            }
         });
     }
 
+    // Antes de submeter o formulário, remover tarefas sem descrição e verificar os campos obrigatórios
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function(e) {
+        // Verifica se os campos obrigatórios (Cliente e Conteúdo) estão preenchidos
+        const clienteValue = clienteSelect.value.trim();
+        const conteudoValue = document.getElementById("id_conteudo").value.trim();
+        if (!clienteValue || !conteudoValue) {
+            alert("Preencha os campos obrigatórios: Cliente e Conteúdo.");
+            e.preventDefault();
+            return;
+        }
+        // Se o título estiver vazio, define-o como "Nota de Conversa"
+        if (tituloInput.value.trim() === "") {
+            tituloInput.value = "Nota de Conversa";
+        }
+        // Remove as tarefas sem descrição
+        let tarefaRows = tarefaTableBody.querySelectorAll("tr.tarefa-row:not(.tarefa-template)");
+        tarefaRows.forEach(function(row) {
+            let descricaoInput = row.querySelector("input[name$='-descricao']");
+            if (descricaoInput && descricaoInput.value.trim() === "") {
+                row.remove();
+            }
+        });
+        updateTarefaTotalForms();
+    });
 });
 </script>
 {% endblock %}

@@ -1,10 +1,8 @@
 # notas/forms.py
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from .models import Nota, Tarefa, PedidoAssistencia
-from clientes.models import Cliente, EquipamentoCliente # Para filtrar o campo PAT
-# Note: Não fazemos uma importação de PedidoAssistencia no nível do módulo
-# para evitar problemas de escopo; ela será importada localmente no __init__.
+from clientes.models import Cliente, EquipamentoCliente  # Para filtrar o campo PAT
 
 # --- Formulário para Nota de Conversa ---
 class NotaForm(forms.ModelForm):
@@ -25,11 +23,16 @@ class NotaForm(forms.ModelForm):
         self.fields['pat'].required = False  # PAT é opcional
         self.fields['equipamento'].required = False  # Equipamento também pode ser opcional
 
-        cliente = self.initial.get('cliente') or (self.instance.cliente if self.instance.pk else None)
-
         from assistencia.models import PedidoAssistencia
-        if cliente:
-            self.fields['pat'].queryset = PedidoAssistencia.objects.filter(cliente=cliente)
+        # Se houver dados no POST (self.data), usamos para filtrar o queryset.
+        if 'cliente' in self.data:
+            try:
+                cliente_id = int(self.data.get('cliente'))
+                self.fields['pat'].queryset = PedidoAssistencia.objects.filter(cliente=cliente_id)
+            except (ValueError, TypeError):
+                self.fields['pat'].queryset = PedidoAssistencia.objects.none()
+        elif self.instance and self.instance.pk:
+            self.fields['pat'].queryset = PedidoAssistencia.objects.filter(cliente=self.instance.cliente)
         else:
             self.fields['pat'].queryset = PedidoAssistencia.objects.none()
 
@@ -47,23 +50,33 @@ class NotaForm(forms.ModelForm):
 
         return cleaned_data
 
-
 # --- Formulário para Tarefa (associada a uma Nota) ---
 class TarefaForm(forms.ModelForm):
     class Meta:
         model = Tarefa
-        # O usuário preencherá apenas a descrição e escolherá o status (que poderá ser um toggle via JS)
         fields = ['descricao', 'status']
         widgets = {
             'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'status': forms.Select(attrs={'class': 'form-control'}),
         }
 
-# Cria um formset inline para as tarefas associadas à nota.
+# --- Classe base customizada para o formset de Tarefa ---
+class BaseTarefaFormSet(BaseInlineFormSet):
+    def save_new(self, form, commit=True):
+        instance = super().save_new(form, commit=False)
+        # Se o campo cliente não estiver definido, define-o com o cliente da nota associada.
+        if not instance.cliente:
+            instance.cliente = self.instance.cliente
+        if commit:
+            instance.save()
+        return instance
+
+# Cria o formset inline para as tarefas associadas à nota, usando a classe base customizada.
 TarefaFormSet = inlineformset_factory(
     Nota,
     Tarefa,
     form=TarefaForm,
+    formset=BaseTarefaFormSet,
     extra=1,
     can_delete=True
 )
@@ -75,7 +88,6 @@ EditTarefaFormSet = inlineformset_factory(
     extra=0,   # Na edição, não queremos formulário extra
     can_delete=True
 )
-
 
 # --- Formulário para Tarefa Independente ---
 class TarefaIndependenteForm(forms.ModelForm):
@@ -91,7 +103,7 @@ class TarefaIndependenteForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super(TarefaIndependenteForm, self).__init__(*args, **kwargs)
-        self.fields['cliente'].required = True  # 🔹 Torna o cliente obrigatório
+        self.fields['cliente'].required = True  # Torna o cliente obrigatório
         self.fields['pat'].required = False
 
         cliente = None

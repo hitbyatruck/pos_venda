@@ -16,6 +16,7 @@
   </ul>
 
   <div class="tab-content mt-3" id="tarefasTabsContent">
+    <a href="{% url 'notas:criar_tarefa' %}" class="btn btn-primary">Criar Nova Tarefa</a>
     <!-- Aba Tarefas a Fazer -->
     <div class="tab-pane fade show active" id="a-fazer" role="tabpanel" aria-labelledby="a-fazer-tab">
       {% if tarefas_a_fazer %}
@@ -64,7 +65,7 @@
       {% else %}
         <p>Nenhuma tarefa a fazer encontrada.</p>
       {% endif %}
-      <a href="{% url 'notas:criar_tarefa' %}" class="btn btn-primary">Criar Nova Tarefa</a>
+      
     </div>
 
     <!-- Aba Tarefas Concluídas -->
