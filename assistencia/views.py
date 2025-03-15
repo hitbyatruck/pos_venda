@@ -26,22 +26,44 @@ def criar_pat(request):
     return render(request, 'assistencia/criar_pat.html', {'form': form, 'formset': formset})
 
 def listar_pats(request):
-    """Lista todas as PATs com ordenação dinâmica"""
+    """Lista todas as PATs separadas por Estado em abas"""
     ordenar_por = request.GET.get("ordenar_por", "pat_number")
     direcao = request.GET.get("direcao", "asc")
 
+    # Mapear nomes de colunas para os nomes reais no modelo
+    mapeamento_colunas = {
+        "data_criacao": "data_entrada",
+        "data_entrada": "data_entrada",
+        "data_reparacao": "data_reparacao",
+        "cliente": "cliente__nome",
+        "equipamento": "equipamento__equipamento_fabricado__nome",
+        "estado": "estado",
+        "pat_number": "pat_number"
+    }
+
+    # Usar o nome correto do modelo ou padrão de fallback
+    ordenar_por = mapeamento_colunas.get(ordenar_por, "pat_number")
+
     if direcao == "asc":
-        pats = PedidoAssistencia.objects.all().order_by(ordenar_por)
+        direcao_prefix = ""
         nova_direcao = "desc"
     else:
-        pats = PedidoAssistencia.objects.all().order_by(f"-{ordenar_por}")
+        direcao_prefix = "-"
         nova_direcao = "asc"
 
+    # Filtrar PATs por estado
+    pats_abertos = PedidoAssistencia.objects.filter(estado__in=["aberto", "em_curso", "em_diagnostico"]).order_by(f"{direcao_prefix}{ordenar_por}")
+    pats_concluidos = PedidoAssistencia.objects.filter(estado="concluido").order_by(f"{direcao_prefix}{ordenar_por}")
+    pats_cancelados = PedidoAssistencia.objects.filter(estado="cancelado").order_by(f"{direcao_prefix}{ordenar_por}")
+
     return render(request, 'assistencia/listar_pats.html', {
-        'pats': pats,
+        'pats_abertos': pats_abertos,
+        'pats_concluidos': pats_concluidos,
+        'pats_cancelados': pats_cancelados,
         'ordenar_por': ordenar_por,
         'direcao': nova_direcao
     })
+
 
 def detalhes_pat(request, pat_id):
     """Exibe os detalhes de um Pedido de Assistência Técnica (PAT)"""

@@ -23,11 +23,20 @@
                 <td>
                     <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-danger btn-sm confirm-delete"
-                            data-id="{{ equipamento.id }}"
-                            data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
-                        Excluir
-                    </button>
+                    {% if equipamento.equipamentocliente_set.all|length > 0 or equipamento.pedidoassistencia_set.all|length > 0 %}
+                        <button type="button" class="btn btn-danger btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#errorModal">
+                            Excluir
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-danger btn-sm confirm-delete"
+                                data-bs-toggle="modal"
+                                data-bs-target="#confirmModal"
+                                data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+                            Excluir
+                        </button>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -37,6 +46,7 @@
 {% endblock %}
 
 {% block extra_modals %}
+<!-- Modal de Confirmação para Exclusão do Equipamento -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -51,6 +61,24 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" id="confirmModalBtn" class="btn btn-primary">Confirmar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Erro: Equipamento associado a clientes ou Pedidos de Assistência -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title" id="errorModalLabel">Exclusão não permitida</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+       </div>
+       <div class="modal-body">
+         Este equipamento não pode ser excluído, pois está associado a clientes ou Pedidos de Assistência.
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+       </div>
     </div>
   </div>
 </div>
