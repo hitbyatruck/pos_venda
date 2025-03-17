@@ -64,78 +64,66 @@
         </div>
 
         <!-- Aba PAT's -->
+        <!-- Aba Pedidos de Assistência -->
         <div id="pats" class="tab-pane fade" role="tabpanel">
-            <h3 class="mt-4">PAT's</h3>
-            <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary mb-3">Criar PAT</a>
+            <h3 class="mt-4">Pedidos de Assistência (PAT's)</h3>
+
+            <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-primary mb-3">Criar PAT</a>
+
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>
-                            <a href="?ordenar_por=pat_number&direcao={{ direcao }}">
-                                Número da PAT
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}">
-                                Equipamento
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">
-                                Data de Reparação
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=estado&direcao={{ direcao }}">
-                                Estado
-                            </a>
-                        </th>
+                        <th>Número da PAT</th>
+                        <th>Equipamento</th>
+                        <th>Data de Reparação</th>
+                        <th>Estado</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for pat in pats %}
+                    {% for pat in pedidos_assistencia %}
                     <tr id="pat-row-{{ pat.id }}">
-                        <td>{{ pat.pat_number }}</td>
+                        <td>{{ pat.id }}</td>
                         <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
                         <td>
-                          {% if pat.data_reparacao %}
-                            {{ pat.data_reparacao|date:"d/m/Y" }}
-                          {% else %}
-                            N/A
-                          {% endif %}
+                            {% if pat.data_reparacao %}
+                                {{ pat.data_reparacao|date:"d/m/Y" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
                         </td>
                         <td>
-                          {% if pat.estado == 'aberto' %}
-                            <span class="badge bg-danger">Aberto</span>
-                          {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
-                            <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
-                          {% elif pat.estado == 'concluido' %}
-                            <span class="badge bg-success">Concluído</span>
-                          {% elif pat.estado == 'cancelado' %}
-                            <span class="badge bg-danger text-white">Cancelado</span>
-                          {% else %}
-                            {{ pat.get_estado_display }}
-                          {% endif %}
+                            {% if pat.estado == 'aberto' %}
+                                <span class="badge bg-danger">Aberto</span>
+                            {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
+                                <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
+                            {% elif pat.estado == 'concluido' %}
+                                <span class="badge bg-success">Concluído</span>
+                            {% elif pat.estado == 'cancelado' %}
+                                <span class="badge bg-danger text-white">Cancelado</span>
+                            {% else %}
+                                {{ pat.get_estado_display }}
+                            {% endif %}
                         </td>
                         <td>
                             <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
                             <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
-                            <button class="btn btn-danger btn-sm pat-delete" 
+                            <button class="btn btn-danger btn-sm pat-delete"
                                     data-id="{{ pat.id }}"
                                     data-url="{% url 'assistencia:excluir_pat' pat.id %}">
-                              Excluir
+                                Excluir
                             </button>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">Nenhum PAT associado.</td>
+                        <td colspan="5" class="text-center">Nenhum Pedido de Assistência associado.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
 
         <!-- Aba Notas de Conversa -->
         <div id="notas" class="tab-pane fade" role="tabpanel">

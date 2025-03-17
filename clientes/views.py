@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from .models import Cliente, EquipamentoCliente
 from .forms import EquipamentoClienteForm, ClienteForm
-
+from assistencia.models import PedidoAssistencia
 
 # LISTAGEM DE FUNÇÕES DE CLIENTES
 
@@ -40,10 +40,15 @@ def listar_clientes(request):
     })
 
 
+
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    return render(request, 'clientes/detalhes_cliente.html', {'cliente': cliente})
+    pedidos_assistencia = PedidoAssistencia.objects.filter(cliente=cliente)  # Buscar PATs do cliente
 
+    return render(request, 'clientes/detalhes_cliente.html', {
+        'cliente': cliente,
+        'pedidos_assistencia': pedidos_assistencia  # Adicionar PATs ao contexto
+    })
 
 def editar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)  

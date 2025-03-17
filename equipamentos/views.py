@@ -63,7 +63,9 @@ def excluir_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     force = request.POST.get("force", "false").lower() == "true"
     associations_exist = EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists()
+    
     print(f"DEBUG: Equipamento {equipamento_id} associations_exist: {associations_exist}")
+
     if associations_exist and not force:
         return JsonResponse({
             "success": False,
@@ -73,15 +75,19 @@ def excluir_equipamento_fabricado(request, equipamento_id):
                 "Confirma a exclusão?"
             )
         })
+
     if force:
         EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).delete()
+    
     try:
         equipamento.delete()
     except ValidationError as e:
         return JsonResponse({"success": False, "message": str(e)})
     except Exception as e:
         return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
-    return JsonResponse({"success": True})
+
+    # Adicionamos a URL de redirecionamento após a exclusão
+    return JsonResponse({"success": True, "redirect_url": "/equipamentos/fabricados/lista/"})
 
 @csrf_exempt
 def upload_documento_equipamento(request, equipamento_id):
