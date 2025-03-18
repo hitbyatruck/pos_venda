@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Equipamentos dos Clientes{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Lista de Equipamentos dos Clientes</h2>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Equipamento</th>
+                    <th>Número de Série</th>
+                    <th>Data de Aquisição</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for equipamento in equipamentos %}
+                    <tr>
+                        <td>{{ equipamento.cliente.nome }}</td>
+                        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+                        <td>{{ equipamento.numero_serie }}</td>
+                        <td>{{ equipamento.data_aquisicao }}</td>
+                        <td>
+                            <a href="#" class="btn btn-info btn-sm">Detalhes</a>
+                            <a href="#" class="btn btn-warning btn-sm">Editar</a>
+                            <a href="#" class="btn btn-danger btn-sm confirm-delete">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Nenhum equipamento registrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

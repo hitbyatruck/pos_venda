@@ -1,0 +1,146 @@
+/* Tipografia: Carregar fonte do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+    
+    padding-top: 70px !important; /* Garante que o conteúdo não fica escondido */
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Botões personalizados */
+.btn {
+    font-size: 0.9rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Botões no modo escuro */
+body.dark-mode .btn {
+    border: none;
+}
+
+/* Ajuste para o botão de pesquisa */
+.navbar form.d-flex .form-control {
+    border: none;
+    border-radius: 0.25rem 0 0 0.25rem;
+    background-color: #444;
+    color: #ccc;
+}
+
+.navbar form.d-flex .btn {
+    border: none;
+    background-color: #555;
+    color: #ccc;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.navbar form.d-flex .btn:hover {
+    background-color: #666;
+}
+
+/* Modo Escuro Global */
+body.dark-mode {
+    background-color: #2C2C2C;
+    color: #e0e0e0;
+}
+
+/* Navbar no modo escuro */
+body.dark-mode .navbar,
+body.dark-mode .dropdown-menu {
+    background-color: #333;
+}
+
+body.dark-mode .navbar .nav-link,
+body.dark-mode .navbar .navbar-brand,
+body.dark-mode .dropdown-menu a {
+    color: #e0e0e0 !important;
+}
+
+/* Tabelas no modo escuro */
+body.dark-mode table,
+body.dark-mode .table {
+    background-color: #2C2C2C;
+    color: #e0e0e0;
+    border: 1px solid #444;
+}
+
+body.dark-mode table th,
+body.dark-mode table td {
+    border-color: #444;
+}
+
+/* Tabelas striped */
+body.dark-mode table.table-striped tbody tr:nth-of-type(odd),
+body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #3A3A3A;
+}
+
+body.dark-mode table.table-striped tbody tr:nth-of-type(even),
+body.dark-mode .table-striped tbody tr:nth-of-type(even) {
+    background-color: #333;
+}
+
+body.dark-mode table.table-striped tbody tr:hover {
+    background-color: #444;
+}
+
+/* Inputs e formulários no modo escuro */
+body.dark-mode .form-control {
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+
+/* Links e hover */
+a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Botão de alternância do modo escuro */
+body.dark-mode .navbar #darkModeToggle {
+    background-color: #979696d5 !important;
+    border: none;
+    color: #f0f0f0 !important;
+}
+
+/* Estilos para abas no modo escuro */
+body.dark-mode .nav-tabs {
+    background-color: #3a3a3a;
+    border-bottom: 1px solid #444;
+}
+
+body.dark-mode .nav-tabs .nav-link {
+    color: #e0e0e0;
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+body.dark-mode .nav-tabs .nav-link.active,
+body.dark-mode .nav-tabs .nav-link.active:hover {
+    color: #fff;
+    background-color: #4a4a4a;
+    border-color: #444 #444 #4a4a4a;
+}
+
+/* Detalhes do equipamento no modo escuro */
+body.dark-mode .detalhes-equipamento,
+body.dark-mode .container.detalhes-equipamento,
+body.dark-mode .detalhes-equipamento-container {
+    background-color: #2C2C2C !important;
+    color: #e0e0e0 !important;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+body.dark-mode .detalhes-equipamento table {
+    background-color: #2C2C2C !important;
+    color: #e0e0e0 !important;
+}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Categorias de Equipamentos</h2>
+    <a href="{% url 'adicionar_categoria' %}" class="btn btn-primary mb-3">Adicionar Nova Categoria</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Nome da Categoria</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for categoria in categorias %}
+                <tr>
+                    <td>{{ categoria.nome }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="1">Nenhuma categoria cadastrada.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

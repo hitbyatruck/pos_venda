@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Lista de Clientes</h2>
+    <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary mb-3">Adicionar Cliente</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Empresa</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr id="client-row-{{ cliente.id }}">
+                <td>{{ cliente.nome }}</td>
+                <td>{{ cliente.empresa }}</td>
+                <td>{{ cliente.telefone }}</td>
+                <td>{{ cliente.email }}</td>
+                <td>
+                    <a href="{% url 'clientes:detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                    <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
+                    <button class="btn btn-danger btn-sm confirm-delete"
+                            data-id="{{ cliente.id }}"
+                            data-url="{% url 'clientes:excluir_cliente' cliente.id %}">
+                        Excluir
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_modals %}
+<!-- Modal de Confirmação Inicial -->
+<div class="modal fade" id="clientConfirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar Exclusão</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Tem a certeza que deseja excluir este cliente?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="clientConfirmModalBtn" class="btn btn-danger">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Aviso Extra -->
+<div class="modal fade" id="clientWarningModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Aviso</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="clientWarningModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="clientWarningModalBtn" class="btn btn-danger">Confirmar Exclusão</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'clientes/js/clients_scripts.js' %}"></script>
+{% endblock %}

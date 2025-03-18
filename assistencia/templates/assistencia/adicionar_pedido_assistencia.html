@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Adicionar Pedido de Assistência Técnica</h2>
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label for="id_cliente">Cliente:</label>
+        {{ form.cliente }}
+    </div>
+
+    <div class="mb-3">
+        <label for="equipamento">Equipamento:</label>
+        <select name="equipamento" id="equipamento">
+            <option value="">--- Selecione um equipamento ---</option>
+            {% for equipamento in equipamentos %}
+            <option value="{{ equipamento.id }}">{{ equipamento.nome }} - {{ equipamento.numero_serie }}</option>
+            {% endfor %}
+        </select>
+
+        {% if cliente_id %}
+            <a href="{% url 'adicionar_equipamento_ao_cliente' cliente_id %}" class="btn btn-primary">Adicionar Equipamento</a>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_numero_pedido">Número do Pedido:</label>
+        {{ form.numero_pedido }}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_em_garantia">Em Garantia?</label>
+        {{ form.em_garantia }}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_data_entrada">Data de Entrada:</label>
+        {{ form.data_entrada }}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_data_reparacao">Data de Reparação:</label>
+        {{ form.data_reparacao }}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_estado">Estado:</label>
+        {{ form.estado }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Salvar</button>
+</form>
+
+<script>
+    document.getElementById("id_cliente").addEventListener("change", function () {
+        let clienteId = this.value;
+        let equipamentoSelect = document.getElementById("id_equipamento");
+
+        fetch(`/assistencia/get_equipamentos/${clienteId}/`)
+            .then(response => response.json())
+            .then(data => {
+                equipamentoSelect.innerHTML = '<option value="">Selecione um equipamento</option>';
+                data.equipamentos.forEach(equip => {
+                    let option = document.createElement("option");
+                    option.value = equip.id;
+                    option.textContent = `${equip.nome} - ${equip.numero_serie}`;
+                    equipamentoSelect.appendChild(option);
+                });
+            });
+    });
+</script>
+
+{% endblock %}

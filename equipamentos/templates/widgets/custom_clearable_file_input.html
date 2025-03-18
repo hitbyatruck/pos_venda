@@ -1,0 +1,47 @@
+<div id="foto-container">
+    {% if widget.value %}
+        <p id="currentFoto">Foto: <a href="{{ widget.value.url }}">{{ widget.value.name }}</a></p>
+        <button type="button" class="btn btn-danger btn-sm" onclick="excluirFotoFunc()">Excluir Foto</button>
+    {% endif %}
+</div>
+<div id="input-container">
+    {% if widget.input %}
+        {{ widget.input }}
+    {% else %}
+        <input type="file" name="{{ widget.name }}" class="form-control">
+    {% endif %}
+</div>
+<script>
+function excluirFotoFunc() {
+    // Oculta a exibição atual da foto e o botão de exclusão
+    var currentFoto = document.getElementById("currentFoto");
+    if (currentFoto) {
+        currentFoto.style.display = "none";
+    }
+    var btn = document.querySelector("#foto-container button");
+    if (btn) {
+        btn.style.display = "none";
+    }
+    // Insere um input oculto para sinalizar que a foto atual deve ser removida
+    var inputContainer = document.getElementById("input-container");
+    var hiddenInput = document.createElement("input");
+    hiddenInput.type = "hidden";
+    hiddenInput.name = "{{ widget.name }}-clear";
+    hiddenInput.value = "on";
+    inputContainer.parentNode.insertBefore(hiddenInput, inputContainer.nextSibling);
+}
+
+// Se o usuário selecionar um novo ficheiro, remove o input de clear para evitar conflito
+document.addEventListener("DOMContentLoaded", function(){
+    var fileInput = document.querySelector('#input-container input[type="file"][name="{{ widget.name }}"]');
+    if (fileInput) {
+        fileInput.addEventListener("change", function(){
+            var clearInput = document.querySelector('input[name="{{ widget.name }}-clear"]');
+            if (clearInput) {
+                clearInput.parentNode.removeChild(clearInput);
+            }
+        });
+    }
+});
+</script>
+

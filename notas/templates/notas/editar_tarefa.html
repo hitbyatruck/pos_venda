@@ -1,0 +1,30 @@
+{# notas/templates/notas/editar_tarefa.html #}
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Editar Tarefa{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Editar Tarefa</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+      {{ form.cliente }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.pat.id_for_label }}">PAT (opcional)</label>
+      {{ form.pat }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.descricao.id_for_label }}">Descrição</label>
+      {{ form.descricao }}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.status.id_for_label }}">Status</label>
+      {{ form.status }}
+    </div>
+    <button type="submit" class="btn btn-primary">Atualizar Tarefa</button>
+    <a href="{% url 'notas:listar_tarefas_a_fazer' %}" class="btn btn-secondary">Voltar</a>
+  </form>
+</div>
+{% endblock %}

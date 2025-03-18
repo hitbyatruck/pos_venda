@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Resultados da Pesquisa{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Resultados para "{{ query }}"</h2>
+
+  {% if results.clientes %}
+  <h3>Clientes</h3>
+  <ul>
+    {% for cliente in results.clientes %}
+      <li><a href="{% url 'detalhes_cliente' cliente.id %}">{{ cliente.nome }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if results.equipamentos %}
+  <h3>Equipamentos</h3>
+  <ul>
+    {% for equipamento in results.equipamentos %}
+      <li>
+        <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}">
+          {{ equipamento.equipamento_fabricado.nome }}
+        </a>
+        {% if equipamento.numero_serie %}
+          - Nº Série: {{ equipamento.numero_serie }}
+        {% endif %}
+        {% if equipamento.cliente %}
+          - Cliente: {{ equipamento.cliente.nome }}
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if results.pats %}
+  <h3>PAT's</h3>
+  <ul>
+    {% for pat in results.pats %}
+      <li>
+        <a href="{% url 'assistencia:detalhes_pat' pat.id %}">
+          PAT #{{ pat.pat_number }}
+        </a>
+        {% if pat.cliente %}
+          - Cliente: {{ pat.cliente.nome }}
+        {% endif %}
+        {% if pat.equipamento %}
+          - Equipamento: {{ pat.equipamento.equipamento_fabricado.nome }} (Série: {{ pat.equipamento.numero_serie }})
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if results.notas %}
+  <h3>Notas de Conversa</h3>
+  <ul>
+    {% for nota in results.notas %}
+      <li><a href="{% url 'notas:detalhes_nota' nota.id %}">{{ nota.titulo }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if results.tarefas %}
+  <h3>Tarefas</h3>
+  <ul>
+    {% for tarefa in results.tarefas %}
+      <li>
+        <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}">
+          {{ tarefa.descricao|truncatewords:10 }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if not results.clientes and not results.equipamentos and not results.pats and not results.notas and not results.tarefas %}
+    <p>Nenhum resultado encontrado.</p>
+  {% endif %}
+</div>
+{% endblock %}

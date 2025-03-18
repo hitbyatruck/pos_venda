@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Criar PAT{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Criar Pedido de Assistência Técnica (PAT)</h2>
+  <form method="post" id="patForm">
+    {% csrf_token %}
+
+    <!-- Linha 1: Cliente e Número da PAT -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.cliente.id_for_label }}">Cliente</label>
+        {{ form.cliente }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
+        {{ form.pat_number }}
+      </div>
+    </div>
+
+    <!-- Linha 2: Datas e Estado -->
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label for="{{ form.data_entrada.id_for_label }}">Data de Entrada</label>
+        {{ form.data_entrada }}
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="{{ form.estado.id_for_label }}">Estado da PAT</label>
+        {{ form.estado }}
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="{{ form.data_reparacao.id_for_label }}">Data de Reparação</label>
+        {{ form.data_reparacao }}
+      </div>
+    </div>
+
+    <!-- Linha 3: Equipamento e Garantia -->
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
+        {{ form.equipamento }}
+      </div>
+      <div class="col-md-6 mb-3 d-flex align-items-center">
+        <div class="form-check">
+          {{ form.garantia }}
+          <label class="form-check-label ms-2" for="{{ form.garantia.id_for_label }}">Em Garantia</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção Itens -->
+    <h4 class="mt-4">Itens (Serviços e Componentes)</h4>
+    {{ formset.management_form }}
+    <table class="table table-bordered" id="itensTable">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Referência</th>
+          <th>Designação</th>
+          <th>Quantidade</th>
+          <th>Preço (€)</th>
+          <th>Total (€)</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in formset %}
+        <tr class="item-row">
+          {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+          <td>{{ form.tipo }}</td>
+          <td>{{ form.referencia }}</td>
+          <td>{{ form.designacao }}</td>
+          <td>
+            <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="{{ form.quantidade.value|default:1 }}">
+          </td>
+          <td>
+            <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="{{ form.preco.value|default:0 }}">
+          </td>
+          <td class="row-total">0.00</td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+          </td>
+        </tr>
+        {% endfor %}
+        {# Linha template oculta para novos itens – NÃO altere esta linha #}
+        <tr class="item-row template-row" style="display: none;">
+          {% with form=formset.empty_form %}
+          <td>{{ form.tipo }}</td>
+          <td>{{ form.referencia }}</td>
+          <td>{{ form.designacao }}</td>
+          <td>
+            <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="">
+          </td>
+          <td>
+            <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="">
+          </td>
+          <td class="row-total">0.00</td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+          </td>
+          {% endwith %}
+        </tr>
+        <tr id="grandTotalRow">
+          <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
+          <td class="text-end" id="grandTotalValue">0.00</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
+
+    <!-- Campo para Relatório -->
+    <div class="mb-4">
+      <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
+      {{ form.relatorio }}
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="mb-4">
+      <button type="submit" class="btn btn-primary">Criar PAT</button>
+      <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </form>
+</div>
+<script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
+{% endblock %}

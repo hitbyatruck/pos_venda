@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalhes da Nota{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Detalhes da Nota: {{ nota.titulo }}</h2>
+  <p><strong>Cliente:</strong> {{ nota.cliente.nome }}</p>
+  {% if nota.pat %}
+    <p><strong>PAT:</strong> {{ nota.pat.pat_number }}</p>
+  {% endif %}
+  {% if nota.equipamento %}
+    <p><strong>Equipamento:</strong> {{ nota.equipamento.equipamento_fabricado.nome }} ({{ nota.equipamento.numero_serie }})</p>
+  {% endif %}
+  <p><strong>Conteúdo:</strong></p>
+  <p>{{ nota.conteudo }}</p>
+  <p><strong>Data de Criação:</strong> {{ nota.data_criacao|date:"d/m/Y H:i" }}</p>
+  
+  <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning">Editar Nota</a>
+  <a href="{% url 'notas:listar_notas' %}" class="btn btn-secondary">Voltar</a>
+</div>
+{% endblock %}
