@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0 text-gray-800">
+            <i class="fas fa-boxes me-2 text-primary"></i>{% trans "Dashboard de Stock" %}
+        </h1>
+    </div>
+    
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item active">{% trans "Stock" %}</li>
+        </ol>
+    </nav>
+    
+    {% include 'stock/includes/menu_stock.html' %}
+    <!-- Cards principais com estatísticas -->
+    <div class="row mb-4">
+        <!-- Card Total de Peças -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {% trans "Total de Peças" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_pecas|default:"0" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Peças com Stock Baixo -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Stock Baixo" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pecas_stock_baixo|default:"0" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Peças Esgotadas -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                {% trans "Peças Esgotadas" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pecas_esgotadas|default:"0" }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Valor Total em Stock -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                {% trans "Valor em Stock" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ valor_total_stock|default:"0,00" }} €</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seções principais -->
+    <div class="row">
+        <!-- Peças com Stock Baixo -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Peças com Stock Baixo" %}</h6>
+                    <a href="{% url 'stock:listar_pecas' %}?stock=baixo" class="btn btn-sm btn-warning">
+                        {% trans "Ver Todas" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if pecas_stock_baixo_lista %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Código" %}</th>
+                                    <th>{% trans "Nome" %}</th>
+                                    <th>{% trans "Stock Atual" %}</th>
+                                    <th>{% trans "Stock Mínimo" %}</th>
+                                    <th>{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for peca in pecas_stock_baixo_lista %}
+                                <tr>
+                                    <td>{{ peca.codigo }}</td>
+                                    <td>
+                                        <a href="{% url 'stock:detalhes_peca' peca.id %}">
+                                            {{ peca.nome }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ peca.get_status_class }}">
+                                            {{ peca.stock_atual }}
+                                        </span>
+                                    </td>
+                                    <td>{{ peca.stock_minimo }}</td>
+                                    <td>
+                                        <a href="{% url 'stock:registrar_entrada' %}?peca={{ peca.id }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="mb-0">{% trans "Não há peças com stock baixo. Tudo em ordem!" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Movimentações -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Últimas Movimentações" %}</h6>
+                    <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-sm btn-primary">
+                        {% trans "Ver Todas" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if movimentacoes_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Peça" %}</th>
+                                    <th>{% trans "Tipo" %}</th>
+                                    <th>{% trans "Qtd" %}</th>
+                                    <th>{% trans "Utilizador" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in movimentacoes_recentes %}
+                                <tr>
+                                    <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'stock:detalhes_peca' mov.peca.id %}">
+                                            {{ mov.peca.codigo }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if mov.tipo == 'entrada' %}
+                                        <span class="badge bg-success">{% trans "Entrada" %}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{% trans "Saída" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ mov.quantidade }}</td>
+                                    <td>{{ mov.utilizador.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                        <p class="mb-0">{% trans "Não há movimentações recentes para exibir." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Segunda linha de widgets -->
+    <div class="row">
+        <!-- Encomendas Pendentes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Encomendas Pendentes" %}</h6>
+                    <a href="{% url 'stock:listar_encomendas' %}?status=pendente" class="btn btn-sm btn-primary">
+                        {% trans "Ver Todas" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if encomendas_pendentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Encomenda #" %}</th>
+                                    <th>{% trans "Fornecedor" %}</th>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Status" %}</th>
+                                    <th>{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for encomenda in encomendas_pendentes %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'stock:detalhes_encomenda' encomenda.id %}">
+                                            #{{ encomenda.id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ encomenda.fornecedor.nome }}</td>
+                                    <td>{{ encomenda.data_encomenda|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ encomenda.get_status_class }}">
+                                            {{ encomenda.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if encomenda.status == 'pendente' or encomenda.status == 'parcial' %}
+                                        <a href="{% url 'stock:receber_encomenda' encomenda.id %}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-box"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
+                        <p class="mb-0">{% trans "Não há encomendas pendentes no momento." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorias de Peças -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Categorias de Peças" %}</h6>
+                    <a href="{% url 'stock:listar_categorias' %}" class="btn btn-sm btn-primary">
+                        {% trans "Ver Todas" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if categorias %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Categoria" %}</th>
+                                    <th>{% trans "Total de Peças" %}</th>
+                                    <th>{% trans "Ver Peças" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for categoria in categorias %}
+                                <tr>
+                                    <td>{{ categoria.nome }}</td>
+                                    <td>{{ categoria.total_pecas }}</td>
+                                    <td>
+                                        <a href="{% url 'stock:listar_pecas' %}?categoria={{ categoria.id }}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tags fa-3x text-info mb-3"></i>
+                        <p class="mb-0">{% trans "Não há categorias cadastradas." %}</p>
+                        <a href="{% url 'stock:adicionar_categoria' %}" class="btn btn-primary mt-3">
+                            {% trans "Adicionar Categoria" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Resultados da Pesquisa: "{{ query }}"</h2>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="q" value="{{ query }}">
+                <div class="col-md-4">
+                    <label for="type-filter" class="form-label">Filtrar por tipo</label>
+                    <select name="type" id="type-filter" class="form-select">
+                        <option value="">Todos os tipos</option>
+                        <option value="clientes" {% if selected_type == 'clientes' %}selected{% endif %}>Clientes</option>
+                        <option value="equipamentos" {% if selected_type == 'equipamentos' %}selected{% endif %}>Equipamentos</option>
+                        <option value="pats" {% if selected_type == 'pats' %}selected{% endif %}>PATs</option>
+                        <option value="tarefas" {% if selected_type == 'tarefas' %}selected{% endif %}>Tarefas</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    {% if not query %}
+        <div class="alert alert-info">Digite um termo para pesquisar.</div>
+    {% else %}
+        <!-- Clientes Section -->
+        {% if show_all or selected_type == 'clientes' %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Clientes</h3>
+                <span class="badge bg-secondary">{{ clientes|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if clientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Telefone</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes %}
+                                <tr>
+                                    <td>{{ cliente.nome }}</td>
+                                    <td>{{ cliente.email }}</td>
+                                    <td>{{ cliente.telefone }}</td>
+                                    <td>
+                                        <a href="{% url 'detalhes_cliente' cliente.id %}" 
+                                           class="btn btn-info btn-sm">
+                                            <i class="bi bi-eye"></i> Detalhes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhum cliente encontrado.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Equipamentos Section -->
+        {% if show_all or selected_type == 'equipamentos' %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Equipamentos</h3>
+                <span class="badge bg-secondary">{{ equipamentos|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if equipamentos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Número de Série</th>
+                                    <th>Cliente</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equip in equipamentos %}
+                                <tr>
+                                    <td>{{ equip.equipamento_fabricado.nome }}</td>
+                                    <td>{{ equip.numero_serie }}</td>
+                                    <td>{{ equip.cliente.nome }}</td>
+                                    <td>
+                                        <a href="{% url 'detalhes_equipamento' equip.id %}" 
+                                           class="btn btn-info btn-sm">
+                                            <i class="bi bi-eye"></i> Detalhes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhum equipamento encontrado.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- PATs Section -->
+        {% if show_all or selected_type == 'pats' %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">PATs</h3>
+                <span class="badge bg-secondary">{{ pats|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if pats %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Equipamento</th>
+                                    <th>Estado</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pat in pats %}
+                                <tr>
+                                    <td>{{ pat.pat_number }}</td>
+                                    <td>{{ pat.cliente.nome }}</td>
+                                    <td>{{ pat.equipamento.equipamento_fabricado.nome }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ pat.get_estado_class }}">
+                                            {{ pat.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'assistencia:detalhes_pat' pat.id %}" 
+                                           class="btn btn-info btn-sm">
+                                            <i class="bi bi-eye"></i> Detalhes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhuma PAT encontrada.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if show_all or selected_type == 'tarefas' %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Tarefas</h3>
+                <span class="badge bg-secondary">{{ tarefas|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if tarefas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nota</th>
+                                    <th>Descrição</th>
+                                    <th>Cliente</th>
+                                    <th>PAT</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tarefa in tarefas %}
+                                <tr>
+                                    <td>{{ tarefa.nota }}</td>
+                                    <td>{{ tarefa.descricao|truncatechars:50 }}</td>
+                                    <td>{{ tarefa.cliente.nome|default:"-" }}</td>
+                                    <td>{{ tarefa.pat.pat_number|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ tarefa.get_status_class }}">
+                                            {{ tarefa.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" 
+                                        class="btn btn-info btn-sm">
+                                            <i class="bi bi-eye"></i> Detalhes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhuma tarefa encontrada.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not clientes and not equipamentos and not pats and not tarefas %}
+            <div class="alert alert-warning">
+                Nenhum resultado encontrado para "{{ query }}".
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

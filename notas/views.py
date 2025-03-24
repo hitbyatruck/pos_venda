@@ -6,6 +6,8 @@ from django.urls import reverse
 from .models import Nota, Tarefa, PedidoAssistencia, EquipamentoCliente
 from clientes.models import Cliente
 from .forms import NotaForm, TarefaFormSet, TarefaIndependenteForm, EditTarefaFormSet
+from core.utils import group_required
+
 
 def listar_notas(request):
     """
@@ -15,17 +17,16 @@ def listar_notas(request):
     return render(request, 'notas/listar_notas.html', {'notas': notas})
 
 def criar_nota(request):
-    """
-    Cria uma nova Nota de Conversa, possivelmente com tarefas associadas.
-    Se a URL tiver ?cliente=<id>, preenche o campo cliente automaticamente.
-    """
+    """Cria uma nova Nota de Conversa com tarefas associadas."""
     if request.method == "POST":
         form = NotaForm(request.POST)
         tarefa_formset = TarefaFormSet(request.POST)
+        
         if form.is_valid() and tarefa_formset.is_valid():
-            # Salva a nota sem commit para poder ajustar os campos se necessário
+            # Save the nota first
             nota = form.save(commit=False)
-            # Se a nota não tiver cliente, tenta obter do parâmetro GET 'cliente'
+            
+            # If no client is set, try to get from URL
             if not nota.cliente:
                 cliente_id = request.GET.get('cliente')
                 if cliente_id:
@@ -33,33 +34,30 @@ def criar_nota(request):
                         nota.cliente = Cliente.objects.get(id=cliente_id)
                     except Cliente.DoesNotExist:
                         messages.error(request, "Cliente não encontrado.")
-                        return render(request, 'notas/criar_nota.html', {'form': form, 'tarefa_formset': tarefa_formset})
-            nota.save()  # Agora a nota tem um ID
-            # Associa o formset de tarefas à nota
+                        return render(request, 'notas/criar_nota.html', 
+                                    {'form': form, 'tarefa_formset': tarefa_formset})
+            
+            nota.save()
+            
+            # Set the instance for the formset and save it
             tarefa_formset.instance = nota
-            # Salva as tarefas sem commit para poder ajustar o campo cliente
-            for tarefa in tarefa_formset.save(commit=False):
-                if not tarefa.descricao.strip():
-                    continue  # Pula tarefas sem descrição
-                if not getattr(tarefa, 'cliente_id', None):
-                    tarefa.cliente = nota.cliente
-                    tarefa.save()
-            tarefa_formset.save_m2m()
+            tarefa_formset.save()
+            
             messages.success(request, "Nota criada com sucesso.")
-            return HttpResponseRedirect(reverse('detalhes_cliente', args=[nota.cliente.id]) + '#notas')
+            return HttpResponseRedirect(reverse('detalhes_cliente', 
+                                             args=[nota.cliente.id]) + '#notas')
         else:
-            print("NotaForm errors:", form.errors)
-            print("TarefaFormSet errors:", tarefa_formset.errors)
             messages.error(request, "Erro na criação da nota. Verifique os campos.")
     else:
-        # Se houver ?cliente=<id> na URL, pré-preenche o campo 'cliente'
         initial_data = {}
         cliente_id = request.GET.get('cliente')
         if cliente_id:
             initial_data['cliente'] = cliente_id
         form = NotaForm(initial=initial_data)
         tarefa_formset = TarefaFormSet()
-    return render(request, 'notas/criar_nota.html', {'form': form, 'tarefa_formset': tarefa_formset})
+    
+    return render(request, 'notas/criar_nota.html', 
+                 {'form': form, 'tarefa_formset': tarefa_formset})
 
 def detalhes_nota(request, nota_id):
     """

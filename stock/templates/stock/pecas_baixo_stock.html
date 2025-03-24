@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Peças com Estoque Baixo" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Monitoramento de Estoque" %}</h1>
+        <a href="{% url 'stock:adicionar_encomenda' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> {% trans "Nova Encomenda" %}
+        </a>
+    </div>
+    
+    <div class="row">
+        <!-- Peças Esgotadas -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                {% trans "Peças Esgotadas" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_esgotadas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Peças Abaixo do Mínimo -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Abaixo do Mínimo" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_baixo_estoque }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Peças em Atenção -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                {% trans "Atenção" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_atencao }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-eye fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Peças Esgotadas -->
+    {% if pecas_esgotadas %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-danger">{% trans "Peças Esgotadas" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Código" %}</th>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Stock Mínimo" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for peca in pecas_esgotadas %}
+                        <tr>
+                            <td><a href="{% url 'stock:detalhes_peca' peca.id %}">{{ peca.codigo }}</a></td>
+                            <td>{{ peca.nome }}</td>
+                            <td>{{ peca.categoria.nome|default:"-" }}</td>
+                            <td>{{ peca.stock_minimo }}</td>
+                            <td>
+                                <a href="{% url 'stock:detalhes_peca' peca.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'stock:adicionar_encomenda' %}?peca={{ peca.id }}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Tabela de Peças Abaixo do Mínimo -->
+    {% if pecas_baixo_estoque %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-warning">{% trans "Peças Abaixo do Estoque Mínimo" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Código" %}</th>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Stock Atual" %}</th>
+                            <th>{% trans "Stock Mínimo" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for peca in pecas_baixo_estoque %}
+                        <tr>
+                            <td><a href="{% url 'stock:detalhes_peca' peca.id %}">{{ peca.codigo }}</a></td>
+                            <td>{{ peca.nome }}</td>
+                            <td>{{ peca.categoria.nome|default:"-" }}</td>
+                            <td>{{ peca.stock_atual }}</td>
+                            <td>{{ peca.stock_minimo }}</td>
+                            <td>
+                                <a href="{% url 'stock:detalhes_peca' peca.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'stock:adicionar_encomenda' %}?peca={{ peca.id }}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

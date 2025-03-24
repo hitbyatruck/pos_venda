@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Várias Peças" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Adicionar Várias Peças para o Fornecedor" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>{% trans "Fornecedor" %}: {{ fornecedor.nome }}</h5>
+                <p>{% if fornecedor.contacto %}{% trans "Contacto" %}: {{ fornecedor.contacto }}{% endif %}</p>
+            </div>
+            
+            {% if total_disponiveis == 0 %}
+                <div class="alert alert-info">
+                    <p>{% trans "Não existem peças disponíveis para associar a este fornecedor. Todas as peças já estão associadas." %}</p>
+                </div>
+                <a href="{% url 'stock:detalhes_fornecedor' fornecedor_id=fornecedor.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "Voltar para Detalhes do Fornecedor" %}
+                </a>
+            {% else %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold">{% trans "Preço Unitário Padrão (€)" %}:</label>
+                        <input type="text" name="preco_padrao" class="form-control" value="0,00" placeholder="0,00">
+                        <small class="form-text text-muted">{% trans "Valor inicial padrão para todas as peças selecionadas. Pode ser personalizado depois para cada peça." %}</small>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold">{% trans "Tempo de Entrega Padrão (dias)" %}:</label>
+                        <input type="number" name="tempo_entrega_padrao" class="form-control" value="0" min="0">
+                        <small class="form-text text-muted">{% trans "Valor inicial padrão para todas as peças selecionadas. Pode ser personalizado depois para cada peça." %}</small>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">{% trans "Selecione as Peças" %}:</label>
+                        <div class="alert alert-info">
+                            {% trans "Selecione uma ou mais peças da lista abaixo para associar a este fornecedor." %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-selecionar-todos">{% trans "Selecionar Todas" %}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-desmarcar-todos">{% trans "Desmarcar Todas" %}</button>
+                            <input type="text" id="filtro-pecas" class="form-control mt-2" placeholder="{% trans 'Filtrar peças...' %}">
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;"></th>
+                                            <th>{% trans "Código" %}</th>
+                                            <th>{% trans "Nome" %}</th>
+                                            <th>{% trans "Categoria" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-pecas">
+                                        {% for peca in pecas_disponiveis %}
+                                        <tr class="linha-peca">
+                                            <td>
+                                                <input type="checkbox" class="form-check-input checkbox-peca" name="pecas" value="{{ peca.id }}" id="peca_{{ peca.id }}">
+                                            </td>
+                                            <td><label for="peca_{{ peca.id }}">{{ peca.codigo }}</label></td>
+                                            <td>{{ peca.nome }}</td>
+                                            <td>{{ peca.categoria.nome|default:"-" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% trans "Criar Associações" %}
+                        </button>
+                        <a href="{% url 'stock:detalhes_fornecedor' fornecedor_id=fornecedor.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </form>
+                
+                <script>
+                    document.getElementById('btn-selecionar-todos').addEventListener('click', function() {
+                        document.querySelectorAll('.checkbox-peca').forEach(function(checkbox) {
+                            const tr = checkbox.closest('tr');
+                            if (tr.style.display !== 'none') {
+                                checkbox.checked = true;
+                            }
+                        });
+                    });
+                    
+                    document.getElementById('btn-desmarcar-todos').addEventListener('click', function() {
+                        document.querySelectorAll('.checkbox-peca').forEach(function(checkbox) {
+                            checkbox.checked = false;
+                        });
+                    });
+                    
+                    document.getElementById('filtro-pecas').addEventListener('keyup', function() {
+                        const filtro = this.value.toLowerCase();
+                        document.querySelectorAll('.linha-peca').forEach(function(tr) {
+                            const codigo = tr.cells[1].textContent.toLowerCase();
+                            const nome = tr.cells[2].textContent.toLowerCase();
+                            const categoria = tr.cells[3].textContent.toLowerCase();
+                            
+                            if (codigo.includes(filtro) || nome.includes(filtro) || categoria.includes(filtro)) {
+                                tr.style.display = '';
+                            } else {
+                                tr.style.display = 'none';
+                            }
+                        });
+                    });
+                </script>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

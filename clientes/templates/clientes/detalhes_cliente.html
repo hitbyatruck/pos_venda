@@ -1,10 +1,36 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Detalhes do Cliente{% endblock %}
 
 {% block content %}
 <div class="container">
     <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
+
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Início</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'listar_clientes' %}">Clientes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ cliente.nome }}</li>
+      </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>{{ cliente.nome }}</h2>
+      <div class="btn-group">
+        <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-outline-primary">
+          <i class="bi bi-pencil"></i> Editar Cliente
+        </a>
+        <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-outline-success">
+          <i class="bi bi-plus-circle"></i> Adicionar Equipamento
+        </a>
+        <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-outline-info">
+          <i class="bi bi-tools"></i> Criar PAT
+        </a>
+        <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-outline-secondary">
+          <i class="bi bi-chat-left-text"></i> Nova Nota
+        </a>
+      </div>
+    </div>
 
     <ul class="nav nav-tabs" id="tabs" role="tablist">
         <li class="nav-item" role="presentation">
@@ -34,8 +60,7 @@
         <!-- Aba Equipamentos -->
         <div id="equipamentos" class="tab-pane fade" role="tabpanel">
             <h3 class="mt-4">Equipamentos do Cliente</h3>
-            <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-primary mb-3">Adicionar Equipamento</a>
-            <table class="table table-striped">
+            <table class="table table-striped table-hover">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -44,30 +69,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for equipamento in cliente.equipamentos.all %}
-                    <tr>
-                        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                        <td>{{ equipamento.numero_serie }}</td>
-                        <td>
-                            <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}?origem={% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Ver</a>
-                            <a href="{% url 'desassociar_equipamento' equipamento.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja desassociar este equipamento?');">Desassociar</a>
-                        </td>
-                    </tr>
-                    {% empty %}
+                  {% for equipamento in cliente.equipamentos.all %}
+                  <tr id="equipment-row-{{ equipamento.id }}">
+                      <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+                      <td>{{ equipamento.numero_serie }}</td>
+                      <td>
+                        <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                        <button class="btn btn-danger btn-sm deassociate-equipment"
+                          data-id="{{ equipamento.id }}"
+                          data-url="{% url 'desassociar_equipamento_cliente' equipamento.id %}">
+                          Desassociar
+                        </button>
+                      </td>
+                  </tr>
+                  {% empty %}
                     <tr>
                         <td colspan="3" class="text-center">Nenhum equipamento associado.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            
         </div>
 
         <!-- Aba PAT's -->
         <div id="pats" class="tab-pane fade" role="tabpanel">
             <h3 class="mt-4">PAT's</h3>
-            <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary mb-3">Criar PAT</a>
-            <table class="table table-striped">
+            <table class="table table-striped table-hover">
                 <thead>
                     <tr>
                         <th>
@@ -139,13 +166,8 @@
 
         <!-- Aba Notas de Conversa -->
         <div id="notas" class="tab-pane fade" role="tabpanel">
-            <div id="notas" class="tab-pane">
-                <h3>Notas de Conversa</h3>
-                <div class="mb-3">
-                    <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-primary">Criar Nova Nota</a>
-                </div>
-                <!-- Aqui a listagem das notas do cliente -->
-                <table class="table table-striped">
+            <h3>Notas de Conversa</h3>
+            <table class="table table-striped table-hover">
                     <thead>
                       <tr>
                         <th>Título</th>
@@ -185,69 +207,46 @@
       
     <a href="{% url 'listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
 </div>
-{% endblock %}
-{% block extra_js %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Função para obter o CSRF Token dos cookies
-    function getCSRFToken() {
-        let cookieValue = null;
-        const cookies = document.cookie.split(";");
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.startsWith("csrftoken=")) {
-                cookieValue = cookie.substring("csrftoken=".length);
-                break;
-            }
-        }
-        return cookieValue;
-    }
 
-    // Configura o evento de clique para os botões "Excluir" na aba de PAT’s
-    document.querySelectorAll(".pat-delete").forEach(function(button) {
-        button.addEventListener("click", function() {
-            if (!confirm("Tem certeza que deseja excluir esta PAT?")) {
-                return;
-            }
-            let patId = this.getAttribute("data-id");
-            let url = this.getAttribute("data-url");
-            fetch(url, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCSRFToken(),
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    let row = document.getElementById("pat-row-" + patId);
-                    if (row) {
-                        row.remove();
-                    }
-                } else {
-                    alert(data.message || "Erro ao excluir a PAT.");
-                }
-            })
-            .catch(error => {
-                console.error("Erro:", error);
-            });
-        });
-    });
-});
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Verifica se há um hash na URL e se é "#notas"
-    if (window.location.hash === "#notas") {
-        // Seleciona o link da aba que ativa a seção de Notas de Conversa
-        var notasTabTrigger = document.querySelector('a[data-bs-toggle="tab"][href="#notas"]');
-        if (notasTabTrigger) {
-            // Cria um objeto Tab do Bootstrap e mostra a aba
-            var tab = new bootstrap.Tab(notasTabTrigger);
-            tab.show();
-        }
-    }
-});
-</script>
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        Tem a certeza que deseja desassociar este equipamento do cliente?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="warningModalBody">
+        <!-- Mensagem dinâmica será inserida aqui -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
+{% block scripts %}
+{{ block.super }}
+<script src="{% static 'clientes/js/equipment_deassociation.js' %}"></script>
+{% endblock %}

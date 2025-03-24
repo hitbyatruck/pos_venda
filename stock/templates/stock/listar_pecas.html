@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% trans "Peças em Stock" %}</h1>
+        <div>
+            <a href="{% url 'stock:adicionar_peca' %}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> {% trans "Nova Peça" %}
+            </a>
+        </div>
+    </div>
+    
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item active">{% trans "Peças" %}</li>
+        </ol>
+    </nav>
+    
+    {% include 'stock/includes/menu_stock.html' %}
+    
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtros" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filtro-form" class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="form-label">{% trans "Pesquisar" %}</label>
+                    <input type="text" class="form-control" id="q" name="q" value="{{ query|default:'' }}" 
+                           placeholder="{% trans 'Código, nome ou descrição' %}">
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label">{% trans "Categoria" %}</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">{% trans "Todas as categorias" %}</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if filtro_categoria == cat.id|stringformat:"i" %}selected{% endif %}>
+                            {{ cat.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="stock" class="form-label">{% trans "Status do Stock" %}</label>
+                    <select class="form-select" id="stock" name="stock">
+                        <option value="">{% trans "Todos os status" %}</option>
+                        <option value="baixo" {% if filtro_stock == 'baixo' %}selected{% endif %}>
+                            {% trans "Stock Baixo" %}
+                        </option>
+                        <option value="esgotado" {% if filtro_stock == 'esgotado' %}selected{% endif %}>
+                            {% trans "Esgotado" %}
+                        </option>
+                        <option value="ok" {% if filtro_stock == 'ok' %}selected{% endif %}>
+                            {% trans "Stock OK" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                    <a href="{% url 'stock:listar_pecas' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync me-1"></i> {% trans "Limpar" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listagem de Peças -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            {% if pecas %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Código" %}</th>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Stock Atual" %}</th>
+                            <th>{% trans "Preço de Venda" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for peca in pecas %}
+                        <tr>
+                            <td>{{ peca.codigo }}</td>
+                            <td>
+                                <a href="{% url 'stock:detalhes_peca' peca.id %}">
+                                    {{ peca.nome }}
+                                </a>
+                            </td>
+                            <td>{{ peca.categoria.nome|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-{{ peca.get_status_class }}">
+                                    {{ peca.stock_atual }}
+                                </span>
+                            </td>
+                            <td>{{ peca.preco_venda }} €</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'stock:detalhes_peca' peca.id %}" class="btn btn-sm btn-info" 
+                                       title="{% trans 'Detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'stock:editar_peca' peca.id %}" class="btn btn-sm btn-primary" 
+                                       title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'stock:registrar_entrada' %}?peca={{ peca.id }}" class="btn btn-sm btn-success" 
+                                       title="{% trans 'Entrada' %}">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </a>
+                                    <a href="{% url 'stock:registrar_saida' %}?peca={{ peca.id }}" class="btn btn-sm btn-warning" 
+                                       title="{% trans 'Saída' %}">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5>{% trans "Nenhuma peça encontrada com os filtros aplicados." %}</h5>
+                <p class="text-muted">{% trans "Tente modificar os filtros ou adicione uma nova peça." %}</p>
+                <a href="{% url 'stock:adicionar_peca' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus-circle me-1"></i> {% trans "Adicionar Peça" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

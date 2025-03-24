@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Excluir Fornecedor" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Excluir Fornecedor" %}</h6>
+        </div>
+        <div class="card-body">
+            {% if pecas_associadas > 0 or encomendas_associadas > 0 %}
+                <div class="alert alert-danger">
+                    <h5>{% trans "Não é possível excluir este fornecedor" %}</h5>
+                    {% if pecas_associadas > 0 %}
+                        <p>{% blocktrans with nome=fornecedor.nome count counter=pecas_associadas %}
+                            O fornecedor "{{ nome }}" está associado a {{ counter }} peça.
+                            {% plural %}
+                            O fornecedor "{{ nome }}" está associado a {{ counter }} peças.
+                            {% endblocktrans %}</p>
+                    {% endif %}
+                    
+                    {% if encomendas_associadas > 0 %}
+                        <p>{% blocktrans with nome=fornecedor.nome count counter=encomendas_associadas %}
+                            O fornecedor "{{ nome }}" possui {{ counter }} encomenda registrada.
+                            {% plural %}
+                            O fornecedor "{{ nome }}" possui {{ counter }} encomendas registradas.
+                            {% endblocktrans %}</p>
+                    {% endif %}
+                    
+                    <p>{% trans "Você precisa remover todas as associações antes de excluir este fornecedor." %}</p>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'stock:listar_fornecedores' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans "Voltar" %}
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h5>{% trans "Confirmação de exclusão" %}</h5>
+                    <p>{% blocktrans with nome=fornecedor.nome %}
+                        Tem certeza que deseja excluir o fornecedor "{{ nome }}"?
+                        {% endblocktrans %}</p>
+                    <p><strong>{% trans "Esta ação não pode ser desfeita." %}</strong></p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> {% trans "Excluir Fornecedor" %}
+                        </button>
+                        <a href="{% url 'stock:listar_fornecedores' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

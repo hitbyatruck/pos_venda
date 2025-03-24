@@ -1,0 +1,90 @@
+:root {
+    /* Light Theme Colors */
+    --light-primary: #2C699A;
+    --light-secondary: #548CA8;
+    --light-background: #FFFFFF;
+    --light-surface: #F5F7FA;
+    --light-text: #1A1A1A;
+    --light-accent: #04724D;
+    --light-warning: #F9A826;
+    --light-danger: #E63946;
+    
+    /* Dark Theme Colors */
+    --dark-primary: #64B6AC;
+    --dark-secondary: #5D737E;
+    --dark-background: #1A1F2C;
+    --dark-surface: #2C3440;
+    --dark-text: #E8F1F2;
+    --dark-accent: #48BF84;
+    --dark-warning: #FFB344;
+    --dark-danger: #FF6B6B;
+}
+
+/* Light Theme (default) */
+[data-bs-theme="light"] {
+    --bs-primary: var(--light-primary);
+    --bs-secondary: var(--light-secondary);
+    --bs-body-bg: var(--light-background);
+    --bs-body-color: var(--light-text);
+    
+    .navbar {
+        background-color: var(--light-primary) !important;
+    }
+    
+    .card {
+        background-color: var(--light-surface);
+        border-color: rgba(0, 0, 0, 0.125);
+    }
+    
+    .table {
+        --bs-table-bg: var(--light-surface);
+        --bs-table-striped-bg: rgba(0, 0, 0, 0.02);
+        --bs-table-hover-bg: rgba(0, 0, 0, 0.04);
+    }
+}
+
+/* Dark Theme */
+[data-bs-theme="dark"] {
+    --bs-primary: var(--dark-primary);
+    --bs-secondary: var(--dark-secondary);
+    --bs-body-bg: var(--dark-background);
+    --bs-body-color: var(--dark-text);
+    
+    .navbar {
+        background-color: var(--dark-surface) !important;
+    }
+    
+    .card {
+        background-color: var(--dark-surface);
+        border-color: rgba(255, 255, 255, 0.125);
+    }
+    
+    .table {
+        --bs-table-bg: var(--dark-surface);
+        --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+        --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+    }
+    
+    .dropdown-menu {
+        background-color: var(--dark-surface);
+        border-color: rgba(255, 255, 255, 0.125);
+    }
+    
+    .dropdown-item {
+        color: var(--dark-text);
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    }
+}
+
+/* Global Styles */
+* {
+    transition: background-color 0.3s,
+                color 0.3s,
+                border-color 0.3s;
+}
+
+body {
+    padding-top: 56px;
+}

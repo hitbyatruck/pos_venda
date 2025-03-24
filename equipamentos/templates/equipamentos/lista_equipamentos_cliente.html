@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Equipamentos dos Clientes{% endblock %}
 
 {% block content %}
@@ -17,17 +17,21 @@
                 </tr>
             </thead>
             <tbody>
-                {% for equipamento in equipamentos %}
-                    <tr>
-                        <td>{{ equipamento.cliente.nome }}</td>
-                        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                        <td>{{ equipamento.numero_serie }}</td>
-                        <td>{{ equipamento.data_aquisicao }}</td>
-                        <td>
-                            <a href="#" class="btn btn-info btn-sm">Detalhes</a>
-                            <a href="#" class="btn btn-warning btn-sm">Editar</a>
-                            <a href="#" class="btn btn-danger btn-sm confirm-delete">Excluir</a>
-                        </td>
+              {% for equipamento in equipamentos %}
+                <tr id="equipment-row-{{ equipamento.id }}">
+                    <td>{{ equipamento.cliente.nome }}</td>
+                    <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+                    <td>{{ equipamento.numero_serie }}</td>
+                    <td>{{ equipamento.data_aquisicao }}</td>
+                    <td>
+                        <a href="#" class="btn btn-info btn-sm">Detalhes</a>
+                        <a href="#" class="btn btn-warning btn-sm">Editar</a>
+                        <button class="btn btn-danger btn-sm deassociate-equipment"
+                                data-id="{{ equipamento.id }}"
+                                data-url="{% url 'desassociar_equipamento_cliente' equipamento.id %}">
+                            Desassociar
+                        </button>
+                      </td>
                     </tr>
                 {% empty %}
                     <tr><td colspan="5">Nenhum equipamento registrado.</td></tr>
@@ -35,4 +39,47 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Modal de Confirmação Inicial -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            Tem a certeza que deseja desassociar este equipamento do cliente?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Aviso Extra (para equipamentos associados a PATs) -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body" id="warningModalBody">
+            <!-- A mensagem será inserida aqui dinamicamente -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="{% static 'clientes/js/equipment_deassociation.js' %}"></script>
 {% endblock %}

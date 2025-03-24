@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% trans "Movimentações de Stock" %}</h1>
+        <div>
+            <a href="{% url 'stock:registrar_entrada' %}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> {% trans "Nova Entrada" %}
+            </a>
+            <a href="{% url 'stock:registrar_saida' %}" class="btn btn-warning">
+                <i class="fas fa-minus-circle me-1"></i> {% trans "Nova Saída" %}
+            </a>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item active">{% trans "Movimentações" %}</li>
+        </ol>
+    </nav>
+    
+    {% include 'stock/includes/menu_stock.html' %}
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtros" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filtro-form" class="row g-3">
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">{% trans "Tipo" %}</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">{% trans "Todos os tipos" %}</option>
+                        <option value="entrada" {% if filtro_tipo == 'entrada' %}selected{% endif %}>
+                            {% trans "Entradas" %}
+                        </option>
+                        <option value="saida" {% if filtro_tipo == 'saida' %}selected{% endif %}>
+                            {% trans "Saídas" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="inicio" class="form-label">{% trans "Data Inicial" %}</label>
+                    <input type="date" class="form-control" id="inicio" name="inicio" value="{{ filtro_inicio|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fim" class="form-label">{% trans "Data Final" %}</label>
+                    <input type="date" class="form-control" id="fim" name="fim" value="{{ filtro_fim|default:'' }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                    <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync me-1"></i> {% trans "Limpar" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listagem de Movimentações -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            {% if movimentacoes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Data" %}</th>
+                            <th>{% trans "Peça" %}</th>
+                            <th>{% trans "Tipo" %}</th>
+                            <th>{% trans "Quantidade" %}</th>
+                            <th>{% trans "Motivo" %}</th>
+                            <th>{% trans "Preço Unit." %}</th>
+                            <th>{% trans "Utilizador" %}</th>
+                            <th>{% trans "PAT" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movimentacoes %}
+                        <tr>
+                            <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'stock:detalhes_peca' mov.peca.id %}">
+                                    {{ mov.peca.codigo }} - {{ mov.peca.nome }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if mov.tipo == 'entrada' %}
+                                <span class="badge bg-success">{% trans "Entrada" %}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{% trans "Saída" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ mov.quantidade }}</td>
+                            <td>{{ mov.get_motivo_display }}</td>
+                            <td>
+                                {% if mov.preco_unitario %}
+                                {{ mov.preco_unitario }} €
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ mov.utilizador.username }}</td>
+                            <td>
+                                {% if mov.pat %}
+                                <a href="{% url 'stock:assistencia:detalhes_pat' mov.pat.id %}">
+                                    PAT #{{ mov.pat.id }}
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5>{% trans "Nenhuma movimentação encontrada com os filtros aplicados." %}</h5>
+                <p class="text-muted">{% trans "Tente modificar os filtros ou registar uma nova movimentação." %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

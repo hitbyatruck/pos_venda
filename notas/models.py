@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from clientes.models import Cliente, EquipamentoCliente
 from assistencia.models import PedidoAssistencia
+from simple_history.models import HistoricalRecords
 
 
 STATUS_TAREFA = [
@@ -45,10 +46,20 @@ class Tarefa(models.Model):
         verbose_name="Status"
     )
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    history = HistoricalRecords()
 
-    def __str__(self):
-        return f"Tarefa: {self.descricao[:50]}..."
+    def get_status_class(self):
+        """Returns Bootstrap class for status badge"""
+        return 'success' if self.status == 'concluido' else 'warning'
 
+    @property
+    def get_nota_display(self):
+        """Returns nota title or default text"""
+        return self.nota.titulo if self.nota else "Sem nota associada"
+
+    class Meta:
+        ordering = ['-data_criacao']
+        
 class Nota(models.Model):
     titulo = models.CharField(max_length=200, verbose_name="Título")
     cliente = models.ForeignKey(
@@ -75,7 +86,7 @@ class Nota(models.Model):
     )
     conteudo = models.TextField(verbose_name="Conteúdo")
     data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
-
+    history = HistoricalRecords()
     
 
     def __str__(self):

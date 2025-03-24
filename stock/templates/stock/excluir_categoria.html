@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Excluir Categoria" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Excluir Categoria" %}</h6>
+        </div>
+        <div class="card-body">
+            {% if pecas_associadas > 0 %}
+                <div class="alert alert-danger">
+                    <h5>{% trans "Não é possível excluir esta categoria" %}</h5>
+                    <p>{% blocktrans with nome=categoria.nome count counter=pecas_associadas %}
+                        A categoria "{{ nome }}" está sendo usada por {{ counter }} peça.
+                        {% plural %}
+                        A categoria "{{ nome }}" está sendo usada por {{ counter }} peças.
+                        {% endblocktrans %}</p>
+                    <p>{% trans "Você precisa remover ou alterar a categoria dessas peças antes de excluir esta categoria." %}</p>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'stock:listar_categorias' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans "Voltar" %}
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h5>{% trans "Confirmação de exclusão" %}</h5>
+                    <p>{% blocktrans with nome=categoria.nome %}
+                        Tem certeza que deseja excluir a categoria "{{ nome }}"?
+                        {% endblocktrans %}</p>
+                    <p><strong>{% trans "Esta ação não pode ser desfeita." %}</strong></p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> {% trans "Excluir Categoria" %}
+                        </button>
+                        <a href="{% url 'stock:listar_categorias' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ fornecedor.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Título principal -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0 text-gray-800">
+            <i class="fas fa-building me-2 text-primary"></i>{{ fornecedor.nome }}
+        </h1>
+        <div class="btn-group">
+            <a href="{% url 'stock:editar_fornecedor' fornecedor.id %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> {% trans "Editar" %}
+            </a>
+            <a href="{% url 'stock:listar_fornecedores' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> {% trans "Voltar" %}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:listar_fornecedores' %}">{% trans "Fornecedores" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ fornecedor.nome }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Menu Stock -->
+    {% include 'stock/includes/menu_stock.html' %}
+
+    <!-- Informações do Fornecedor -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Informações do Fornecedor" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">{% trans "Nome:" %}</th>
+                                    <td>{{ fornecedor.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Contacto:" %}</th>
+                                    <td>{{ fornecedor.contacto|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Telefone:" %}</th>
+                                    <td>
+                                        {% if fornecedor.telefone %}
+                                        <a href="tel:{{ fornecedor.telefone }}">{{ fornecedor.telefone }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">{% trans "Email:" %}</th>
+                                    <td>
+                                        {% if fornecedor.email %}
+                                        <a href="mailto:{{ fornecedor.email }}">{{ fornecedor.email }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Website:" %}</th>
+                                    <td>
+                                        {% if fornecedor.website %}
+                                        <a href="{{ fornecedor.website }}" target="_blank">{{ fornecedor.website }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Cadastro:" %}</th>
+                                    <td>{{ fornecedor.data_cadastro|date:"d/m/Y" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if fornecedor.notas %}
+                    <div class="mt-3">
+                        <h6 class="font-weight-bold">{% trans "Notas:" %}</h6>
+                        <p>{{ fornecedor.notas|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Últimas Encomendas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Últimas Encomendas" %}</h6>
+                    <a href="{% url 'stock:adicionar_encomenda' %}?fornecedor={{ fornecedor.id }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus-circle"></i> {% trans "Nova Encomenda" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if fornecedor.encomendas.all %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "ID" %}</th>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Valor" %}</th>
+                                    <th>{% trans "Status" %}</th>
+                                    <th>{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for encomenda in fornecedor.encomendas.all|slice:":5" %}
+                                <tr>
+                                    <td>{{ encomenda.id }}</td>
+                                    <td>{{ encomenda.data_encomenda|date:"d/m/Y" }}</td>
+                                    <td>{{ encomenda.valor_total|floatformat:2 }}€</td>
+                                    <td>
+                                        {% if encomenda.status == 'pendente' %}
+                                        <span class="badge bg-warning text-dark">{% trans "Pendente" %}</span>
+                                        {% elif encomenda.status == 'parcial' %}
+                                        <span class="badge bg-info">{% trans "Parcial" %}</span>
+                                        {% elif encomenda.status == 'recebida' %}
+                                        <span class="badge bg-success">{% trans "Recebida" %}</span>
+                                        {% elif encomenda.status == 'cancelada' %}
+                                        <span class="badge bg-danger">{% trans "Cancelada" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'stock:detalhes_encomenda' encomenda.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if fornecedor.encomendas.count > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'stock:listar_encomendas' %}?fornecedor={{ fornecedor.id }}" class="btn btn-link">
+                            {% trans "Ver todas as encomendas" %} ({{ fornecedor.encomendas.count }})
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <p>{% trans "Nenhuma encomenda registrada para este fornecedor." %}</p>
+                        <a href="{% url 'stock:adicionar_encomenda' %}?fornecedor={{ fornecedor.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> {% trans "Criar Encomenda" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Estatísticas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Estatísticas" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ fornecedor.pecas_fornecidas.count }}</div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">{% trans "Peças" %}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ fornecedor.encomendas.count }}</div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">{% trans "Encomendas" %}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ fornecedor.count_preferential_pieces }}
+                            </div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">{% trans "Preferencial" %}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if fornecedor.get_valor_total_encomendas %}
+                                {{ fornecedor.get_valor_total_encomendas|floatformat:2 }}€
+                                {% else %}
+                                0.00€
+                                {% endif %}
+                            </div>
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">{% trans "Total Compras" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ações Rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Ações Rápidas" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'stock:adicionar_encomenda' %}?fornecedor={{ fornecedor.id }}" class="btn btn-success btn-block">
+                            <i class="fas fa-shopping-cart me-1"></i> {% trans "Nova Encomenda" %}
+                        </a>
+                        <a href="{% url 'stock:editar_fornecedor' fornecedor.id %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-edit me-1"></i> {% trans "Editar Informações" %}
+                        </a>
+                        <button type="button" class="btn btn-info btn-block" data-bs-toggle="modal" data-bs-target="#adicionarPecaModal">
+                            <i class="fas fa-link me-1"></i> {% trans "Adicionar Peça" %}
+                        </button>
+                        <a href="mailto:{{ fornecedor.email }}" class="btn btn-outline-secondary btn-block {% if not fornecedor.email %}disabled{% endif %}">
+                            <i class="fas fa-envelope me-1"></i> {% trans "Enviar Email" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Peças Fornecidas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Peças Fornecidas" %}</h6>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#adicionarPecaModal">
+                <i class="fas fa-plus"></i> {% trans "Adicionar Peça" %}
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="tabelaPecas">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Código" %}</th>
+                            <th>{% trans "Nome da Peça" %}</th>
+                            <th>{% trans "Ref. Fornecedor" %}</th>
+                            <th>{% trans "Preço" %}</th>
+                            <th>{% trans "Prazo" %}</th>
+                            <th>{% trans "Preferencial" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fp in fornecedor.pecas_fornecidas.all %}
+                        <tr>
+                            <td>{{ fp.peca.codigo }}</td>
+                            <td>{{ fp.peca.nome }}</td>
+                            <td>{{ fp.referencia_fornecedor }}</td>
+                            <td>{{ fp.preco_unitario }}€</td>
+                            <td>{{ fp.tempo_entrega|default:"-" }} {% if fp.tempo_entrega %}dias{% endif %}</td>
+                            <td>
+                                {% if fp.fornecedor_preferencial %}
+                                <span class="badge bg-success">{% trans "Sim" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'stock:detalhes_peca' fp.peca.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-primary edit-peca-fornecedor" 
+                                            data-fornecedor-peca-id="{{ fp.id }}"
+                                            data-bs-toggle="modal" data-bs-target="#editarPecaModal">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-peca-fornecedor" 
+                                            data-fornecedor-peca-id="{{ fp.id }}"
+                                            data-bs-toggle="modal" data-bs-target="#confirmarExclusaoModal">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                {% trans "Nenhuma peça associada a este fornecedor." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para adicionar peça ao fornecedor -->
+<div class="modal fade" id="adicionarPecaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'stock:adicionar_peca_fornecedor' fornecedor.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Adicionar Peça" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_peca" class="form-label">{% trans "Peça" %}</label>
+                        <select name="peca" id="id_peca" class="form-control" required>
+                            <option value="">---------</option>
+                            {% for peca in pecas_disponiveis %}
+                            <option value="{{ peca.id }}">{{ peca.codigo }} - {{ peca.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_referencia_fornecedor" class="form-label">{% trans "Referência do Fornecedor" %}</label>
+                        <input type="text" name="referencia_fornecedor" id="id_referencia_fornecedor" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_preco_unitario" class="form-label">{% trans "Preço Unitário (€)" %}</label>
+                        <input type="number" name="preco_unitario" id="id_preco_unitario" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_tempo_entrega" class="form-label">{% trans "Tempo de Entrega (dias)" %}</label>
+                        <input type="number" name="tempo_entrega" id="id_tempo_entrega" class="form-control" min="1">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="id_fornecedor_preferencial" name="fornecedor_preferencial">
+                        <label class="form-check-label" for="id_fornecedor_preferencial">
+                            {% trans "Definir como fornecedor preferencial" %}
+                        </label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_notas" class="form-label">{% trans "Notas" %}</label>
+                        <textarea name="notas" id="id_notas" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar associação peça-fornecedor -->
+<div class="modal fade" id="editarPecaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="" id="formEditarPeca">
+                {% csrf_token %}
+                <input type="hidden" name="from_fornecedor" value="1">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Editar Associação" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "Peça" %}</label>
+                        <input type="text" id="edit_peca_nome" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_referencia_fornecedor" class="form-label">{% trans "Referência do Fornecedor" %}</label>
+                        <input type="text" name="referencia_fornecedor" id="edit_referencia_fornecedor" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_preco_unitario" class="form-label">{% trans "Preço Unitário (€)" %}</label>
+                        <input type="number" name="preco_unitario" id="edit_preco_unitario" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_tempo_entrega" class="form-label">{% trans "Tempo de Entrega (dias)" %}</label>
+                        <input type="number" name="tempo_entrega" id="edit_tempo_entrega" class="form-control" min="1">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit_fornecedor_preferencial" name="fornecedor_preferencial">
+                        <label class="form-check-label" for="edit_fornecedor_preferencial">
+                            {% trans "Definir como fornecedor preferencial" %}
+                        </label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_notas" class="form-label">{% trans "Notas" %}</label>
+                        <textarea name="notas" id="edit_notas" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<div class="modal fade" id="confirmarExclusaoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="" id="formExcluirAssociacao">
+                {% csrf_token %}
+                <input type="hidden" name="origem" value="fornecedor">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja remover esta associação entre peça e fornecedor?" %}</p>
+                    <p class="text-danger">{% trans "Esta ação não pode ser desfeita." %}</p>
+                    <div id="infoExclusao">
+                        <p><strong>{% trans "Peça:" %}</strong> <span id="delete_peca_nome"></span></p>
+                        <p><strong>{% trans "Referência:" %}</strong> <span id="delete_referencia_fornecedor"></span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Editar associação peça-fornecedor
+    document.querySelectorAll('.edit-peca-fornecedor').forEach(button => {
+        button.addEventListener('click', function() {
+            const fornecedorPecaId = this.getAttribute('data-fornecedor-peca-id');
+            const formAction = "{% url 'stock:editar_fornecedor_peca' 0 %}".replace('0', fornecedorPecaId);
+            document.getElementById('formEditarPeca').action = formAction;
+            
+            // Carregar dados via AJAX
+            fetch(`/stock/fornecedor-peca/${fornecedorPecaId}/api/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_peca_nome').value = data.peca_codigo + ' - ' + data.peca_nome;
+                    document.getElementById('edit_referencia_fornecedor').value = data.referencia_fornecedor;
+                    document.getElementById('edit_preco_unitario').value = data.preco_unitario;
+                    document.getElementById('edit_tempo_entrega').value = data.tempo_entrega || '';
+                    document.getElementById('edit_fornecedor_preferencial').checked = data.fornecedor_preferencial;
+                    document.getElementById('edit_notas').value = data.notas || '';
+                })
+                .catch(error => console.error('Erro ao carregar dados:', error));
+        });
+    });
+    
+    // Excluir associação
+    document.querySelectorAll('.delete-peca-fornecedor').forEach(button => {
+        button.addEventListener('click', function() {
+            const fornecedorPecaId = this.getAttribute('data-fornecedor-peca-id');
+            const formAction = "{% url 'stock:excluir_fornecedor_peca' 0 %}".replace('0', fornecedorPecaId);
+            document.getElementById('formExcluirAssociacao').action = formAction;
+            
+            // Carregar dados via AJAX
+            fetch(`/stock/fornecedor-peca/${fornecedorPecaId}/api/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('delete_peca_nome').textContent = data.peca_codigo + ' - ' + data.peca_nome;
+                    document.getElementById('delete_referencia_fornecedor').textContent = data.referencia_fornecedor;
+                })
+                .catch(error => console.error('Erro ao carregar dados:', error));
+        });
+    });
+});
+</script>
+{% endblock %}

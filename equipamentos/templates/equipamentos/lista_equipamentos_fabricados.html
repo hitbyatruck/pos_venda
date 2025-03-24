@@ -1,15 +1,17 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+
 {% block content %}
 <div class="container">
-    <h2>Lista de Equipamentos Fabricados</h2>
-    <a href="{% url 'adicionar_equipamento_fabricado' %}" class="btn btn-primary mb-3">Adicionar Novo Equipamento</a>
-    <table class="table table-striped">
+    <h2>Equipamentos Fabricados</h2>
+    <a href="{% url 'adicionar_equipamento_fabricado' %}" class="btn btn-primary mb-3">Adicionar Equipamento</a>
+
+    <table class="table">
         <thead>
             <tr>
-                <th><a href="?ordenar_por=nome&direcao={{ direcao }}">Nome</a></th>
-                <th><a href="?ordenar_por=referencia_interna&direcao={{ direcao }}">Referência</a></th>
-                <th><a href="?ordenar_por=categoria__nome&direcao={{ direcao }}">Categoria</a></th>
+                <th>Nome</th>
+                <th>Referência</th>
+                <th>Categoria</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -22,9 +24,10 @@
                 <td>
                     <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-info btn-sm">Detalhes</a>
                     <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-danger btn-sm confirm-delete"
-                            data-id="{{ equipamento.id }}"
-                            data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+                    <button 
+                        class="btn btn-danger btn-sm confirm-delete" 
+                        data-id="{{ equipamento.id }}"
+                        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
                         Excluir
                     </button>
                 </td>
@@ -34,42 +37,46 @@
     </table>
 </div>
 
-<!-- Modal de Confirmação Inicial -->
+<!-- Modal de Confirmação -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirmar Exclusão</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body">
-        Tem a certeza que deseja excluir este equipamento?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="confirmModalBtn" class="btn btn-primary">Confirmar</button>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja excluir este equipamento?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmModalBtn">Confirmar</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
-<!-- Modal de Aviso Extra (para equipamentos associados) -->
+<!-- Modal de Aviso -->
 <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="warningModalLabel">Aviso</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" id="warningModalBody">
-        <!-- A mensagem será inserida aqui dinamicamente -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="warningModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warningModalLabel">Atenção: Exclusão Irreversível</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="warningModalBody">
+                <!-- Mensagem dinâmica será inserida aqui -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="warningModalBtn">Confirmar Exclusão Irreversível</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-<script src="{% static 'js/scripts.js' %}"></script>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'equipamentos/js/equipamentos_scripts.js' %}"></script>
 {% endblock %}

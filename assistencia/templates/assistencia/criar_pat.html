@@ -1,59 +1,83 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Criar PAT{% endblock %}
+{% block title %}Nova PAT{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Criar Pedido de Assistência Técnica (PAT)</h2>
-    <form method="post">
+    <h2>Criar Pedido de Assistência Técnica (PAT)</h2>
+    
+    <form method="post" id="patForm">
         {% csrf_token %}
-
-        <!-- Linha 1: Cliente e Número da PAT -->
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.cliente.id_for_label }}">Cliente</label>
-                {{ form.cliente }}
+        
+        <!-- Include formset management form -->
+        {{ formset.management_form }}
+        
+        <!-- PAT Details Section -->
+        <div class="row mb-4">
+            <!-- Left Column -->
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        Informações da PAT
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.pat_number.id_for_label }}" class="form-label">Número da PAT</label>
+                            {{ form.pat_number }}
+                            {% if form.pat_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pat_number.errors|striptags }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Número único que identifica este pedido de assistência.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.cliente.id_for_label }}" class="form-label">Cliente</label>
+                            {{ form.cliente }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.equipamento.id_for_label }}" class="form-label">Equipamento</label>
+                            {{ form.equipamento }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.data_entrada.id_for_label }}" class="form-label">Data de Entrada</label>
+                            {{ form.data_entrada }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
+                            {{ form.estado }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.garantia }}
+                            <label for="{{ form.garantia.id_for_label }}" class="form-check-label">Em Garantia</label>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.pat_number.id_for_label }}">Número da PAT</label>
-                {{ form.pat_number }}
-            </div>
-        </div>
-
-        <!-- Linha 2: Datas e Estado -->
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.data_entrada.id_for_label }}">Data de Entrada</label>
-                {{ form.data_entrada }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.estado.id_for_label }}">Estado da PAT</label>
-                {{ form.estado }}
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="{{ form.data_reparacao.id_for_label }}">Data de Reparação</label>
-                {{ form.data_reparacao }}
-            </div>
-        </div>
-
-        <!-- Linha 3: Equipamento e Garantia -->
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="{{ form.equipamento.id_for_label }}">Equipamento</label>
-                {{ form.equipamento }}
-            </div>
-            <div class="col-md-6 mb-3 d-flex align-items-center">
-                <div class="form-check">
-                    {{ form.garantia }}
-                    <label class="form-check-label ms-2" for="{{ form.garantia.id_for_label }}">Em Garantia</label>
+            
+            <!-- Right Column -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Detalhes Adicionais
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.relatorio.id_for_label }}" class="form-label">Relatório</label>
+                            {{ form.relatorio }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.data_reparacao.id_for_label }}" class="form-label">Data de Reparação</label>
+                            {{ form.data_reparacao }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Seção Itens -->
-        <h4 class="mt-4">Itens (Serviços e Componentes)</h4>
-        {{ formset.management_form }}
+        
+        <!-- Items Table -->
+        <h4>Itens</h4>
         <table class="table table-bordered" id="itensTable">
             <thead>
                 <tr>
@@ -67,255 +91,121 @@
                 </tr>
             </thead>
             <tbody>
-              {% for form in formset %}
-                  <tr class="item-row">
-                      {% for hidden in form.hidden_fields %}
-                          {{ hidden }}
-                      {% endfor %}
-                      <td>{{ form.tipo }}</td>
-                      <td>{{ form.referencia }}</td>
-                      <td>{{ form.designacao }}</td>
-                      <td>{{ form.quantidade }}</td>
-                      <td>
-                          <div class="input-group">
-                              <span class="input-group-text">€</span>
-                              {{ form.preco }}
-                          </div>
-                      </td>
-                      <td class="row-total">0.00</td>
-                      <td class="text-center">
-                          <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                      </td>
-                  </tr>
-              {% endfor %}
-              {# Linha de template oculta para novos itens – mantenha esta linha inalterada #}
-              <tr class="item-row template-row" style="display: none;">
-                  <td>{{ formset.empty_form.tipo }}</td>
-                  <td>{{ formset.empty_form.referencia }}</td>
-                  <td>{{ formset.empty_form.designacao }}</td>
-                  <td>{{ formset.empty_form.quantidade }}</td>
-                  <td>
-                      <div class="input-group">
-                          <span class="input-group-text">€</span>
-                          {{ formset.empty_form.preco }}
-                      </div>
-                  </td>
-                  <td class="row-total">0.00</td>
-                  <td class="text-center">
-                      <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                  </td>
-              </tr>
-              <tr id="grandTotalRow">
-                <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
-                <td class="text-end" id="grandTotalValue">0.00</td>
-                <td></td>
-              </tr>
-          </tbody>
+                <!-- New Items -->
+                {% for form in formset %}
+                    <tr class="item-row">
+                        <td>
+                            <div class="form-group">
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.tipo.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                {{ form.referencia }}
+                                {% if form.referencia.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.referencia.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                {{ form.designacao }}
+                                {% if form.designacao.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.designacao.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="1">
+                                {% if form.quantidade.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.quantidade.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="0.00">
+                                {% if form.preco.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.preco.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="row-total">0.00</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                
+                <!-- Template row for new items -->
+                <tr class="item-row template-row" style="display: none;">
+                    {% with form=formset.empty_form %}
+                        <td>
+                            <div class="form-group">
+                                {{ form.tipo }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                {{ form.referencia }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                {{ form.designacao }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="1">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group">
+                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="0.00">
+                            </div>
+                        </td>
+                        <td class="row-total">0.00</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+                        </td>
+                    {% endwith %}
+                </tr>
+                
+                <!-- Grand Total Row -->
+                <tr id="grandTotalRow">
+                    <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
+                    <td class="text-end" id="grandTotalValue">0.00</td>
+                    <td></td>
+                </tr>
+            </tbody>
         </table>
 
         <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
 
-        <!-- Campo para Relatório -->
-        <div class="mb-4">
-            <label for="{{ form.relatorio.id_for_label }}">Relatório</label>
-            {{ form.relatorio }}
-        </div>
-
         <!-- Botões de Ação -->
         <div class="mb-4">
             <button type="submit" class="btn btn-primary">Criar PAT</button>
-            <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">Voltar</a>
+            <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </form>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    console.log("Extra JS carregado em criar_pat.html");
-
-    /* --- Mantendo o código dos dropdowns inalterado --- */
-    let clienteSelect = document.getElementById("id_cliente");
-    let equipamentoSelect = document.getElementById("id_equipamento");
-
-    if (!clienteSelect || !equipamentoSelect) {
-        console.error("Os elementos Cliente ou Equipamento não foram encontrados!");
-        return;
-    }
-
-    // Função para adicionar a opção "Adicionar Novo Cliente" no dropdown Cliente
-    function adicionarOpcaoNovoCliente() {
-        let existeOpcao = [...clienteSelect.options].some(opt => opt.value === "adicionar");
-        if (!existeOpcao) {
-            let addClienteOpt = document.createElement("option");
-            addClienteOpt.value = "adicionar";
-            addClienteOpt.text = "Adicionar Novo Cliente";
-            clienteSelect.insertBefore(addClienteOpt, clienteSelect.firstChild);
-        }
-    }
-    adicionarOpcaoNovoCliente();
-
-    // Inicializa o dropdown Equipamento vazio
-    equipamentoSelect.innerHTML = "";
-    let defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.text = "Selecione um Cliente Primeiro";
-    equipamentoSelect.appendChild(defaultOption);
-
-    function updateEquipamentoDropdown(clienteId) {
-        console.log("updateEquipamentoDropdown chamado com clienteId:", clienteId);
-        if (!clienteId || clienteId.trim() === "" || clienteId === "adicionar") {
-            equipamentoSelect.innerHTML = "";
-            let opt = document.createElement("option");
-            opt.value = "";
-            opt.text = "Selecione um Cliente Primeiro";
-            equipamentoSelect.appendChild(opt);
-            console.log("Cliente inválido. Placeholder definido.");
-            return;
-        }
-        fetch("{% url 'equipamentos_por_cliente' %}?cliente_id=" + clienteId)
-            .then(response => response.json())
-            .then(data => {
-                console.log("Dados recebidos:", data);
-                equipamentoSelect.innerHTML = "";
-                let placeholderOpt = document.createElement("option");
-                placeholderOpt.value = "";
-                placeholderOpt.text = "----------";
-                equipamentoSelect.appendChild(placeholderOpt);
-                let addOption = document.createElement("option");
-                addOption.value = "adicionar";
-                addOption.text = "Adicionar Equipamento ao Cliente";
-                equipamentoSelect.appendChild(addOption);
-                if (data.equipamentos && data.equipamentos.length > 0) {
-                    data.equipamentos.forEach(eq => {
-                        let option = document.createElement("option");
-                        option.value = eq.id;
-                        option.text = eq.nome + (eq.numero_serie ? " (" + eq.numero_serie + ")" : "");
-                        equipamentoSelect.appendChild(option);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error("Erro ao obter equipamentos:", error);
-            });
-    }
-
-    if (clienteSelect) {
-        clienteSelect.addEventListener("change", function() {
-            console.log("Cliente selecionado:", this.value);
-            if (this.value === "adicionar") {
-                let url = "{% url 'adicionar_cliente' %}";
-                window.open(url, "_blank");
-                this.selectedIndex = 0;
-            } else {
-                updateEquipamentoDropdown(this.value);
-            }
-        });
-    }
-
-    if (equipamentoSelect) {
-        equipamentoSelect.addEventListener("change", function() {
-            console.log("Dropdown Equipamento alterado. Novo valor:", this.value);
-            if (this.value === "adicionar") {
-                if (!clienteSelect.value || clienteSelect.value === "adicionar" || clienteSelect.value.trim() === "") {
-                    alert("Selecione um Cliente Primeiro.");
-                    this.selectedIndex = 0;
-                } else {
-                    let url = "/clientes/cliente/adicionar_equipamento/" + clienteSelect.value;
-                    window.open(url, "_blank");
-                    this.selectedIndex = 0;
-                }
-            }
-        });
-    }
-
-    if (clienteSelect && clienteSelect.value && clienteSelect.value !== "adicionar") {
-        console.log("Cliente já selecionado:", clienteSelect.value, "- Atualizando dropdown de equipamento.");
-        updateEquipamentoDropdown(clienteSelect.value);
-    }
-
-    /* --- Fim do código dos dropdowns --- */
-
-    /* --- Função para o botão "Adicionar Item" --- */
-    let addItemBtn = document.getElementById("addItemBtn");
-    let totalFormsInput = document.getElementById("id_itens-TOTAL_FORMS");
-    let tbody = document.querySelector("#itensTable tbody");
-    let grandTotalRow = document.getElementById("grandTotalRow");
-    let templateRow = tbody.querySelector("tr.template-row");
-
-    function updateTotalForms() {
-        let totalRows = tbody.querySelectorAll("tr.item-row:not(.template-row)").length;
-        totalFormsInput.value = totalRows;
-    }
-
-    function calculateRowTotal(row) {
-        let quantidade = parseFloat(row.querySelector("input[name$='-quantidade']").value) || 0;
-        let preco = parseFloat(row.querySelector("input[name$='-preco']").value) || 0;
-        let total = quantidade * preco;
-        row.querySelector(".row-total").textContent = total.toFixed(2);
-        return total;
-    }
-
-    function updateGrandTotal() {
-        let total = 0;
-        tbody.querySelectorAll("tr.item-row:not(.template-row)").forEach(row => {
-            total += calculateRowTotal(row);
-        });
-        document.getElementById("grandTotalValue").textContent = total.toFixed(2);
-    }
-
-    function addCalculationListeners(row) {
-        row.querySelectorAll("input").forEach(input => {
-            input.addEventListener("input", function() {
-                calculateRowTotal(row);
-                updateGrandTotal();
-            });
-        });
-    }
-
-    function addNewItemRow() {
-        let currentFormCount = parseInt(totalFormsInput.value);
-        let newRow = templateRow.cloneNode(true);
-        newRow.style.display = "";
-        newRow.classList.remove("template-row");
-
-        newRow.querySelectorAll("input, select").forEach(input => {
-            input.name = input.name.replace("__prefix__", currentFormCount);
-            input.id = input.id.replace("__prefix__", currentFormCount);
-            input.value = "";
-        });
-
-        tbody.insertBefore(newRow, grandTotalRow);  // Insere a nova linha ANTES do Total Geral
-        totalFormsInput.value = currentFormCount + 1;
-        addCalculationListeners(newRow);
-
-        newRow.querySelector(".item-delete").addEventListener("click", function() {
-            newRow.remove();
-            updateTotalForms();
-            updateGrandTotal();
-        });
-
-        updateTotalForms();
-        updateGrandTotal();
-    }
-
-    addItemBtn.addEventListener("click", function() {
-        addNewItemRow();
-    });
-
-    // Configura os listeners para os botões "Excluir" já existentes
-    tbody.querySelectorAll("tr.item-row:not(.template-row)").forEach(row => {
-        addCalculationListeners(row);
-        row.querySelector(".item-delete").addEventListener("click", function() {
-            row.remove();
-            updateTotalForms();
-            updateGrandTotal();
-        });
-    });
-
-    updateTotalForms();
-    updateGrandTotal();
-});
-</script>
+{% block scripts %}
+    <script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
 {% endblock %}

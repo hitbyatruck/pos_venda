@@ -1,135 +1,205 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}Lista de PAT's{% endblock %}
 
 {% block content %}
 <div class="container">
-  <h2>Lista de Pedidos de Assistência Técnica (PAT's) Globais</h2>
+  <h2>Lista de Pedidos de Assistência Técnica (PAT's)</h2>
   <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary mb-3">Criar Novo PAT</a>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>
-          <a href="?ordenar_por=pat_number&direcao={{ direcao }}">
-            Número da PAT
-          </a>
-        </th>
-        <th>
-          <a href="?ordenar_por=cliente__nome&direcao={{ direcao }}">
-            Cliente
-          </a>
-        </th>
-        <th>
-          <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}">
-            Equipamento
-          </a>
-        </th>
-        <th>
-          <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">
-            Data de Reparação
-          </a>
-        </th>
-        <th>
-          <a href="?ordenar_por=estado&direcao={{ direcao }}">
-            Estado
-          </a>
-        </th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pat in pats %}
-      <tr id="pat-row-{{ pat.id }}">
-        <td>{{ pat.pat_number }}</td>
-        <td>{{ pat.cliente.nome }}</td>
-        <td>
-          {{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})
-        </td>
-        <td>
-          {% if pat.data_reparacao %}
-            {{ pat.data_reparacao|date:"d/m/Y" }}
-          {% else %}
-            N/A
-          {% endif %}
-        </td>
-        <td>
-          {% if pat.estado == 'aberto' %}
-            <span class="badge bg-danger">Aberto</span>
-          {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
-            <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
-          {% elif pat.estado == 'concluido' %}
-            <span class="badge bg-success">Concluído</span>
-          {% elif pat.estado == 'cancelado' %}
-            <span class="badge bg-danger text-white">Cancelado</span>
-          {% else %}
-            {{ pat.get_estado_display }}
-          {% endif %}
-        </td>
-        <td>
-          <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
-          <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
-          <button class="btn btn-danger btn-sm pat-delete" 
-                  data-id="{{ pat.id }}"
-                  data-url="{% url 'assistencia:excluir_pat' pat.id %}">
-            Excluir
-          </button>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="6" class="text-center">Nenhum PAT encontrado.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Abas para separar PATs por Estado -->
+  <ul class="nav nav-tabs" id="patTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" id="abertos-tab" data-bs-toggle="tab" data-bs-target="#abertos" type="button" role="tab">
+        Abertos
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="concluidos-tab" data-bs-toggle="tab" data-bs-target="#concluidos" type="button" role="tab">
+        Concluídos
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="cancelados-tab" data-bs-toggle="tab" data-bs-target="#cancelados" type="button" role="tab">
+        Cancelados
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content mt-3" id="patTabContent">
+    <!-- Aba Abertos -->
+    <div class="tab-pane fade show active" id="abertos" role="tabpanel">
+      <h4>PATs Abertos</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>
+              <a href="?ordenar_por=pat_number&direcao={{ direcao }}">Número da PAT</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=cliente&direcao={{ direcao }}">Cliente</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=equipamento&direcao={{ direcao }}">Equipamento</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=data_entrada&direcao={{ direcao }}">Data de Entrada</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=estado&direcao={{ direcao }}">Estado</a>
+            </th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pat in pats_abertos %}
+          <tr id="pat-row-{{ pat.id }}">
+            <td>{{ pat.pat_number }}</td>
+            <td>{{ pat.cliente.nome }}</td>
+            <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
+            <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
+            <td>
+              {% if pat.estado == 'aberto' %}
+                <span class="badge bg-danger">Aberto</span>
+              {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
+                <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
+              {% else %}
+                {{ pat.get_estado_display }}
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+              <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+              <button class="btn btn-danger btn-sm pat-delete" data-id="{{ pat.id }}" data-url="{% url 'assistencia:excluir_pat' pat.id %}">Excluir</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center">Nenhuma PAT em aberto.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Aba Concluídos -->
+    <div class="tab-pane fade" id="concluidos" role="tabpanel">
+      <h4>PATs Concluídos</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>
+              <a href="?ordenar_por=pat_number&direcao={{ direcao }}">Número da PAT</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=cliente&direcao={{ direcao }}">Cliente</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=equipamento&direcao={{ direcao }}">Equipamento</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=data_entrada&direcao={{ direcao }}">Data de Entrada</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">Data de Reparação</a>
+            </th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pat in pats_concluidos %}
+          <tr id="pat-row-{{ pat.id }}">
+            <td>{{ pat.pat_number }}</td>
+            <td>{{ pat.cliente.nome }}</td>
+            <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
+            <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
+            <td>{{ pat.data_reparacao|date:"d/m/Y" }}</td>
+            <td>
+              <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+              <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+              <button class="btn btn-danger btn-sm pat-delete" data-id="{{ pat.id }}" data-url="{% url 'assistencia:excluir_pat' pat.id %}">Excluir</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center">Nenhuma PAT concluída.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Aba Cancelados -->
+    <div class="tab-pane fade" id="cancelados" role="tabpanel">
+      <h4>PATs Cancelados</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>
+              <a href="?ordenar_por=pat_number&direcao={{ direcao }}">Número da PAT</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=cliente&direcao={{ direcao }}">Cliente</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=equipamento&direcao={{ direcao }}">Equipamento</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=data_entrada&direcao={{ direcao }}">Data de Entrada</a>
+            </th>
+            <th>
+              <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">Data de Reparação</a>
+            </th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pat in pats_cancelados %}
+          <tr id="pat-row-{{ pat.id }}">
+            <td>{{ pat.pat_number }}</td>
+            <td>{{ pat.cliente.nome }}</td>
+            <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
+            <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
+            <td>{{ pat.data_reparacao|date:"d/m/Y" }}</td>
+            <td>
+              <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
+              <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
+              <button class="btn btn-danger btn-sm pat-delete" data-id="{{ pat.id }}" data-url="{% url 'assistencia:excluir_pat' pat.id %}">Excluir</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center">Nenhuma PAT cancelada.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
+<!-- Modal de Confirmação para Exclusão de PAT -->
+<div class="modal fade" id="patConfirmModal" tabindex="-1" aria-labelledby="patConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patConfirmModalLabel">Confirmar Exclusão da PAT</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        Tem certeza que deseja excluir esta PAT?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="patConfirmModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Função para obter o CSRF Token dos cookies
-    function getCSRFToken() {
-        let cookieValue = null;
-        let cookies = document.cookie.split(";");
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.startsWith("csrftoken=")) {
-                cookieValue = cookie.substring("csrftoken=".length);
-                break;
-            }
-        }
-        return cookieValue;
-    }
-
-    // Configura o evento de clique para os botões "Excluir" das PAT's
-    document.querySelectorAll(".pat-delete").forEach(function(button) {
-        button.addEventListener("click", function() {
-            if (!confirm("Tem certeza que deseja excluir esta PAT?")) {
-                return;
-            }
-            let patId = this.getAttribute("data-id");
-            let url = this.getAttribute("data-url");
-            fetch(url, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCSRFToken(),
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById("pat-row-" + patId).remove();
-                } else {
-                    alert(data.message || "Erro ao excluir a PAT.");
-                }
-            })
-            .catch(error => {
-                console.error("Erro:", error);
-            });
-        });
-    });
-});
-</script>
+{% block scripts %}
+<script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Detalhes da Movimentação" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Detalhes da Movimentação de Stock" %}</h6>
+            <div>
+                <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "Voltar à Lista" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold">{% trans "Informações da Movimentação" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Tipo:" %}</div>
+                                <div class="col-md-8">
+                                    {% if movimentacao.tipo == 'entrada' %}
+                                        <span class="badge bg-success text-white">{% trans "Entrada" %}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger text-white">{% trans "Saída" %}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Data:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.data_movimentacao|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Quantidade:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.quantidade }} {{ movimentacao.peca.unidade }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Motivo:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.get_motivo_display }}</div>
+                            </div>
+                            {% if movimentacao.num_fatura %}
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Fatura/Doc:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.num_fatura }}</div>
+                            </div>
+                            {% endif %}
+                            {% if movimentacao.preco_unitario %}
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Preço Unitário:" %}</div>
+                                <div class="col-md-8">€ {{ movimentacao.preco_unitario }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Valor Total:" %}</div>
+                                <div class="col-md-8">€ {{ movimentacao.preco_unitario|floatformat:2|multiply:movimentacao.quantidade }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Registado por:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.utilizador.get_full_name|default:movimentacao.utilizador.username }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold">{% trans "Detalhes da Peça" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Código:" %}</div>
+                                <div class="col-md-8">
+                                    <a href="{% url 'stock:detalhes_peca' peca_id=movimentacao.peca.id %}">
+                                        {{ movimentacao.peca.codigo }}
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Nome:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.peca.nome }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Categoria:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.peca.categoria.nome|default:"-" }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Stock Atual:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.peca.stock_atual }} {{ movimentacao.peca.unidade }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if movimentacao.fornecedor %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold">{% trans "Fornecedor" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Nome:" %}</div>
+                                <div class="col-md-8">
+                                    <a href="{% url 'stock:detalhes_fornecedor' fornecedor_id=movimentacao.fornecedor.id %}">
+                                        {{ movimentacao.fornecedor.nome }}
+                                    </a>
+                                </div>
+                            </div>
+                            {% if movimentacao.fornecedor.contacto %}
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Contacto:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.fornecedor.contacto }}</div>
+                            </div>
+                            {% endif %}
+                            {% if movimentacao.fornecedor_peca %}
+                            <div class="row mb-2">
+                                <div class="col-md-4 font-weight-bold">{% trans "Ref. Fornecedor:" %}</div>
+                                <div class="col-md-8">{{ movimentacao.fornecedor_peca.referencia_fornecedor }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if movimentacao.observacao %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">{% trans "Observações" %}</h6>
+                </div>
+                <div class="card-body">
+                    {{ movimentacao.observacao|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Histórico de movimentações desta peça -->
+            {% if historico %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold">{% trans "Histórico de Movimentações desta Peça" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Tipo" %}</th>
+                                    <th>{% trans "Quantidade" %}</th>
+                                    <th>{% trans "Motivo" %}</th>
+                                    <th>{% trans "Observação" %}</th>
+                                    <th>{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in historico %}
+                                <tr>
+                                    <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if mov.tipo == 'entrada' %}
+                                            <span class="badge bg-success text-white">{% trans "Entrada" %}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger text-white">{% trans "Saída" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ mov.quantidade }} {{ mov.peca.unidade }}</td>
+                                    <td>{{ mov.get_motivo_display }}</td>
+                                    <td>{{ mov.observacao|truncatechars:50 }}</td>
+                                    <td>
+                                        <a href="{% url 'stock:detalhes_movimentacao' movimentacao_id=mov.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

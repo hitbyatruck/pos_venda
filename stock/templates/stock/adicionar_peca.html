@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Peça" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0 text-gray-800">
+            <i class="fas fa-microchip me-2 text-primary"></i>{% trans "Adicionar Nova Peça" %}
+        </h1>
+    </div>
+    
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:listar_pecas' %}">{% trans "Peças" %}</a></li>
+            <li class="breadcrumb-item active">{% trans "Adicionar" %}</li>
+        </ol>
+    </nav>
+    
+    {% include 'stock/includes/menu_stock.html' %}
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Preencha os dados da peça" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ field.label }}: {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.codigo.id_for_label }}">
+                                {% trans "Código" %}:
+                            </label>
+                            {{ form.codigo }}
+                            {% if form.codigo.help_text %}
+                                <small class="form-text text-muted">{{ form.codigo.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.nome.id_for_label }}">
+                                {% trans "Nome" %}:
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.help_text %}
+                                <small class="form-text text-muted">{{ form.nome.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.categoria.id_for_label }}">
+                                {% trans "Categoria" %}:
+                            </label>
+                            {{ form.categoria }}
+                            {% if form.categoria.help_text %}
+                                <small class="form-text text-muted">{{ form.categoria.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.unidade.id_for_label }}">
+                                {% trans "Unidade" %}:
+                            </label>
+                            {{ form.unidade }}
+                            {% if form.unidade.help_text %}
+                                <small class="form-text text-muted">{{ form.unidade.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.stock_atual.id_for_label }}">
+                                {% trans "Stock Atual" %}:
+                            </label>
+                            {{ form.stock_atual }}
+                            {% if form.stock_atual.help_text %}
+                                <small class="form-text text-muted">{{ form.stock_atual.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.stock_minimo.id_for_label }}">
+                                {% trans "Stock Mínimo" %}:
+                            </label>
+                            {{ form.stock_minimo }}
+                            {% if form.stock_minimo.help_text %}
+                                <small class="form-text text-muted">{{ form.stock_minimo.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.stock_ideal.id_for_label }}">
+                                {% trans "Stock Ideal" %}:
+                            </label>
+                            {{ form.stock_ideal }}
+                            {% if form.stock_ideal.help_text %}
+                                <small class="form-text text-muted">{{ form.stock_ideal.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.preco_custo.id_for_label }}">
+                                {% trans "Preço de Custo" %}:
+                            </label>
+                            {{ form.preco_custo }}
+                            {% if form.preco_custo.help_text %}
+                                <small class="form-text text-muted">{{ form.preco_custo.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.preco_venda.id_for_label }}">
+                                {% trans "Preço de Venda" %}:
+                            </label>
+                            {{ form.preco_venda }}
+                            {% if form.preco_venda.help_text %}
+                                <small class="form-text text-muted">{{ form.preco_venda.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ form.localizacao.id_for_label }}">
+                                {% trans "Localização" %}:
+                            </label>
+                            {{ form.localizacao }}
+                            {% if form.localizacao.help_text %}
+                                <small class="form-text text-muted">{{ form.localizacao.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ form.descricao.id_for_label }}">
+                                {% trans "Descrição" %}:
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.help_text %}
+                                <small class="form-text text-muted">{{ form.descricao.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ form.notas.id_for_label }}">
+                                {% trans "Notas" %}:
+                            </label>
+                            {{ form.notas }}
+                            {% if form.notas.help_text %}
+                                <small class="form-text text-muted">{{ form.notas.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> {% trans "Salvar Peça" %}
+                        </button>
+                        <a href="{% url 'stock:listar_pecas' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

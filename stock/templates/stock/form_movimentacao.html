@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">{% trans "Início" %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'stock:listar_movimentacoes' %}">{% trans "Movimentações" %}</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+</nav>
+
+{% include 'stock/includes/menu_stock.html' %}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ titulo }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% trans "Por favor, corrija os erros abaixo." %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.peca.id_for_label }}" class="form-label">
+                                {{ form.peca.label }}{% if form.peca.field.required %} *{% endif %}
+                            </label>
+                            {{ form.peca }}
+                            {% if form.peca.errors %}
+                            <div class="text-danger">{{ form.peca.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.quantidade.id_for_label }}" class="form-label">
+                                {{ form.quantidade.label }}{% if form.quantidade.field.required %} *{% endif %}
+                            </label>
+                            {{ form.quantidade }}
+                            {% if form.quantidade.errors %}
+                            <div class="text-danger">{{ form.quantidade.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.motivo.id_for_label }}" class="form-label">
+                                {{ form.motivo.label }}{% if form.motivo.field.required %} *{% endif %}
+                            </label>
+                            {{ form.motivo }}
+                            {% if form.motivo.errors %}
+                            <div class="text-danger">{{ form.motivo.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.fornecedor %}
+                        <div class="mb-3">
+                            <label for="{{ form.fornecedor.id_for_label }}" class="form-label">
+                                {{ form.fornecedor.label }}
+                            </label>
+                            {{ form.fornecedor }}
+                            {% if form.fornecedor.errors %}
+                            <div class="text-danger">{{ form.fornecedor.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.num_fatura %}
+                        <div class="mb-3">
+                            <label for="{{ form.num_fatura.id_for_label }}" class="form-label">
+                                {{ form.num_fatura.label }}
+                            </label>
+                            {{ form.num_fatura }}
+                            {% if form.num_fatura.errors %}
+                            <div class="text-danger">{{ form.num_fatura.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.preco_unitario %}
+                        <div class="mb-3">
+                            <label for="{{ form.preco_unitario.id_for_label }}" class="form-label">
+                                {{ form.preco_unitario.label }}
+                            </label>
+                            {{ form.preco_unitario }}
+                            {% if form.preco_unitario.errors %}
+                            <div class="text-danger">{{ form.preco_unitario.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.pat %}
+                        <div class="mb-3">
+                            <label for="{{ form.pat.id_for_label }}" class="form-label">
+                                {{ form.pat.label }}
+                            </label>
+                            {{ form.pat }}
+                            {% if form.pat.errors %}
+                            <div class="text-danger">{{ form.pat.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.observacao.id_for_label }}" class="form-label">
+                                {{ form.observacao.label }}
+                            </label>
+                            {{ form.observacao }}
+                            {% if form.observacao.errors %}
+                            <div class="text-danger">{{ form.observacao.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {% trans "Guardar" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar classes Bootstrap aos campos do formulário
+        const formFields = document.querySelectorAll('input, select, textarea');
+        formFields.forEach(field => {
+            if (field.tagName === 'SELECT') {
+                field.classList.add('form-select');
+            } else if (field.type === 'file') {
+                field.classList.add('form-control');
+            } else {
+                field.classList.add('form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}

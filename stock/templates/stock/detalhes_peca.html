@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ peca.nome }}</h1>
+        <div>
+            <a href="{% url 'stock:listar_pecas' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar para a lista" %}
+            </a>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:listar_pecas' %}">{% trans "Peças" %}</a></li>
+            <li class="breadcrumb-item active">{{ peca.codigo }} - {{ peca.nome }}</li>
+        </ol>
+    </nav>
+    
+    {% include 'stock/includes/menu_stock.html' %}
+
+    <div class="row">
+        <!-- Informações básicas da peça -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Detalhes da Peça" %}</h6>
+                    <div>
+                        <a href="{% url 'stock:editar_peca' peca.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+                        </a>
+                        <a href="{% url 'stock:excluir_peca' peca.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>{% trans "Código:" %}</th>
+                                    <td><strong>{{ peca.codigo }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Categoria:" %}</th>
+                                    <td>{{ peca.categoria.nome|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Localização:" %}</th>
+                                    <td>{{ peca.localizacao|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Preço de Custo:" %}</th>
+                                    <td>{{ peca.preco_custo }} €</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Preço de Venda:" %}</th>
+                                    <td>{{ peca.preco_venda }} €</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>{% trans "Stock Atual:" %}</th>
+                                    <td>
+                                        <span class="badge bg-{{ peca.get_status_class }} p-2">
+                                            {{ peca.stock_atual }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Stock Mínimo:" %}</th>
+                                    <td>{{ peca.stock_minimo }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Stock Ideal:" %}</th>
+                                    <td>{{ peca.stock_ideal }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Data de Cadastro:" %}</th>
+                                    <td>{{ peca.data_cadastro|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Última Atualização:" %}</th>
+                                    <td>{{ peca.ultima_atualizacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if peca.descricao %}
+                    <div class="mt-3">
+                        <h6 class="font-weight-bold">{% trans "Descrição:" %}</h6>
+                        <p>{{ peca.descricao|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Movimentações recentes da peça -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Últimas Movimentações" %}</h6>
+                    <div>
+                        <a href="{% url 'stock:registar_entrada' %}?peca={{ peca.id }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-plus-circle me-1"></i> {% trans "Entrada" %}
+                        </a>
+                        <a href="{% url 'stock:registar_saida' %}?peca={{ peca.id }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-minus-circle me-1"></i> {% trans "Saída" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if movimentacoes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Tipo" %}</th>
+                                    <th>{% trans "Quantidade" %}</th>
+                                    <th>{% trans "Motivo" %}</th>
+                                    <th>{% trans "Utilizador" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in movimentacoes %}
+                                <tr>
+                                    <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if mov.tipo == 'entrada' %}
+                                        <span class="badge bg-success">{% trans "Entrada" %}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{% trans "Saída" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ mov.quantidade }}</td>
+                                    <td>{{ mov.get_motivo_display }}</td>
+                                    <td>{{ mov.utilizador.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                        <p class="mb-0">{% trans "Não há movimentações registadas para esta peça." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar com informações adicionais -->
+        <div class="col-lg-4">
+            <!-- Imagem da peça -->
+            {% if peca.imagem %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Imagem" %}</h6>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ peca.imagem.url }}" alt="{{ peca.nome }}" class="img-fluid">
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Fornecedores -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Fornecedores" %}</h6>
+                </div>
+                <div class="card-body">
+                    {% if peca.fornecedores.all %}
+                    <ul class="list-group">
+                        {% for fornecedor in peca.fornecedores.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'stock:detalhes_fornecedor' fornecedor.id %}">
+                                {{ fornecedor.nome }}
+                            </a>
+                            <a href="{% url 'stock:adicionar_encomenda' %}?fornecedor={{ fornecedor.id }}&peca={{ peca.id }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                {% trans "Encomendar" %}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-truck fa-2x text-muted mb-3"></i>
+                        <p class="mb-0">{% trans "Não há fornecedores associados a esta peça." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Equipamentos compatíveis -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Compatível com" %}</h6>
+                </div>
+                <div class="card-body">
+                    {% if peca.compativel_com.all %}
+                    <ul class="list-group">
+                        {% for modelo in peca.compativel_com.all %}
+                        <li class="list-group-item">
+                            {{ modelo.marca.nome }} - {{ modelo.nome }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cogs fa-2x text-muted mb-3"></i>
+                        <p class="mb-0">{% trans "Não há equipamentos compatíveis definidos." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans "Fornecedores desta Peça" %}</h6>
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#adicionarFornecedorModal">
+            <i class="fas fa-plus"></i> {% trans "Adicionar Fornecedor" %}
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "Fornecedor" %}</th>
+                        <th>{% trans "Referência" %}</th>
+                        <th>{% trans "Preço" %}</th>
+                        <th>{% trans "Prazo Entrega" %}</th>
+                        <th>{% trans "Preferencial" %}</th>
+                        <th>{% trans "Ações" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fp in peca.fornecedores.all %}
+                    <tr>
+                        <td>{{ fp.fornecedor.nome }}</td>
+                        <td>{{ fp.referencia_fornecedor }}</td>
+                        <td>{{ fp.preco_unitario }}€</td>
+                        <td>{{ fp.tempo_entrega|default:"-" }} {% if fp.tempo_entrega %}dias{% endif %}</td>
+                        <td>
+                            {% if fp.fornecedor_preferencial %}
+                            <span class="badge bg-success">{% trans "Sim" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "Não" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-primary edit-fornecedor" 
+                                        data-fornecedor-peca-id="{{ fp.id }}"
+                                        data-bs-toggle="modal" data-bs-target="#editarFornecedorModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-fornecedor" 
+                                        data-fornecedor-peca-id="{{ fp.id }}"
+                                        data-bs-toggle="modal" data-bs-target="#confirmarExclusaoModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            {% trans "Nenhum fornecedor associado a esta peça." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para adicionar fornecedor à peça -->
+<div class="modal fade" id="adicionarFornecedorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'stock:adicionar_fornecedor_peca' peca.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Adicionar Fornecedor" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_fornecedor" class="form-label">{% trans "Fornecedor" %}</label>
+                        <select name="fornecedor" id="id_fornecedor" class="form-control" required>
+                            <option value="">---------</option>
+                            {% for fornecedor in fornecedores_disponiveis %}
+                            <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_referencia_fornecedor" class="form-label">{% trans "Referência do Fornecedor" %}</label>
+                        <input type="text" name="referencia_fornecedor" id="id_referencia_fornecedor" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_preco_unitario" class="form-label">{% trans "Preço Unitário (€)" %}</label>
+                        <input type="number" name="preco_unitario" id="id_preco_unitario" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_tempo_entrega" class="form-label">{% trans "Tempo de Entrega (dias)" %}</label>
+                        <input type="number" name="tempo_entrega" id="id_tempo_entrega" class="form-control" min="1">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="id_fornecedor_preferencial" name="fornecedor_preferencial">
+                        <label class="form-check-label" for="id_fornecedor_preferencial">
+                            {% trans "Definir como fornecedor preferencial" %}
+                        </label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_notas" class="form-label">{% trans "Notas" %}</label>
+                        <textarea name="notas" id="id_notas" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% if fornecedor %}
+        {% trans "Editar Fornecedor" %}
+    {% else %}
+        {% trans "Adicionar Fornecedor" %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:listar_fornecedores' %}">{% trans "Fornecedores" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if fornecedor %}
+                    {% trans "Editar" %}
+                {% else %}
+                    {% trans "Adicionar" %}
+                {% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Título e botões de ação -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            {% if fornecedor %}
+                {% trans "Editar Fornecedor" %}: {{ fornecedor.nome }}
+            {% else %}
+                {% trans "Adicionar Fornecedor" %}
+            {% endif %}
+        </h2>
+    </div>
+
+    <!-- Formulário -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- Informações Básicas -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">{% trans "Nome" %} *</label>
+                        {{ form.nome }}
+                        {% if form.nome.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nome.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.contacto.id_for_label }}" class="form-label">{% trans "Contacto" %}</label>
+                        {{ form.contacto }}
+                        {% if form.contacto.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.contacto.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Contato -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.telefone.id_for_label }}" class="form-label">{% trans "Telefone" %}</label>
+                        {{ form.telefone }}
+                        {% if form.telefone.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.telefone.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">{% trans "Email" %}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.website.id_for_label }}" class="form-label">{% trans "Website" %}</label>
+                    {{ form.website }}
+                    {% if form.website.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.website.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.notas.id_for_label }}" class="form-label">{% trans "Notas" %}</label>
+                    {{ form.notas }}
+                    {% if form.notas.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.notas.errors }}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">{% trans "Informações adicionais sobre o fornecedor" %}</div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        {% if fornecedor %}
+                            {% trans "Atualizar Fornecedor" %}
+                        {% else %}
+                            {% trans "Adicionar Fornecedor" %}
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'stock:listar_fornecedores' %}" class="btn btn-secondary">{% trans "Cancelar" %}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilizar os elementos do formulário */
+    form input, form textarea, form select {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    form textarea {
+        min-height: 100px;
+    }
+    
+    form input:focus, form textarea:focus, form select:focus {
+        color: #212529;
+        background-color: #fff;
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}

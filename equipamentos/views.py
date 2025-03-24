@@ -1,11 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
 from clientes.models import EquipamentoCliente
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
+from core.utils import group_required
 
 def listar_equipamentos_fabricados(request):
     ordenar_por = request.GET.get("ordenar_por", "nome")
@@ -22,6 +24,8 @@ def listar_equipamentos_fabricados(request):
         "direcao": nova_direcao,
     })
 
+@login_required
+@group_required(['Administradores', 'Técnicos'])
 def adicionar_equipamento_fabricado(request):
     if request.method == 'POST':
         form = EquipamentoFabricadoForm(request.POST, request.FILES)
@@ -39,6 +43,8 @@ def detalhes_equipamento(request, equipamento_id):
     documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
     return render(request, 'equipamentos/detalhes_equipamento.html', {'equipamento': equipamento, 'documentos': documentos})
 
+@login_required
+@group_required(['Administradores', 'Técnicos'])
 def editar_equipamento_fabricado(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, pk=equipamento_id)
     documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
@@ -57,32 +63,33 @@ def editar_equipamento_fabricado(request, equipamento_id):
         'equipamento': equipamento,
     })
 
-@require_POST
-@csrf_exempt
-def excluir_equipamento_fabricado(request, equipamento_id):
-    equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-    force = request.POST.get("force", "false").lower() == "true"
-    associations_exist = EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).exists()
-    print(f"DEBUG: Equipamento {equipamento_id} associations_exist: {associations_exist}")
-    if associations_exist and not force:
-        return JsonResponse({
-            "success": False,
-            "message": (
-                "Este equipamento está associado a um cliente. "
-                "Ao excluir, ele será removido da lista do cliente. "
-                "Confirma a exclusão?"
-            )
-        })
-    if force:
-        EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento).delete()
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+@require_http_methods(["DELETE"])
+def excluir_equipamento_fabricado(request, pk):
     try:
-        equipamento.delete()
-    except ValidationError as e:
-        return JsonResponse({"success": False, "message": str(e)})
+        equipamento = get_object_or_404(EquipamentoFabricado, pk=pk)
+        force = request.GET.get('force') == 'true'
+        
+        try:
+            equipamento.delete(force=force)
+            return JsonResponse({'status': 'success'})
+        except ValidationError as e:
+            # Get the first message without list formatting
+            message = str(e.message) if hasattr(e, 'message') else str(e.messages[0])
+            return JsonResponse({
+                'status': 'warning',
+                'message': message,
+                'requireForce': True
+            })
     except Exception as e:
-        return JsonResponse({"success": False, "message": "Erro ao excluir: " + str(e)})
-    return JsonResponse({"success": True})
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
 
+@login_required
+@group_required(['Administradores', 'Técnicos'])   
 @csrf_exempt
 def upload_documento_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
@@ -94,6 +101,8 @@ def upload_documento_equipamento(request, equipamento_id):
         return JsonResponse({'success': True, 'documento_id': documento.id, 'documento_url': documento.arquivo.url})
     return JsonResponse({'success': False})
 
+@login_required
+@group_required(['Administradores', 'Técnicos'])
 @csrf_exempt
 def excluir_documento(request, documento_id):
     documento = get_object_or_404(DocumentoEquipamento, id=documento_id)

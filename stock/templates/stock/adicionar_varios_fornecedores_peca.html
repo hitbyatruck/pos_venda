@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Vários Fornecedores" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Adicionar Vários Fornecedores para a Peça" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>{% trans "Peça" %}: {{ peca.codigo }} - {{ peca.nome }}</h5>
+                <p>{% trans "Categoria" %}: {{ peca.categoria.nome|default:"-" }}</p>
+            </div>
+            
+            {% if total_disponiveis == 0 %}
+                <div class="alert alert-info">
+                    <p>{% trans "Não existem fornecedores disponíveis para associar a esta peça. Todos os fornecedores já estão associados." %}</p>
+                </div>
+                <a href="{% url 'stock:ddetalhes_peca' peca_id=peca.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "Voltar para Detalhes da Peça" %}
+                </a>
+            {% else %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold">{% trans "Preço Unitário Padrão (€)" %}:</label>
+                        <input type="text" name="preco_padrao" class="form-control" value="0,00" placeholder="0,00">
+                        <small class="form-text text-muted">{% trans "Valor inicial padrão para todos os fornecedores selecionados. Pode ser personalizado depois para cada fornecedor." %}</small>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold">{% trans "Tempo de Entrega Padrão (dias)" %}:</label>
+                        <input type="number" name="tempo_entrega_padrao" class="form-control" value="0" min="0">
+                        <small class="form-text text-muted">{% trans "Valor inicial padrão para todos os fornecedores selecionados. Pode ser personalizado depois para cada fornecedor." %}</small>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">{% trans "Selecione os Fornecedores" %}:</label>
+                        <div class="alert alert-info">
+                            {% trans "Selecione um ou mais fornecedores da lista abaixo para associar a esta peça." %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-selecionar-todos">{% trans "Selecionar Todos" %}</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-desmarcar-todos">{% trans "Desmarcar Todos" %}</button>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                                {% for fornecedor in fornecedores_disponiveis %}
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input checkbox-fornecedor" name="fornecedores" value="{{ fornecedor.id }}" id="fornecedor_{{ fornecedor.id }}">
+                                    <label class="form-check-label" for="fornecedor_{{ fornecedor.id }}">
+                                        {{ fornecedor.nome }}
+                                        {% if fornecedor.contacto %}<br><small class="text-muted">{{ fornecedor.contacto }}</small>{% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% trans "Criar Associações" %}
+                        </button>
+                        <a href="{% url 'stock:ddetalhes_peca' peca_id=peca.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </form>
+                
+                <script>
+                    document.getElementById('btn-selecionar-todos').addEventListener('click', function() {
+                        document.querySelectorAll('.checkbox-fornecedor').forEach(function(checkbox) {
+                            checkbox.checked = true;
+                        });
+                    });
+                    
+                    document.getElementById('btn-desmarcar-todos').addEventListener('click', function() {
+                        document.querySelectorAll('.checkbox-fornecedor').forEach(function(checkbox) {
+                            checkbox.checked = false;
+                        });
+                    });
+                </script>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

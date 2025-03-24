@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Encomendas" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Título principal -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0 text-gray-800">
+            <i class="fas fa-shopping-cart me-2 text-primary"></i>{% trans "Encomendas" %}
+        </h1>
+        <div class="btn-group">
+            <a href="{% url 'stock:adicionar_encomenda' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> {% trans "Nova Encomenda" %}
+            </a>
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-filter"></i> {% trans "Filtrar" %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="?status=pendente">{% trans "Pendentes" %}</a></li>
+                <li><a class="dropdown-item" href="?status=parcial">{% trans "Parcialmente Recebidas" %}</a></li>
+                <li><a class="dropdown-item" href="?status=recebida">{% trans "Recebidas" %}</a></li>
+                <li><a class="dropdown-item" href="?status=cancelada">{% trans "Canceladas" %}</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'stock:listar_encomendas' %}">{% trans "Todas" %}</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "Início" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stock:dashboard_stock' %}">{% trans "Stock" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Encomendas" %}</li>
+        </ol>
+    </nav>
+    
+    <!-- Menu Stock - incluído da mesma forma que no dashboard -->
+    {% include 'stock/includes/menu_stock.html' %}
+
+    <!-- Filtros Ativos (se houver) -->
+    {% if request.GET.status %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {% trans "Filtro ativo:" %} 
+        <strong>{{ request.GET.status|title }}</strong>
+        <a href="{% url 'stock:listar_encomendas' %}" class="btn-close" aria-label="Close"></a>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de encomendas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Lista de Encomendas" %}</h6>
+            <span class="badge bg-primary">{% trans "Total:" %} {{ encomendas.count }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "ID" %}</th>
+                            <th>{% trans "Fornecedor" %}</th>
+                            <th>{% trans "Data" %}</th>
+                            <th>{% trans "Total" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Atualização" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for encomenda in encomendas %}
+                        <tr>
+                            <td>{{ encomenda.id }}</td>
+                            <td>{{ encomenda.fornecedor.nome }}</td>
+                            <td>{{ encomenda.data_encomenda|date:"d/m/Y" }}</td>
+                            <td>{{ encomenda.valor_total|floatformat:2 }}€</td>
+                            <td>
+                                {% if encomenda.status == 'pendente' %}
+                                <span class="badge bg-warning text-dark">{% trans "Pendente" %}</span>
+                                {% elif encomenda.status == 'parcial' %}
+                                <span class="badge bg-info">{% trans "Parcial" %}</span>
+                                {% elif encomenda.status == 'recebida' %}
+                                <span class="badge bg-success">{% trans "Recebida" %}</span>
+                                {% elif encomenda.status == 'cancelada' %}
+                                <span class="badge bg-danger">{% trans "Cancelada" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ encomenda.data_atualizacao|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'stock:detalhes_encomenda' encomenda.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> {% trans "Detalhes" %}
+                                    </a>
+                                    {% if encomenda.status != 'recebida' and encomenda.status != 'cancelada' %}
+                                    <a href="{% url 'stock:receber_encomenda' encomenda.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-download"></i> {% trans "Receber" %}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                {% trans "Nenhuma encomenda encontrada." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginação (se implementada) -->
+            {% if is_paginated %}
+            <nav aria-label="Navegação de página">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

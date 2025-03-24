@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Importar/Exportar Dados" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- IMPORTAÇÃO DE DADOS -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Importar Dados" %}</h6>
+                </div>
+                <div class="card-body">
+                    <p>{% trans "Escolha o tipo de dados a importar e o arquivo correspondente." %}</p>
+                    <p class="text-muted small">{% trans "Formatos aceites: CSV, Excel (.xlsx, .xls)" %}</p>
+                    
+                    <form method="post" enctype="multipart/form-data" class="mb-4">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="import_type">{% trans "Tipo de Dados" %}:</label>
+                            <select name="import_type" id="import_type" class="form-control" required>
+                                <option value="">{% trans "Selecione..." %}</option>
+                                <option value="pecas">{% trans "Peças" %}</option>
+                                <option value="fornecedores">{% trans "Fornecedores" %}</option>
+                                <option value="associacoes">{% trans "Associações Fornecedor-Peça" %}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="import_file">{% trans "Arquivo" %}:</label>
+                            <input type="file" name="import_file" id="import_file" class="form-control-file" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> {% trans "Importar Dados" %}
+                        </button>
+                    </form>
+                    
+                    <!-- Estrutura de dados para cada tipo de importação -->
+                    <div class="accordion" id="accordionImport">
+                        <div class="card">
+                            <div class="card-header" id="headingPecas">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapsePecas" aria-expanded="false" aria-controls="collapsePecas">
+                                        {% trans "Estrutura para Importação de Peças" %}
+                                    </button>
+                                </h2>
+                            </div>
+                            <div id="collapsePecas" class="collapse" aria-labelledby="headingPecas" data-parent="#accordionImport">
+                                <div class="card-body">
+                                    <p>{% trans "Colunas obrigatórias:" %} <code>codigo</code>, <code>nome</code>, <code>categoria</code></p>
+                                    <p>{% trans "Colunas opcionais:" %} <code>descricao</code>, <code>stock_minimo</code>, <code>stock_atual</code>, <code>stock_ideal</code>, <code>localizacao</code>, <code>unidade</code>, <code>preco_custo</code>, <code>preco_venda</code></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header" id="headingFornecedores">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseFornecedores" aria-expanded="false" aria-controls="collapseFornecedores">
+                                        {% trans "Estrutura para Importação de Fornecedores" %}
+                                    </button>
+                                </h2>
+                            </div>
+                            <div id="collapseFornecedores" class="collapse" aria-labelledby="headingFornecedores" data-parent="#accordionImport">
+                                <div class="card-body">
+                                    <p>{% trans "Colunas obrigatórias:" %} <code>nome</code></p>
+                                    <p>{% trans "Colunas opcionais:" %} <code>contacto</code>, <code>telefone</code>, <code>email</code>, <code>website</code>, <code>notas</code></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header" id="headingAssociacoes">
+                                <h2 class="mb-0">
+                                    <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseAssociacoes" aria-expanded="false" aria-controls="collapseAssociacoes">
+                                        {% trans "Estrutura para Importação de Associações" %}
+                                    </button>
+                                </h2>
+                            </div>
+                            <div id="collapseAssociacoes" class="collapse" aria-labelledby="headingAssociacoes" data-parent="#accordionImport">
+                                <div class="card-body">
+                                    <p>{% trans "Colunas obrigatórias:" %} <code>fornecedor</code>, <code>peca_codigo</code>, <code>preco_unitario</code></p>
+                                    <p>{% trans "Colunas opcionais:" %} <code>referencia_fornecedor</code>, <code>tempo_entrega</code>, <code>preferencial</code>, <code>notas</code></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resultados da importação, se houver -->
+            {% if import_result %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Resultados da Importação" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p><strong>{% trans "Total processado" %}:</strong> {{ import_result.total }}</p>
+                        <p><strong>{% trans "Importados com sucesso" %}:</strong> {{ import_result.total_success }}</p>
+                        <p><strong>{% trans "Erros" %}:</strong> {{ import_result.total_errors }}</p>
+                    </div>
+                    
+                    {% if import_result.error_rows %}
+                    <h6 class="font-weight-bold">{% trans "Detalhes dos Erros" %}:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Linha" %}</th>
+                                    <th>{% trans "Erro" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for error in import_result.error_rows %}
+                                <tr>
+                                    <td>{{ error.row }}</td>
+                                    <td>{{ error.error }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- EXPORTAÇÃO DE DADOS -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Exportar Dados" %}</h6>
+                </div>
+                <div class="card-body">
+                    <p>{% trans "Escolha o tipo de dados a exportar e o formato desejado." %}</p>
+                    
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="export_type">{% trans "Tipo de Dados" %}:</label>
+                            <select name="export_type" id="export_type" class="form-control" required>
+                                <option value="">{% trans "Selecione..." %}</option>
+                                <option value="pecas">{% trans "Peças" %} ({{ total_pecas }})</option>
+                                <option value="fornecedores">{% trans "Fornecedores" %} ({{ total_fornecedores }})</option>
+                                <option value="associacoes">{% trans "Associações Fornecedor-Peça" %} ({{ total_associacoes }})</option>
+                                <option value="movimentacoes">{% trans "Movimentações de Stock" %} ({{ total_movimentacoes }})</option>
+                                <option value="encomendas">{% trans "Encomendas" %} ({{ total_encomendas }})</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="export_format">{% trans "Formato" %}:</label>
+                            <select name="export_format" id="export_format" class="form-control" required>
+                                <option value="csv">CSV</option>
+                                <option value="xlsx" selected>Excel</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtros adicionais para movimentações e encomendas -->
+                        <div id="filtros-extra" class="d-none">
+                            <div class="form-row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="data_inicio">{% trans "Data Início" %}:</label>
+                                        <input type="date" name="data_inicio" id="data_inicio" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="data_fim">{% trans "Data Fim" %}:</label>
+                                        <input type="date" name="data_fim" id="data_fim" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtros específicos para movimentações -->
+                            <div id="filtros-movimentacoes" class="d-none">
+                                <div class="form-group">
+                                    <label for="tipo_movimentacao">{% trans "Tipo de Movimentação" %}:</label>
+                                    <select name="tipo_movimentacao" id="tipo_movimentacao" class="form-control">
+                                        <option value="todos">{% trans "Todos" %}</option>
+                                        <option value="entrada">{% trans "Apenas Entradas" %}</option>
+                                        <option value="saida">{% trans "Apenas Saídas" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtros específicos para encomendas -->
+                            <div id="filtros-encomendas" class="d-none">
+                                <div class="form-group">
+                                    <label for="status_encomenda">{% trans "Status da Encomenda" %}:</label>
+                                    <select name="status_encomenda" id="status_encomenda" class="form-control">
+                                        <option value="todos">{% trans "Todos" %}</option>
+                                        <option value="pendente">{% trans "Pendente" %}</option>
+                                        <option value="parcial">{% trans "Parcialmente Recebida" %}</option>
+                                        <option value="concluida">{% trans "Concluída" %}</option>
+                                        <option value="cancelada">{% trans "Cancelada" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-download"></i> {% trans "Exportar Dados" %}
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">{% trans "Informações Adicionais" %}:</h6>
+                        <ul>
+                            <li>{% trans "A exportação em Excel (.xlsx) inclui mais detalhes e múltiplas abas, quando aplicável." %}</li>
+                            <li>{% trans "Para exportações grandes, o processo pode demorar alguns segundos." %}</li>
+                            <li>{% trans "Os dados exportados refletem o estado atual do sistema." %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lógica para mostrar/esconder filtros adicionais com base no tipo de exportação
+        const exportType = document.getElementById('export_type');
+        const filtrosExtra = document.getElementById('filtros-extra');
+        const filtrosMovimentacoes = document.getElementById('filtros-movimentacoes');
+        const filtrosEncomendas = document.getElementById('filtros-encomendas');
+        
+        exportType.addEventListener('change', function() {
+            const tipo = this.value;
+            
+            // Resetar visibilidade
+            filtrosExtra.classList.add('d-none');
+            filtrosMovimentacoes.classList.add('d-none');
+            filtrosEncomendas.classList.add('d-none');
+            
+            // Mostrar filtros apropriados
+            if (tipo === 'movimentacoes') {
+                filtrosExtra.classList.remove('d-none');
+                filtrosMovimentacoes.classList.remove('d-none');
+            } else if (tipo === 'encomendas') {
+                filtrosExtra.classList.remove('d-none');
+                filtrosEncomendas.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

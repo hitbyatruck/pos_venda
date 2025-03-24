@@ -27,7 +27,7 @@
                     <button class="btn btn-danger btn-sm client-delete"
                             data-id="{{ cliente.id }}"
                             data-url="{% url 'excluir_cliente' cliente.id %}">
-                        Excluir
+                        Excluir Cliente
                     </button>
                 </td>
             </tr>
@@ -36,42 +36,47 @@
     </table>
 </div>
 
-<!-- Modal de Confirmação Inicial para Clientes -->
-<div class="modal fade" id="clientConfirmModal" tabindex="-1" aria-labelledby="clientConfirmModalLabel" aria-hidden="true">
+<!-- Initial Confirmation Modal -->
+<div class="modal fade" id="clientConfirmModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="clientConfirmModalLabel">Confirmar Exclusão do Cliente</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title">Confirmar Exclusão</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              Tem certeza que deseja excluir este cliente?
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" id="clientConfirmModalBtn">Confirmar</button>
+          </div>
       </div>
-      <div class="modal-body">
-        Tem certeza que deseja excluir este cliente?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="clientConfirmModalBtn" class="btn btn-primary">Confirmar</button>
-      </div>
-    </div>
   </div>
 </div>
 
-<!-- Modal de Aviso Extra para Clientes -->
-<div class="modal fade" id="clientWarningModal" tabindex="-1" aria-labelledby="clientWarningModalLabel" aria-hidden="true">
+<!-- Warning Modal for Dependencies -->
+<div class="modal fade" id="clientWarningModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="clientWarningModalLabel">Aviso</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title">Atenção!</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="clientWarningModalBody">
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" id="clientWarningModalBtn">
+                  Confirmar Exclusão
+              </button>
+          </div>
       </div>
-      <div class="modal-body" id="clientWarningModalBody">
-        <!-- Mensagem dinâmica será inserida aqui -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="clientWarningModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
-      </div>
-    </div>
   </div>
 </div>
+
 {% endblock %}
-<script src="{% static 'js/clients_scripts.js' %}"></script>
+
+{% block scripts %}
+<script src="{% static 'clientes/js/clients_scripts.js' %}"></script>
+{% endblock %}

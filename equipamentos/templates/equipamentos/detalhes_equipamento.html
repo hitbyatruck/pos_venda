@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Detalhes do Equipamento{% endblock %}
 
 {% block content %}
@@ -50,7 +50,8 @@
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-danger btn-sm confirm-delete"
-                                        data-url="{% url 'excluir_documento' documento.id %}">
+                                        data-url="{% url 'excluir_documento' documento.id %}"
+                                        data-type="documento">
                                         Excluir
                                     </button>
                                 </td>
@@ -73,11 +74,38 @@
                         class="btn btn-danger btn-sm confirm-delete"
                         data-bs-toggle="modal"
                         data-bs-target="#confirmDeleteModal"
-                        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}">
+                        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}"
+                        data-type="equipamento">
                         Excluir
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal de Confirmação -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body" id="confirmDeleteModalBody">
+                    Tem a certeza que deseja excluir este item?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="confirmDeleteModalBtn" class="btn btn-primary">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        console.log("Modal de confirmação está presente no DOM");
+    </script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'equipamentos/js/equipamentos_scripts.js' %}"></script>
 {% endblock %}

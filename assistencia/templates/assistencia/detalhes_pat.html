@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 {% block title %}Detalhes do PAT{% endblock %}
 {% block content %}
 <div class="container">
-  <h2>Detalhes do Pedido de Assistência Técnica (PAT)</h2>
+  <h2>{% trans "Detalhes do Pedido de Assistência Técnica (PAT)" %}</h2>
   <ul class="nav nav-tabs" id="patTab" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="cliente-tab" data-bs-toggle="tab" data-bs-target="#cliente" type="button" role="tab">Cliente</button>
@@ -19,75 +20,75 @@
     <!-- Aba Cliente -->
     <div class="tab-pane fade show active" id="cliente" role="tabpanel">
       <h4>Cliente</h4>
-      <p><strong>Nome:</strong> {{ pat.cliente.nome }}</p>
-      <p><strong>Email:</strong> {{ pat.cliente.email }}</p>
-      <p><strong>Telefone:</strong> {{ pat.cliente.telefone }}</p>
+      <p><strong>{% trans "Nome:" %}</strong> {{ pat.cliente.nome }}</p>
+      <p><strong>{% trans "Email:" %}</strong> {{ pat.cliente.email }}</p>
+      <p><strong>{% trans "Telefone:" %}</strong> {{ pat.cliente.telefone }}</p>
       <div class="mt-3">
-        <a href="{% url 'editar_cliente' pat.cliente.id %}" class="btn btn-primary">Editar Cliente</a>
+        <a href="{% url 'editar_cliente' pat.cliente.id %}" class="btn btn-primary">{% trans "Editar Cliente" %}</a>
       </div>
     </div>
     
     <!-- Aba Equipamento -->
     <div class="tab-pane fade" id="equipamento" role="tabpanel">
-      <h4>Equipamento</h4>
+      <h4>{% trans "Equipamento" %}</h4>
       {% if pat.equipamento.equipamento_fabricado.fotografia %}
         <img src="{{ pat.equipamento.equipamento_fabricado.fotografia.url }}" alt="Fotografia do Equipamento" class="img-fluid mb-3" style="max-width: 300px;">
       {% else %}
-        <p>Sem fotografia disponível.</p>
+        <p>{% trans "Sem fotografia disponível." %}</p>
       {% endif %}
-      <p><strong>Equipamento:</strong> {{ pat.equipamento.equipamento_fabricado.nome }}</p>
-      <p><strong>Número de Série:</strong> {{ pat.equipamento.numero_serie }}</p>
+      <p><strong>{% trans "Equipamento:" %}</strong> {{ pat.equipamento.equipamento_fabricado.nome }}</p>
+      <p><strong>{% trans "Número de Série:" %}</strong> {{ pat.equipamento.numero_serie }}</p>
       <div class="mt-3">
-        <a href="{% url 'editar_equipamento_fabricado' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-primary">Editar Equipamento</a>
-        <a href="{% url 'detalhes_equipamento' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-secondary">Ver Detalhes do Equipamento</a>
+        <a href="{% url 'editar_equipamento_fabricado' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-primary">{% trans "Editar Equipamento" %}</a>
+        <a href="{% url 'detalhes_equipamento' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-secondary">{% trans "Ver Detalhes do Equipamento" %}</a>
       </div>
     </div>
     
     <!-- Aba Informação da PAT -->
     <div class="tab-pane fade" id="pat-info" role="tabpanel">
-      <h4>Informação da PAT</h4>
+      <h4>{% trans "Informação da PAT" %}</h4>
       <!-- Primeira linha: Número da PAT -->
       <div class="row mb-2">
         <div class="col-md-12">
-          <p><strong>Número da PAT:</strong> {{ pat.pat_number }}</p>
+          <p><strong>{% trans "Número da PAT:" %}</strong> {{ pat.pat_number }}</p>
         </div>
       </div>
       <!-- Segunda linha: Data de Entrada e Data de Reparação -->
       <div class="row mb-2">
         <div class="col-md-6">
-          <p><strong>Data de Entrada:</strong> {{ pat.data_entrada|date:"d/m/Y" }}</p>
+          <p><strong>{% trans "Data de Entrada:" %}</strong> {{ pat.data_entrada|date:"d/m/Y" }}</p>
         </div>
         <div class="col-md-6">
-          <p><strong>Data de Reparação:</strong> {% if pat.data_reparacao %}{{ pat.data_reparacao|date:"d/m/Y" }}{% else %}N/A{% endif %}</p>
+          <p><strong>{% trans "Data de Reparação:" %}</strong> {% if pat.data_reparacao %}{{ pat.data_reparacao|date:"d/m/Y" }}{% else %}N/A{% endif %}</p>
         </div>
       </div>
       <!-- Terceira linha: Estado e Garantia -->
       <div class="row mb-3">
         <div class="col-md-6">
-          <p><strong>Estado:</strong> {{ pat.get_estado_display }}</p>
+          <p><strong>{% trans "Estado:" %}</strong> {{ pat.get_estado_display }}</p>
         </div>
         <div class="col-md-6">
-          <p><strong>Em Garantia:</strong>
+          <p><strong>{% trans "Em Garantia:" %}</strong>
             {% if pat.garantia %}
-              <span class="badge bg-success">Sim</span>
+              <span class="badge bg-success">{% trans "Sim" %}</span>
             {% else %}
-              <span class="badge bg-danger">Não</span>
+              <span class="badge bg-danger">{% trans "Não" %}</span>
             {% endif %}
           </p>
         </div>
       </div>
       
       <!-- Tabela de Itens -->
-      <h5>Itens</h5>
+      <h5>{% trans "Itens" %}</h5>
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Tipo</th>
-            <th>Referência</th>
-            <th>Designação</th>
-            <th>Quantidade</th>
-            <th>Preço (€)</th>
-            <th>Total (€)</th>
+            <th>{% trans "Tipo" %}</th>
+            <th>{% trans "Referência" %}</th>
+            <th>{% trans "Designação" %}</th>
+            <th>{% trans "Quantidade" %}</th>
+            <th>{% trans "Preço (€)" %}</th>
+            <th>{% trans "Total (€)" %}</th>
           </tr>
         </thead>
         <tbody>
@@ -104,7 +105,7 @@
         </tbody>
         <tfoot>
             <tr>
-              <td colspan="5" class="text-end"><strong>Total Geral:</strong></td>
+              <td colspan="5" class="text-end"><strong>{% trans "Total Geral:" %}</strong></td>
               <td>{{ total_geral|floatformat:2 }}</td>
             </tr>
           </tfoot>
@@ -112,15 +113,15 @@
       
       <!-- Relatório -->
       <div class="mb-3">
-        <h5>Relatório</h5>
+        <h5>{% trans "Relatório" %}</h5>
         <p>{{ pat.relatorio }}</p>
       </div>
       
       <!-- Botões de Ação -->
       <div class="mt-3">
-        <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">Voltar</a>
+        <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">{% trans "Voltar" %}</a>
 
-        <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-primary">Editar PAT</a>
+        <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-primary">{% trans "Editar PAT" %}</a>
       </div>
     </div>
   </div>

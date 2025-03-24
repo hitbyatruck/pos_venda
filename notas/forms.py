@@ -63,12 +63,17 @@ class TarefaForm(forms.ModelForm):
 # --- Classe base customizada para o formset de Tarefa ---
 class BaseTarefaFormSet(BaseInlineFormSet):
     def save_new(self, form, commit=True):
+        """Save new task and ensure it has the correct client"""
         instance = super().save_new(form, commit=False)
-        # Se o campo cliente não estiver definido, define-o com o cliente da nota associada.
-        if not instance.cliente:
-            instance.cliente = self.instance.cliente
+        
+        # Always set the client from the parent nota
+        instance.cliente = self.instance.cliente
+        
         if commit:
             instance.save()
+            # Save many-to-many data if commit=True
+            form.save_m2m()
+        
         return instance
 
 # Cria o formset inline para as tarefas associadas à nota, usando a classe base customizada.
@@ -103,7 +108,7 @@ class TarefaIndependenteForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super(TarefaIndependenteForm, self).__init__(*args, **kwargs)
-        self.fields['cliente'].required = True  # Torna o cliente obrigatório
+        self.fields['cliente'].required = True
         self.fields['pat'].required = False
 
         cliente = None

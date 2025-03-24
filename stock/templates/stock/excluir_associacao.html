@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Excluir Associação" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Excluir Associação Fornecedor-Peça" %}</h6>
+        </div>
+        <div class="card-body">
+            {% if itens_relacionados > 0 %}
+                <div class="alert alert-danger">
+                    <h5>{% trans "Não é possível excluir esta associação" %}</h5>
+                    <p>{% blocktrans with count=itens_relacionados %}
+                        Esta associação está sendo usada em {{ count }} item de encomenda.
+                        {% plural %}
+                        Esta associação está sendo usada em {{ count }} itens de encomenda.
+                        {% endblocktrans %}</p>
+                    <p>{% trans "Você precisa remover ou alterar os itens de encomenda que usam esta associação antes de excluí-la." %}</p>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> {% trans "Voltar" %}
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h5>{% trans "Confirmação de exclusão" %}</h5>
+                    <p>{% blocktrans with fornecedor=fornecedor.nome peca=peca.codigo %}
+                        Tem certeza que deseja excluir a associação entre o fornecedor "{{ fornecedor }}" e a peça "{{ peca }}"?
+                        {% endblocktrans %}</p>
+                    <p><strong>{% trans "Esta ação não pode ser desfeita." %}</strong></p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">{% trans "Detalhes da Associação" %}</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">{% trans "Fornecedor" %}:</th>
+                                <td>{{ fornecedor.nome }}</td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Peça" %}:</th>
+                                <td>{{ peca.codigo }} - {{ peca.nome }}</td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Referência do Fornecedor" %}:</th>
+                                <td>{{ associacao.referencia_fornecedor }}</td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Preço Unitário" %}:</th>
+                                <td>{{ associacao.preco_unitario }}</td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Fornecedor Preferencial" %}:</th>
+                                <td>
+                                    {% if associacao.fornecedor_preferencial %}
+                                        <span class="badge bg-success">{% trans "Sim" %}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> {% trans "Excluir Associação" %}
+                        </button>
+                        <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> {% trans "Cancelar" %}
+                        </a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
