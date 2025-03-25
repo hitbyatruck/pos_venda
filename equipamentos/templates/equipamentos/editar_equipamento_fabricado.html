@@ -34,7 +34,7 @@
                 {% for documento in documentos %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <a href="{{ documento.arquivo.url }}" target="_blank">{{ documento.arquivo.name }}</a>
-                        <button type="button" class="btn btn-danger btn-sm excluir-documento" data-url="{% url 'excluir_documento' documento.id %}">
+                        <button type="button" class="btn btn-danger btn-sm excluir-documento" data-url="{% url 'equipamentos:excluir_documento' documento.id %}">
                             Excluir
                         </button>
                     </li>
@@ -51,7 +51,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-        <a href="{% url 'detalhes_equipamento' equipamento.id %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'equipamentos:detalhes_equipamento' equipamento.id %}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
 

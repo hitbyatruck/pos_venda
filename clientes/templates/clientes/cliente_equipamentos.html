@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ cliente.nome }} - Equipamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+    
+    {% include 'includes/mini_nav.html' %}
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Equipamentos de {{ cliente.nome }}</h6>
+            <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-sm btn-success">
+                <i class="fas fa-plus-circle"></i> Adicionar Equipamento
+            </a>
+        </div>
+        <div class="card-body">
+            {% if equipamentos_cliente %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Número de Série</th>
+                                <th>Modelo</th>
+                                <th>Data de Instalação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipamento_cliente in equipamentos_cliente %}
+                            <tr>
+                                <td>{{ equipamento_cliente.equipamento.numero_serie }}</td>
+                                <td>{{ equipamento_cliente.equipamento.modelo.nome }}</td>
+                                <td>{{ equipamento_cliente.data_instalacao|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'equipamentos:detalhes_equipamento_fabricado' equipamento_cliente.equipamento.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                                    <a href="{% url 'clientes:desassociar_equipamento' equipamento_cliente.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja desassociar este equipamento?')">Desassociar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">Não há equipamentos associados a este cliente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

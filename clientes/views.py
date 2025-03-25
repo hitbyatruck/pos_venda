@@ -1,6 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
 import logging
+from django.db.models import Q
+
+# Configure logger
+logger = logging.getLogger(__name__)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -23,20 +27,20 @@ def adicionar_cliente(request):
         form = ClienteForm(request.POST)
         if form.is_valid():
             cliente = form.save()
-            messages.success(request, _('Cliente criado com sucesso.'))
+            messages.success(request, ('Cliente criado com sucesso.'))
             return redirect('clientes:detalhes_cliente', cliente_id=cliente.id)
     else:
         form = ClienteForm()
     
     # Adicione breadcrumbs
     breadcrumbs = [
-        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
-        {'title': _('Adicionar Cliente'), 'url': None}
+        {'title': ('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': ('Adicionar Cliente'), 'url': None}
     ]
     
     return render(request, 'clientes/form_cliente.html', {
         'form': form,
-        'titulo': _('Adicionar Cliente'),
+        'titulo': ('Adicionar Cliente'),
         'breadcrumbs': breadcrumbs  # Adicione esta linha
     })
 
@@ -71,12 +75,13 @@ def listar_clientes(request):
 @group_required(['Administradores', 'Técnicos', 'Comerciais'])
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
-    contactos = Contacto.objects.filter(cliente=cliente)
-    equipamentos = EquipamentoFabricado.objects.filter(cliente=cliente)
-    assistencias = PedidoAssistencia.objects.filter(cliente=cliente).order_by('-data_criacao')
-    notas = Nota.objects.filter(cliente=cliente).order_by('-data_criacao')
     
-    # Adicione breadcrumbs
+    # Garantir que estes objetos existam no contexto
+    equipamentos = EquipamentoCliente.objects.filter(cliente=cliente)
+    assistencias = PedidoAssistencia.objects.filter(cliente=cliente)
+    notas = Nota.objects.filter(cliente=cliente)
+    contactos = Contacto.objects.filter(cliente=cliente)
+    
     breadcrumbs = [
         {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
         {'title': cliente.nome, 'url': None}
@@ -84,11 +89,11 @@ def detalhes_cliente(request, cliente_id):
     
     return render(request, 'clientes/detalhes_cliente.html', {
         'cliente': cliente,
-        'contactos': contactos,
         'equipamentos': equipamentos,
         'assistencias': assistencias,
         'notas': notas,
-        'breadcrumbs': breadcrumbs  # Adicione esta linha
+        'contactos': contactos,
+        'breadcrumbs': breadcrumbs
     })
 
 @login_required
@@ -117,6 +122,78 @@ def editar_cliente(request, cliente_id):
         'cliente': cliente,
         'titulo': _('Editar Cliente'),
         'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def cliente_contactos(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    contactos = Contacto.objects.filter(cliente=cliente)
+    
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': reverse('clientes:detalhes_cliente', args=[cliente.id])},
+        {'title': _('Contactos'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/cliente_contactos.html', {
+        'cliente': cliente,
+        'contactos': contactos,
+        'breadcrumbs': breadcrumbs
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def cliente_equipamentos(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    equipamentos_cliente = EquipamentoCliente.objects.filter(cliente=cliente)
+    
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': reverse('clientes:detalhes_cliente', args=[cliente.id])},
+        {'title': _('Equipamentos'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/cliente_equipamentos.html', {
+        'cliente': cliente,
+        'equipamentos_cliente': equipamentos_cliente,
+        'breadcrumbs': breadcrumbs
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def cliente_assistencias(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    assistencias = PedidoAssistencia.objects.filter(cliente=cliente).order_by('-data_criacao')
+    
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': reverse('clientes:detalhes_cliente', args=[cliente.id])},
+        {'title': _('Assistências'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/cliente_assistencias.html', {
+        'cliente': cliente,
+        'assistencias': assistencias,
+        'breadcrumbs': breadcrumbs
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def cliente_notas(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    notas = Nota.objects.filter(cliente=cliente).order_by('data_criacao')
+    
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': reverse('clientes:detalhes_cliente', args=[cliente.id])},
+        {'title': _('Notas'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/cliente_notas.html', {
+        'cliente': cliente,
+        'notas': notas,
+        'breadcrumbs': breadcrumbs
     })
 
 @login_required
@@ -180,7 +257,7 @@ def adicionar_equipamento_cliente(request, cliente_id):
             equipamento_cliente = form.save(commit=False)
             equipamento_cliente.cliente = cliente
             equipamento_cliente.save()
-            return redirect('detalhes_cliente', cliente_id=cliente.id)  # Redireciona para detalhes do cliente
+            return redirect('clientes:detalhes_cliente', cliente_id=cliente.id)  # Redireciona para detalhes do cliente
     else:
         form = EquipamentoClienteForm()
     
@@ -213,7 +290,7 @@ def desassociar_equipamento(request, equipamento_cliente_id):
     equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_cliente_id)
     cliente_id = equipamento.cliente.id
     equipamento.delete()
-    return redirect('detalhes_cliente', cliente_id=cliente_id)
+    return redirect('clientes:detalhes_cliente', cliente_id=cliente_id)
 
 @login_required
 @group_required(['Administradores', 'Técnicos', 'Gestores de Clientes'])

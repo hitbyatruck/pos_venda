@@ -3,34 +3,44 @@ from .models import EquipamentoCliente, Cliente
 from equipamentos.models import EquipamentoFabricado
 
 class EquipamentoClienteForm(forms.ModelForm):
-    data_aquisicao = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-        label="Data de Aquisição"
-    )
-
     class Meta:
         model = EquipamentoCliente
-        fields = ["equipamento_fabricado", "numero_serie", "data_aquisicao"]
+        fields = ['equipamento_fabricado', 'numero_serie', 'data_aquisicao']
         widgets = {
-            "equipamento_fabricado": forms.Select(attrs={"class": "form-control"}),
-            "numero_serie": forms.TextInput(attrs={"class": "form-control"}),
+            'equipamento_fabricado': forms.Select(attrs={'class': 'form-control'}),
+            'numero_serie': forms.TextInput(attrs={'class': 'form-control'}),
+            'data_aquisicao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
-        labels = {
-            "equipamento_fabricado": "Equipamento",
-            "numero_serie": "Número de Série",
-        }
-    # Compare this snippet from clientes/views.py:          
+        
+        
+              
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nome', 'empresa', 'telefone', 'email', 'endereco']
+        fields = ['nome', 'empresa', 'telefone', 'email', 'morada', 'codigo_postal', 'localidade', 'pais', 'nif', 'contacto_principal']
         widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome completo'}),
-            'empresa': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome da empresa'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefone'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'endereco': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Endereço', 'rows': 3}),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'empresa': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'morada': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'codigo_postal': forms.TextInput(attrs={'class': 'form-control'}),
+            'localidade': forms.TextInput(attrs={'class': 'form-control'}),
+            'pais': forms.TextInput(attrs={'class': 'form-control'}),
+            'nif': forms.TextInput(attrs={'class': 'form-control'}),
+            'contacto_principal': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nome': 'Nome',
+            'empresa': 'Empresa',
+            'telefone': 'Telefone',
+            'email': 'Email',
+            'morada': 'Morada',
+            'codigo_postal': 'Código Postal',
+            'localidade': 'Localidade',
+            'pais': 'País',
+            'nif': 'NIF',
+            'contacto_principal': 'Contacto Principal',
         }
 
 class EquipamentoForm(forms.ModelForm):

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ cliente.nome }} - Contactos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+    
+    {% include 'includes/mini_nav.html' %}
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Contactos de {{ cliente.nome }}</h6>
+            <a href="#" class="btn btn-sm btn-success">
+                <i class="fas fa-plus-circle"></i> Adicionar Contacto
+            </a>
+        </div>
+        <div class="card-body">
+            {% if contactos %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Telefone</th>
+                                <th>Posição</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contacto in contactos %}
+                            <tr>
+                                <td>{{ contacto.nome }}</td>
+                                <td>{{ contacto.email }}</td>
+                                <td>{{ contacto.telefone }}</td>
+                                <td>{{ contacto.posicao }}</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-info">Editar</a>
+                                    <a href="#" class="btn btn-sm btn-danger">Excluir</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">Não há contactos cadastrados para este cliente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

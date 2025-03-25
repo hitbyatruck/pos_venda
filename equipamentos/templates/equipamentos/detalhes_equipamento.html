@@ -9,7 +9,7 @@
         {% endif %}
 
         {% include 'includes/mini_nav.html' %}
-        
+
         <div class="card shadow-lg">
             <div class="card-header text-white bg-primary">
                 <h3 class="mb-0">{{ equipamento.nome }}</h3>
@@ -56,7 +56,7 @@
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-danger btn-sm confirm-delete"
-                                        data-url="{% url 'excluir_documento' documento.id %}"
+                                        data-url="{% url 'equipamentos:excluir_documento' documento.id %}"
                                         data-type="documento">
                                         Excluir
                                     </button>
@@ -74,13 +74,13 @@
                 <!-- Botões -->
                 <div class="mt-4">
                     <a href="{{ request.GET.origem|default:'/equipamentos/fabricados/lista/' }}" class="btn btn-secondary">Voltar</a>
-                    <a href="{% url 'editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
+                    <a href="{% url 'equipamentos:editar_equipamento_fabricado' equipamento.id %}" class="btn btn-warning">Editar</a>
 
                     <button type="button"
                         class="btn btn-danger btn-sm confirm-delete"
                         data-bs-toggle="modal"
                         data-bs-target="#confirmDeleteModal"
-                        data-url="{% url 'excluir_equipamento_fabricado' equipamento.id %}"
+                        data-url="{% url 'equipamentos:excluir_equipamento_fabricado' equipamento.id %}"
                         data-type="equipamento">
                         Excluir
                     </button>

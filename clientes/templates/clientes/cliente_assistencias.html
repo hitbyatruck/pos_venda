@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ cliente.nome }} - Assistências{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+    
+    {% include 'includes/mini_nav.html' %}
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Assistências de {{ cliente.nome }}</h6>
+            <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-sm btn-success">
+                <i class="fas fa-plus-circle"></i> Nova Assistência
+            </a>
+        </div>
+        <div class="card-body">
+            {% if assistencias %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Data</th>
+                                <th>Equipamento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assistencia in assistencias %}
+                            <tr>
+                                <td>{{ assistencia.numero }}</td>
+                                <td>{{ assistencia.data_criacao|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if assistencia.equipamento %}
+                                        {{ assistencia.equipamento.numero_serie }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ assistencia.get_status_badge }}">
+                                        {{ assistencia.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'assistencia:detalhes_pat' assistencia.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">Não há assistências registradas para este cliente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

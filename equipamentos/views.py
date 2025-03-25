@@ -12,31 +12,18 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from core.utils import group_required
 from django.urls import reverse
-
 @login_required
 @group_required(['Administradores', 'Técnicos'])
-def listar_equipamentos(request):
-    query = request.GET.get('q', '')
-    equipamentos = EquipamentoFabricado.objects.all().select_related('cliente', 'modelo')
+def listar_equipamentos_fabricados(request):
+    equipamentos = EquipamentoFabricado.objects.all()
     
-    if query:
-        equipamentos = equipamentos.filter(
-            Q(numero_serie__icontains=query) |
-            Q(cliente__nome__icontains=query) |
-            Q(modelo__nome__icontains=query)
-        )
-    
-    equipamentos = equipamentos.order_by('-data_fabrico')
-    
-    # Adicione breadcrumbs
     breadcrumbs = [
         {'title': ('Equipamentos'), 'url': None}
     ]
     
-    return render(request, 'equipamentos/listar_equipamentos.html', {
+    return render(request, 'equipamentos/listar_equipamentos_fabricados.html', {
         'equipamentos': equipamentos,
-        'query': query,
-        'breadcrumbs': breadcrumbs  # Adicione esta linha
+        'breadcrumbs': breadcrumbs
     })
 
 
@@ -49,7 +36,7 @@ def adicionar_equipamento_fabricado(request):
             equipamento = form.save()
             for arquivo in request.FILES.getlist('documentos'):
                 DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
-            return redirect('listar_equipamentos_fabricados')
+            return redirect('equipamentos:listar_equipamentos_fabricados')
     else:
         form = EquipamentoFabricadoForm()
     return render(request, 'equipamentos/adicionar_equipamento_fabricado.html', {'form': form})
@@ -144,7 +131,16 @@ def excluir_documento(request, documento_id):
 
 def listar_equipamentos_cliente(request):
     equipamentos = EquipamentoCliente.objects.all()
-    return render(request, 'equipamentos/lista_equipamentos_cliente.html', {'equipamentos': equipamentos})
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Equipamentos de Clientes'), 'url': None}
+    ]
+    
+    return render(request, 'equipamentos/listar_equipamentos_cliente.html', {
+        'equipamentos': equipamentos,
+        'breadcrumbs': breadcrumbs
+    })
 
 def listar_categorias(request):
     categorias = CategoriaEquipamento.objects.all()
@@ -156,7 +152,7 @@ def adicionar_categoria(request):
         form = CategoriaEquipamentoForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('listar_categorias')
+            return redirect('equipamentos:listar_categorias')
     else:
         form = CategoriaEquipamentoForm()
     return render(request, 'equipamentos/adicionar_categoria.html', {'form': form})

@@ -115,7 +115,7 @@ def listar_pats(request):
     if status:
         pats = pats.filter(status=status)
     
-    pats = pats.order_by('-data_criacao')
+    pats = pats.order_by('-created_at')
     
     # Adicione breadcrumbs
     breadcrumbs = [

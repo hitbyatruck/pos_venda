@@ -4,8 +4,9 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 from clientes.models import Cliente, EquipamentoCliente
+from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
-
+from equipamentos.models import EquipamentoFabricado
 import datetime
 
 class PedidoAssistencia(models.Model):
@@ -259,3 +260,18 @@ class ItemPat(models.Model):
     def is_componente(self):
         """Verifica se o item é um componente"""
         return self.tipo == 'componente'
+
+class HistoricoPAT(models.Model):
+    pat = models.ForeignKey('PedidoAssistencia', on_delete=models.CASCADE, related_name='historico')
+    data_registo = models.DateTimeField(auto_now_add=True, verbose_name="Data de Registo")
+    utilizador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    estado_anterior = models.CharField(max_length=50, blank=True, null=True, verbose_name="Estado Anterior")
+    estado_novo = models.CharField(max_length=50, verbose_name="Estado Novo")
+    comentario = models.TextField(blank=True, null=True, verbose_name="Comentário")
+
+    def __str__(self):
+        return f"Alteração em PAT #{self.pat.numero} - {self.data_registo.strftime('%d/%m/%Y %H:%M')}"
+    
+    class Meta:
+        verbose_name = "Histórico de PAT"
+        verbose_name_plural = "Históricos de PAT"

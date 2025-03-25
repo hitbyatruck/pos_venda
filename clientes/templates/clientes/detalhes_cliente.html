@@ -4,243 +4,151 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
-
     {% if breadcrumbs %}
         {% include 'includes/breadcrumbs.html' %}
     {% endif %}
     
     {% include 'includes/mini_nav.html' %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2>{{ cliente.nome }}</h2>
-      <div class="btn-group">
-        <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-outline-primary">
-          <i class="bi bi-pencil"></i> Editar Cliente
-        </a>
-        <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-outline-success">
-          <i class="bi bi-plus-circle"></i> Adicionar Equipamento
-        </a>
-        <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-outline-info">
-          <i class="bi bi-tools"></i> Criar PAT
-        </a>
-        <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-outline-secondary">
-          <i class="bi bi-chat-left-text"></i> Nova Nota
-        </a>
-      </div>
-    </div>
-
-    <ul class="nav nav-tabs" id="tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" data-bs-toggle="tab" href="#info" role="tab">Informação</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#equipamentos" role="tab">Equipamentos</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#pats" role="tab">PAT's</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" data-bs-toggle="tab" href="#notas" role="tab">Notas de Conversa</a>
-        </li>
-    </ul>
-
-    <div class="tab-content mt-3">
-        <!-- Aba Informação do Cliente -->
-        <div id="info" class="tab-pane fade show active" role="tabpanel">
-            <p><strong>Nome:</strong> {{ cliente.nome }}</p>
-            <p><strong>Empresa:</strong> {{ cliente.empresa }}</p>
-            <p><strong>Email:</strong> {{ cliente.email }}</p>
-            <p><strong>Telefone:</strong> {{ cliente.telefone }}</p>
-            <p><strong>Endereço:</strong> {{ cliente.endereco }}</p>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhes do Cliente</h6>
+            <div>
+                <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus-circle"></i> Adicionar Equipamento
+                </a>
+                <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-sm btn-info">
+                    <i class="fas fa-tools"></i> Criar PAT
+                </a>
+                <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-sticky-note"></i> Nova Nota
+                </a>
+            </div>
         </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Informações Básicas</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">Nome:</th>
+                            <td>{{ cliente.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th>Empresa:</th>
+                            <td>{{ cliente.empresa }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ cliente.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Telefone:</th>
+                            <td>{{ cliente.telefone }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Endereço</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">Morada:</th>
+                            <td>{{ cliente.morada }}</td>
+                        </tr>
+                        <tr>
+                            <th>Localidade:</th>
+                            <td>{{ cliente.localidade }}</td>
+                        </tr>
+                        <tr>
+                            <th>Código Postal:</th>
+                            <td>{{ cliente.codigo_postal }}</td>
+                        </tr>
+                        <tr>
+                            <th>País:</th>
+                            <td>{{ cliente.pais }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
 
-        <!-- Aba Equipamentos -->
-        <div id="equipamentos" class="tab-pane fade" role="tabpanel">
-            <h3 class="mt-4">Equipamentos do Cliente</h3>
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Número de Série</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                  {% for equipamento in cliente.equipamentos.all %}
-                  <tr id="equipment-row-{{ equipamento.id }}">
-                      <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                      <td>{{ equipamento.numero_serie }}</td>
-                      <td>
-                        <a href="{% url 'detalhes_equipamento' equipamento.equipamento_fabricado.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                        <button class="btn btn-danger btn-sm deassociate-equipment"
-                          data-id="{{ equipamento.id }}"
-                          data-url="{% url 'desassociar_equipamento_cliente' equipamento.id %}">
-                          Desassociar
-                        </button>
-                      </td>
-                  </tr>
-                  {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center">Nenhum equipamento associado.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Aba PAT's -->
-        <div id="pats" class="tab-pane fade" role="tabpanel">
-            <h3 class="mt-4">PAT's</h3>
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>
-                            <a href="?ordenar_por=pat_number&direcao={{ direcao }}">
-                                Número da PAT
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}">
-                                Equipamento
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=data_reparacao&direcao={{ direcao }}">
-                                Data de Reparação
-                            </a>
-                        </th>
-                        <th>
-                            <a href="?ordenar_por=estado&direcao={{ direcao }}">
-                                Estado
-                            </a>
-                        </th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pat in pats %}
-                    <tr id="pat-row-{{ pat.id }}">
-                        <td>{{ pat.pat_number }}</td>
-                        <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
-                        <td>
-                          {% if pat.data_reparacao %}
-                            {{ pat.data_reparacao|date:"d/m/Y" }}
-                          {% else %}
-                            N/A
-                          {% endif %}
-                        </td>
-                        <td>
-                          {% if pat.estado == 'aberto' %}
-                            <span class="badge bg-danger">Aberto</span>
-                          {% elif pat.estado == 'em_curso' or pat.estado == 'em_diagnostico' %}
-                            <span class="badge bg-warning text-dark">{{ pat.get_estado_display }}</span>
-                          {% elif pat.estado == 'concluido' %}
-                            <span class="badge bg-success">Concluído</span>
-                          {% elif pat.estado == 'cancelado' %}
-                            <span class="badge bg-danger text-white">Cancelado</span>
-                          {% else %}
-                            {{ pat.get_estado_display }}
-                          {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                            <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
-                            <button class="btn btn-danger btn-sm pat-delete" 
-                                    data-id="{{ pat.id }}"
-                                    data-url="{% url 'assistencia:excluir_pat' pat.id %}">
-                              Excluir
-                            </button>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center">Nenhum PAT associado.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Aba Notas de Conversa -->
-        <div id="notas" class="tab-pane fade" role="tabpanel">
-            <h3>Notas de Conversa</h3>
-            <table class="table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th>Título</th>
-                        <th>PAT</th>
-                        <th>Equipamento</th>
-                        <th>Data de Criação</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for nota in cliente.notas.all %}
-                      <tr>
-                        <td>{{ nota.titulo }}</td>
-                        <td>{% if nota.pat %}{{ nota.pat.pat_number }}{% else %}—{% endif %}</td>
-                        <td>{% if nota.equipamento %}{{ nota.equipamento.equipamento_fabricado.nome }} ({{ nota.equipamento.numero_serie }}){% else %}—{% endif %}</td>
-                        <td>{{ nota.data_criacao|date:"d/m/Y H:i" }}</td>
-                        <td>
-                          <a href="{% url 'notas:detalhes_nota' nota.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                          <a href="{% url 'notas:editar_nota' nota.id %}" class="btn btn-warning btn-sm">Editar</a>
-                          <form action="{% url 'notas:excluir_nota' nota.id %}" method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza?');">Excluir</button>
-                          </form>
-                        </td>
-                      </tr>
-                      {% empty %}
-                      <tr>
-                        <td colspan="5" class="text-center">Nenhuma nota encontrada.</td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-              </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="border-bottom pb-2">Resumo</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Contactos</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ contactos|length }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-address-book fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Equipamentos</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ equipamentos|length }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-tools fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Assistências</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ assistencias|length }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-headset fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Notas</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ notas|length }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-sticky-note fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar à Lista
+                </a>
+            </div>
         </div>
     </div>
-   
-      
-    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
-</div>
-
-
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body">
-        Tem a certeza que deseja desassociar este equipamento do cliente?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" id="warningModalBody">
-        <!-- Mensagem dinâmica será inserida aqui -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
-      </div>
-    </div>
-  </div>
 </div>
 {% endblock %}
 
