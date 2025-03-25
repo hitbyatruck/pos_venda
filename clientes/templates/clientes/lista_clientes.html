@@ -3,7 +3,14 @@
 {% block content %}
 <div class="container">
     <h2>Lista de Clientes</h2>
-    <a href="{% url 'adicionar_cliente' %}" class="btn btn-primary mb-3">Adicionar Cliente</a>
+
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+
+    {% include 'includes/mini_nav.html' %}
+
+    <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary mb-3">Adicionar Cliente</a>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -22,11 +29,11 @@
                 <td>{{ cliente.telefone }}</td>
                 <td>{{ cliente.email }}</td>
                 <td>
-                    <a href="{% url 'detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                    <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="{% url 'clientes:detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
+                    <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
                     <button class="btn btn-danger btn-sm client-delete"
                             data-id="{{ cliente.id }}"
-                            data-url="{% url 'excluir_cliente' cliente.id %}">
+                            data-url="{% url 'clientes:excluir_cliente' cliente.id %}">
                         Excluir Cliente
                     </button>
                 </td>

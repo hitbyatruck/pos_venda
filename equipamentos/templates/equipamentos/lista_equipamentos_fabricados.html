@@ -4,6 +4,13 @@
 {% block content %}
 <div class="container">
     <h2>Equipamentos Fabricados</h2>
+    
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+
+    {% include 'includes/mini_nav.html' %}
+
     <a href="{% url 'adicionar_equipamento_fabricado' %}" class="btn btn-primary mb-3">Adicionar Equipamento</a>
 
     <table class="table">

@@ -5,24 +5,40 @@ from django.contrib.auth.decorators import login_required
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
 from clientes.models import EquipamentoCliente
+from assistencia.models import PedidoAssistencia
+from notas.models import Nota
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from core.utils import group_required
+from django.urls import reverse
 
-def listar_equipamentos_fabricados(request):
-    ordenar_por = request.GET.get("ordenar_por", "nome")
-    direcao = request.GET.get("direcao", "asc")
-    if direcao == "asc":
-        equipamentos = EquipamentoFabricado.objects.all().order_by(ordenar_por)
-        nova_direcao = "desc"
-    else:
-        equipamentos = EquipamentoFabricado.objects.all().order_by(f"-{ordenar_por}")
-        nova_direcao = "asc"
-    return render(request, "equipamentos/lista_equipamentos_fabricados.html", {
-        "equipamentos": equipamentos,
-        "ordenar_por": ordenar_por,
-        "direcao": nova_direcao,
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def listar_equipamentos(request):
+    query = request.GET.get('q', '')
+    equipamentos = EquipamentoFabricado.objects.all().select_related('cliente', 'modelo')
+    
+    if query:
+        equipamentos = equipamentos.filter(
+            Q(numero_serie__icontains=query) |
+            Q(cliente__nome__icontains=query) |
+            Q(modelo__nome__icontains=query)
+        )
+    
+    equipamentos = equipamentos.order_by('-data_fabrico')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Equipamentos'), 'url': None}
+    ]
+    
+    return render(request, 'equipamentos/listar_equipamentos.html', {
+        'equipamentos': equipamentos,
+        'query': query,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
     })
+
 
 @login_required
 @group_required(['Administradores', 'Técnicos'])
@@ -38,10 +54,25 @@ def adicionar_equipamento_fabricado(request):
         form = EquipamentoFabricadoForm()
     return render(request, 'equipamentos/adicionar_equipamento_fabricado.html', {'form': form})
 
+@login_required
+@group_required(['Administradores', 'Técnicos'])
 def detalhes_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
-    documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
-    return render(request, 'equipamentos/detalhes_equipamento.html', {'equipamento': equipamento, 'documentos': documentos})
+    assistencias = PedidoAssistencia.objects.filter(equipamento=equipamento).order_by('-data_criacao')
+    notas = Nota.objects.filter(equipamento=equipamento).order_by('-data_criacao')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Equipamentos'), 'url': reverse('equipamentos:listar_equipamentos')},
+        {'title': equipamento.numero_serie, 'url': None}
+    ]
+    
+    return render(request, 'equipamentos/detalhes_equipamento.html', {
+        'equipamento': equipamento,
+        'assistencias': assistencias,
+        'notas': notas,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
 
 @login_required
 @group_required(['Administradores', 'Técnicos'])
@@ -54,7 +85,7 @@ def editar_equipamento_fabricado(request, equipamento_id):
             equipamento = form.save()
             for arquivo in request.FILES.getlist('documentos'):
                 DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
-            return redirect('detalhes_equipamento', equipamento_id=equipamento.id)
+            return redirect('equipamentos:detalhes_equipamento', equipamento_id=equipamento.id)
     else:
         form = EquipamentoFabricadoForm(instance=equipamento)
     return render(request, 'equipamentos/editar_equipamento_fabricado.html', {

@@ -5,6 +5,13 @@
 {% block content %}
 <div class="container">
   <h2>{% trans "Detalhes do Pedido de Assistência Técnica (PAT)" %}</h2>
+  
+  {% if breadcrumbs %}
+    {% include 'includes/breadcrumbs.html' %}
+  {% endif %}
+
+  {% include 'includes/mini_nav.html' %}
+
   <ul class="nav nav-tabs" id="patTab" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="cliente-tab" data-bs-toggle="tab" data-bs-target="#cliente" type="button" role="tab">Cliente</button>

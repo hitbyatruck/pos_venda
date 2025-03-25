@@ -1,0 +1,13 @@
+{# templates/includes/mini_nav.html #}
+<div class="card mb-4">
+    <div class="card-body p-0">
+        <div class="nav nav-pills nav-fill flex-column flex-sm-row">
+            {% for item in nav_items %}
+                <a class="nav-link {% if current_url_name == item.url_name %}active{% endif %}" 
+                   href="{{ item.url }}">
+                   <i class="fas fa-{{ item.icon }} me-1"></i> {{ item.title }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>

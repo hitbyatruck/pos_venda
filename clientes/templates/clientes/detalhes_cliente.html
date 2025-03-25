@@ -3,24 +3,22 @@
 {% block title %}Detalhes do Cliente{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid py-4">
     <h2 class="mb-4">Detalhes do Cliente: {{ cliente.nome }}</h2>
 
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Início</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'listar_clientes' %}">Clientes</a></li>
-        <li class="breadcrumb-item active" aria-current="page">{{ cliente.nome }}</li>
-      </ol>
-    </nav>
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+    
+    {% include 'includes/mini_nav.html' %}
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2>{{ cliente.nome }}</h2>
       <div class="btn-group">
-        <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-outline-primary">
+        <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-outline-primary">
           <i class="bi bi-pencil"></i> Editar Cliente
         </a>
-        <a href="{% url 'adicionar_equipamento_cliente' cliente.id %}" class="btn btn-outline-success">
+        <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-outline-success">
           <i class="bi bi-plus-circle"></i> Adicionar Equipamento
         </a>
         <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-outline-info">
@@ -205,7 +203,7 @@
     </div>
    
       
-    <a href="{% url 'listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
+    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary mt-4">Voltar à Lista</a>
 </div>
 
 

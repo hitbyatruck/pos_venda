@@ -156,7 +156,7 @@
                                 {% for cliente in top_clientes %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'detalhes_cliente' cliente.id %}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente.id %}">
                                             {{ cliente.nome }}
                                         </a>
                                     </td>
@@ -177,7 +177,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">{% trans "Clientes Recentes" %}</h6>
-                    <a href="{% url 'listar_clientes' %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-sm btn-primary">
                         {% trans "Ver Todos" %}
                     </a>
                 </div>
@@ -194,7 +194,7 @@
                                 {% for cliente in clientes_recentes %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'detalhes_cliente' cliente.id %}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente.id %}">
                                             {{ cliente.nome }}
                                         </a>
                                     </td>

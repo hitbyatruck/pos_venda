@@ -1,20 +1,52 @@
 # notas/views.py
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 from django.urls import reverse
 from .models import Nota, Tarefa, PedidoAssistencia, EquipamentoCliente
+from django.db.models import Q
 from clientes.models import Cliente
 from .forms import NotaForm, TarefaFormSet, TarefaIndependenteForm, EditTarefaFormSet
 from core.utils import group_required
 
 
+@login_required
 def listar_notas(request):
-    """
-    Lista todas as notas de conversa em ordem decrescente por ID.
-    """
-    notas = Nota.objects.all().order_by('-id')
-    return render(request, 'notas/listar_notas.html', {'notas': notas})
+    query = request.GET.get('q', '')
+    tipo = request.GET.get('tipo', '')
+    
+    notas = Nota.objects.all()
+    
+    if query:
+        notas = notas.filter(
+            Q(titulo__icontains=query) |
+            Q(conteudo__icontains=query) |
+            Q(cliente__nome__icontains=query) |
+            Q(equipamento__numero_serie__icontains=query)
+        )
+    
+    if tipo:
+        if tipo == 'cliente':
+            notas = notas.filter(cliente__isnull=False)
+        elif tipo == 'equipamento':
+            notas = notas.filter(equipamento__isnull=False)
+        elif tipo == 'geral':
+            notas = notas.filter(cliente__isnull=True, equipamento__isnull=True)
+    
+    notas = notas.order_by('-data_criacao')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Notas'), 'url': None}
+    ]
+    
+    return render(request, 'notas/listar_notas.html', {
+        'notas': notas,
+        'query': query,
+        'tipo': tipo,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
 
 def criar_nota(request):
     """Cria uma nova Nota de Conversa com tarefas associadas."""
@@ -59,12 +91,21 @@ def criar_nota(request):
     return render(request, 'notas/criar_nota.html', 
                  {'form': form, 'tarefa_formset': tarefa_formset})
 
+@login_required
 def detalhes_nota(request, nota_id):
-    """
-    Exibe os detalhes de uma nota de conversa.
-    """
     nota = get_object_or_404(Nota, id=nota_id)
-    return render(request, 'notas/detalhes_nota.html', {'nota': nota})
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Notas'), 'url': reverse('notas:listar_notas')},
+        {'title': nota.titulo, 'url': None}
+    ]
+    
+    return render(request, 'notas/detalhes_nota.html', {
+        'nota': nota,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
+
 
 def editar_nota(request, nota_id):
     nota = get_object_or_404(Nota, id=nota_id)

@@ -6,7 +6,11 @@
 {% block content %}
 <div class="container">
     <h2>Editar Pedido de Assistência Técnica (PAT)</h2>
-    
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
+
+    {% include 'includes/mini_nav.html' %}
     <form method="post" id="patForm">
         {% csrf_token %}
         

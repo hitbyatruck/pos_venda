@@ -5,7 +5,11 @@
 {% block content %}
     <div class="container">
         <h2 class="mb-4">Lista de Equipamentos dos Clientes</h2>
+        {% if breadcrumbs %}
+          {% include 'includes/breadcrumbs.html' %}
+        {% endif %}
 
+        {% include 'includes/mini_nav.html' %}
         <table class="table table-striped">
             <thead>
                 <tr>

@@ -3,6 +3,12 @@
 {% block content %}
 <div class="container">
   <h2>Notas de Conversa</h2>
+  
+  {% if breadcrumbs %}
+    {% include 'includes/breadcrumbs.html' %}
+  {% endif %}
+
+  {% include 'includes/mini_nav.html' %}
   <a href="{% url 'notas:criar_nota' %}" class="btn btn-primary mb-3">Criar Nova Nota</a>
   <table class="table table-striped">
     <thead>

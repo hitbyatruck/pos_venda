@@ -3,13 +3,15 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
 from django.views.decorators.http import require_POST
-from .models import PedidoAssistencia, ItemPat
+from .models import PedidoAssistencia, ItemPat, HistoricoPAT
 from .forms import PedidoAssistenciaForm, EditItemPatFormSet, PedidoAssistenciaFormSet, PatForm, PatItemFormSet
 from clientes.models import Cliente
 import logging
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from core.utils import group_required
+from django.urls import reverse
 
 @login_required
 @group_required(['Administradores', 'Técnicos'])
@@ -95,56 +97,55 @@ def criar_pat(request):
     })
 
 @login_required
-@group_required(['Administradores', 'Técnicos', 'Gestores de Clientes', 'Visualizadores'])
+@group_required(['Administradores', 'Técnicos'])
 def listar_pats(request):
-    """Lista todas as PATs separadas por Estado em abas"""
-    ordenar_por = request.GET.get("ordenar_por", "pat_number")
-    direcao = request.GET.get("direcao", "asc")
-
-    # Mapear nomes de colunas para os nomes reais no modelo
-    mapeamento_colunas = {
-        "data_criacao": "data_entrada",
-        "data_entrada": "data_entrada",
-        "data_reparacao": "data_reparacao",
-        "cliente": "cliente__nome",
-        "equipamento": "equipamento__equipamento_fabricado__nome",
-        "estado": "estado",
-        "pat_number": "pat_number"
-    }
-
-    # Usar o nome correto do modelo ou padrão de fallback
-    ordenar_por = mapeamento_colunas.get(ordenar_por, "pat_number")
-
-    if direcao == "asc":
-        direcao_prefix = ""
-        nova_direcao = "desc"
-    else:
-        direcao_prefix = "-"
-        nova_direcao = "asc"
-
-    # Filtrar PATs por estado
-    pats_abertos = PedidoAssistencia.objects.filter(estado__in=["aberto", "em_curso", "em_diagnostico"]).order_by(f"{direcao_prefix}{ordenar_por}")
-    pats_concluidos = PedidoAssistencia.objects.filter(estado="concluido").order_by(f"{direcao_prefix}{ordenar_por}")
-    pats_cancelados = PedidoAssistencia.objects.filter(estado="cancelado").order_by(f"{direcao_prefix}{ordenar_por}")
-
+    query = request.GET.get('q', '')
+    status = request.GET.get('status', '')
+    
+    pats = PedidoAssistencia.objects.all().select_related('cliente', 'equipamento')
+    
+    if query:
+        pats = pats.filter(
+            Q(numero__icontains=query) |
+            Q(cliente__nome__icontains=query) |
+            Q(equipamento__numero_serie__icontains=query) |
+            Q(descricao_problema__icontains=query)
+        )
+    
+    if status:
+        pats = pats.filter(status=status)
+    
+    pats = pats.order_by('-data_criacao')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Assistências'), 'url': None}
+    ]
+    
     return render(request, 'assistencia/listar_pats.html', {
-        'pats_abertos': pats_abertos,
-        'pats_concluidos': pats_concluidos,
-        'pats_cancelados': pats_cancelados,
-        'ordenar_por': ordenar_por,
-        'direcao': nova_direcao
+        'pats': pats,
+        'query': query,
+        'status': status,
+        'status_choices': PedidoAssistencia.STATUS_CHOICES,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
     })
 
 @login_required
 @group_required(['Administradores', 'Técnicos'])
 def detalhes_pat(request, pat_id):
-    """Exibe os detalhes de um Pedido de Assistência Técnica (PAT)"""
     pat = get_object_or_404(PedidoAssistencia, id=pat_id)
-    total_geral = sum(item.total for item in pat.itens.all())
+    historico = HistoricoPAT.objects.filter(pat=pat).order_by('-data_criacao')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': ('Assistências'), 'url': reverse('assistencia:listar_pats')},
+        {'title': f'PAT #{pat.numero}', 'url': None}
+    ]
     
     return render(request, 'assistencia/detalhes_pat.html', {
         'pat': pat,
-        'total_geral': total_geral
+        'historico': historico,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
     })
 
 @login_required

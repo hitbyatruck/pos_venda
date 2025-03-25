@@ -6,6 +6,11 @@
 {% block content %}
 <div class="container">
   <h2>Detalhes da Nota: {{ nota.titulo }}</h2>
+  {% if breadcrumbs %}
+    {% include 'includes/breadcrumbs.html' %}
+  {% endif %}
+
+  {% include 'includes/mini_nav.html' %}
   <p><strong>Cliente:</strong> {{ nota.cliente.nome }}</p>
   {% if nota.pat %}
     <p><strong>PAT:</strong> {{ nota.pat.pat_number }}</p>

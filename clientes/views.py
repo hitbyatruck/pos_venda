@@ -1,72 +1,123 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Cliente, EquipamentoCliente
-from assistencia.models import PedidoAssistencia
-from .forms import EquipamentoClienteForm, ClienteForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_http_methods
 from django.db import transaction
 import logging
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from django.utils.translation import gettext as _
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST, require_http_methods
+from .models import Cliente, Contacto
+from equipamentos.models import EquipamentoFabricado
+from assistencia.models import PedidoAssistencia  # PAT em vez de OrdemAssistencia
+from equipamentos.models import EquipamentoCliente  # Add this line to import EquipamentoCliente
+from notas.models import Nota
 from core.utils import group_required
+from .forms import ClienteForm, EquipamentoClienteForm  # Add this line to import ClienteForm and EquipamentoClienteForm
 
 # LISTAGEM DE FUNÇÕES DE CLIENTES
 @login_required
-@group_required(['Administradores', 'Gestores de Clientes'])
+@group_required(['Administradores', 'Comerciais'])
 def adicionar_cliente(request):
     if request.method == 'POST':
         form = ClienteForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('listar_clientes')
+            cliente = form.save()
+            messages.success(request, _('Cliente criado com sucesso.'))
+            return redirect('clientes:detalhes_cliente', cliente_id=cliente.id)
     else:
         form = ClienteForm()
-    return render(request, 'clientes/adicionar_cliente.html', {'form': form})
-
-@login_required
-@group_required(['Administradores', 'Técnicos', 'Gestores de Clientes', 'Visualizadores'])
-def listar_clientes(request):
-    ordenar_por = request.GET.get("ordenar_por", "nome")  
-    direcao = request.GET.get("direcao", "asc")  
-
-    if direcao == "asc":
-        clientes = Cliente.objects.all().order_by(ordenar_por)
-        nova_direcao = "desc"
-    else:
-        clientes = Cliente.objects.all().order_by(f"-{ordenar_por}")
-        nova_direcao = "asc"
-
-    # Adiciona uma propriedade extra para indicar se há associações
-    for cliente in clientes:
-        cliente.tem_associacoes = cliente.equipamentos.exists() or (hasattr(cliente, 'pats') and cliente.pats.exists())
     
-    return render(request, "clientes/lista_clientes.html", {
-        "clientes": clientes,
-        "ordenar_por": ordenar_por,
-        "direcao": nova_direcao,
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': _('Adicionar Cliente'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/form_cliente.html', {
+        'form': form,
+        'titulo': _('Adicionar Cliente'),
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
     })
 
 @login_required
-@group_required(['Administradores', 'Técnicos', 'Gestores de Clientes', 'Visualizadores'])
-def detalhes_cliente(request, cliente_id):
-    cliente = get_object_or_404(Cliente, id=cliente_id)
-    pats = cliente.pats.all().order_by('pat_number')
-    return render(request, 'clientes/detalhes_cliente.html', {'cliente': cliente, 'pats': pats})
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def listar_clientes(request):
+    query = request.GET.get('q', '')
+    clientes = Cliente.objects.all()
+    
+    if query:
+        clientes = clientes.filter(
+            Q(nome__icontains=query) | 
+            Q(codigo__icontains=query) |
+            Q(email__icontains=query) |
+            Q(telefone__icontains=query)
+        )
+    
+    clientes = clientes.order_by('nome')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/listar_clientes.html', {
+        'clientes': clientes,
+        'query': query,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
 
 @login_required
-@group_required(['Administradores', 'Gestores de Clientes'])
+@group_required(['Administradores', 'Técnicos', 'Comerciais'])
+def detalhes_cliente(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    contactos = Contacto.objects.filter(cliente=cliente)
+    equipamentos = EquipamentoFabricado.objects.filter(cliente=cliente)
+    assistencias = PedidoAssistencia.objects.filter(cliente=cliente).order_by('-data_criacao')
+    notas = Nota.objects.filter(cliente=cliente).order_by('-data_criacao')
+    
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': None}
+    ]
+    
+    return render(request, 'clientes/detalhes_cliente.html', {
+        'cliente': cliente,
+        'contactos': contactos,
+        'equipamentos': equipamentos,
+        'assistencias': assistencias,
+        'notas': notas,
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
+
+@login_required
+@group_required(['Administradores', 'Comerciais'])
 def editar_cliente(request, cliente_id):
-    cliente = get_object_or_404(Cliente, id=cliente_id)  # Obtém o cliente ou dá erro 404
-    if request.method == "POST":
-        form = ClienteForm(request.POST, instance=cliente)  # Carrega o formulário com os dados do cliente
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+    
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():
             form.save()
-            return redirect('listar_clientes')  # Redireciona para a lista de clientes
+            messages.success(request, _('Cliente atualizado com sucesso.'))
+            return redirect('clientes:detalhes_cliente', cliente_id=cliente.id)
     else:
-        form = ClienteForm(instance=cliente)  # Preenche o formulário com os dados atuais do cliente
+        form = ClienteForm(instance=cliente)
     
-    return render(request, 'clientes/editar_cliente.html', {'form': form, 'cliente': cliente})
-
-logger = logging.getLogger(__name__)
+    # Adicione breadcrumbs
+    breadcrumbs = [
+        {'title': _('Clientes'), 'url': reverse('clientes:listar_clientes')},
+        {'title': cliente.nome, 'url': reverse('clientes:detalhes_cliente', args=[cliente.id])},
+        {'title': _('Editar'), 'url': None}
+    ]
+    
+    return render(request, 'clientes/form_cliente.html', {
+        'form': form,
+        'cliente': cliente,
+        'titulo': _('Editar Cliente'),
+        'breadcrumbs': breadcrumbs  # Adicione esta linha
+    })
 
 @login_required
 @group_required(['Administradores', 'Gestores de Clientes'])

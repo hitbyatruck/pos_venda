@@ -5,7 +5,11 @@
 {% block content %}
 <div class="container">
     <h2 class="mb-4">Adicionar Novo Equipamento Fabricado</h2>
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
 
+    {% include 'includes/mini_nav.html' %}
     {% if form.errors %}
         <div class="alert alert-danger">
             <strong>Erro!</strong> Por favor, corrija os seguintes erros:

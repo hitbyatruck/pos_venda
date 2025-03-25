@@ -6,6 +6,13 @@
 {% block content %}
 <div class="container">
   <h2>Lista de Pedidos de Assistência Técnica (PAT's)</h2>
+
+  {% if breadcrumbs %}
+    {% include 'includes/breadcrumbs.html' %}
+  {% endif %}
+
+  {% include 'includes/mini_nav.html' %}
+  
   <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary mb-3">Criar Novo PAT</a>
 
   <!-- Abas para separar PATs por Estado -->

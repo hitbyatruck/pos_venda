@@ -5,7 +5,11 @@
 {% block content %}
     <div class="container">
         <h2 class="mb-4">Editar Cliente: {{ cliente.nome }}</h2>
+        {% if breadcrumbs %}
+            {% include 'includes/breadcrumbs.html' %}
+        {% endif %}
 
+        {% include 'includes/mini_nav.html' %}
         <form method="POST" class="row g-3">
             {% csrf_token %}
 

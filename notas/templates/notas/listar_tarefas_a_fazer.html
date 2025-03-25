@@ -5,6 +5,11 @@
 {% block content %}
 <div class="container">
   <h2>Tarefas - A Fazer</h2>
+  {% if breadcrumbs %}
+    {% include 'includes/breadcrumbs.html' %}
+  {% endif %}
+
+  {% include 'includes/mini_nav.html' %}
   <!-- Abas para Tarefas a Fazer e Tarefas Concluídas -->
   <ul class="nav nav-tabs" id="tarefasTabs" role="tablist">
     <li class="nav-item" role="presentation">
