@@ -21,6 +21,6 @@ urlpatterns = [
     path('equipamentos_por_cliente/', views.equipamentos_por_cliente, name='equipamentos_por_cliente'),
 
     path('detalhes/<int:cliente_id>/equipamentos/', views.cliente_equipamentos, name='cliente_equipamentos'),
-path('detalhes/<int:cliente_id>/assistencias/', views.cliente_assistencias, name='cliente_assistencias'),
-path('detalhes/<int:cliente_id>/notas/', views.cliente_notas, name='cliente_notas'),
+    path('detalhes/<int:cliente_id>/assistencias/', views.cliente_assistencias, name='cliente_assistencias'),
+    path('detalhes/<int:cliente_id>/notas/', views.cliente_notas, name='cliente_notas'),
 ]

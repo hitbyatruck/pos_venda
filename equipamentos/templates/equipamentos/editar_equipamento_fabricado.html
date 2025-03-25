@@ -4,12 +4,13 @@
 
 {% block content %}
 <div class="container">
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
+ 
 
     {% include 'includes/mini_nav.html' %}
     <h2 class="mb-4">Editar Equipamento: {{ equipamento.nome }}</h2>
+    {% if breadcrumbs %}
+        {% include 'includes/breadcrumbs.html' %}
+    {% endif %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row">

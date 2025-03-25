@@ -52,7 +52,25 @@ class EquipamentoFabricado(models.Model):
                 raise ValidationError(message)
         else:
             return super().delete(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
         
+        # Validar nome único (ignorando maiúsculas/minúsculas)
+        if self.nome:
+            nome_duplicado = EquipamentoFabricado.objects.filter(nome__iexact=self.nome)
+            if self.pk:
+                nome_duplicado = nome_duplicado.exclude(pk=self.pk)
+            if nome_duplicado.exists():
+                raise ValidationError({'nome': 'Já existe um equipamento com este nome.'})
+        
+        # Validar referência única (ignorando maiúsculas/minúsculas)
+        if self.referencia_interna:  # Corrigido de referencia para referencia_interna
+            ref_duplicada = EquipamentoFabricado.objects.filter(referencia_interna__iexact=self.referencia_interna)
+            if self.pk:
+                ref_duplicada = ref_duplicada.exclude(pk=self.pk)
+            if ref_duplicada.exists():
+                raise ValidationError({'referencia_interna': 'Já existe um equipamento com esta referência.'})   
 
 class DocumentoEquipamento(models.Model):
     equipamento = models.ForeignKey(EquipamentoFabricado, on_delete=models.CASCADE, related_name='documentos')

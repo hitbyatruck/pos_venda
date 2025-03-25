@@ -61,7 +61,7 @@ class PedidoAssistencia(models.Model):
         null=True, 
         verbose_name="Data de Reparação"
     )
-    created_at = models.DateTimeField(
+    data_criacao = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Data de Criação"
     )
@@ -195,7 +195,7 @@ class ItemPat(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="Preço unitário em euros"
     )
-    created_at = models.DateTimeField(
+    data_entrada = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Data de Criação"
     )

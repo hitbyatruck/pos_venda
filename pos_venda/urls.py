@@ -10,6 +10,8 @@ from core.views import dashboard
 urlpatterns = [
     # Adicione as URLs de autenticação aqui!
     path('accounts/', include('django.contrib.auth.urls')),
+
+    
     
     # URL para mudar idioma
     path('i18n/', include('django.conf.urls.i18n')),

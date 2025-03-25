@@ -1,5 +1,7 @@
-{# templates/includes/mini_nav.html #}
 <div class="card mb-4">
+    <a href="{% url 'dashboard' %}" class="btn {% if request.resolver_match.url_name == 'dashboard' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <i class="fas fa-chart-line"></i> Dashboard
+    </a>
     <div class="card-body p-0">
         <div class="nav nav-pills nav-fill flex-column flex-sm-row">
             {% for item in nav_items %}

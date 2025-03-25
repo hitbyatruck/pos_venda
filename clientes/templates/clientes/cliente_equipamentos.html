@@ -33,11 +33,11 @@
                         <tbody>
                             {% for equipamento_cliente in equipamentos_cliente %}
                             <tr>
-                                <td>{{ equipamento_cliente.equipamento.numero_serie }}</td>
-                                <td>{{ equipamento_cliente.equipamento.modelo.nome }}</td>
-                                <td>{{ equipamento_cliente.data_instalacao|date:"d/m/Y" }}</td>
+                                <td>{{ equipamento_cliente.numero_serie }}</td>
+                                <td>{{ equipamento_cliente.equipamento_fabricado.modelo.nome }}</td>
+                                <td>{{ equipamento_cliente.data_aquisicao|date:"d/m/Y" }}</td>
                                 <td>
-                                    <a href="{% url 'equipamentos:detalhes_equipamento_fabricado' equipamento_cliente.equipamento.id %}" class="btn btn-sm btn-info">Detalhes</a>
+                                    <a href="{% url 'equipamentos:detalhes_equipamento' equipamento_cliente.equipamento_fabricado.id %}" class="btn btn-sm btn-info">Detalhes</a>
                                     <a href="{% url 'clientes:desassociar_equipamento' equipamento_cliente.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja desassociar este equipamento?')">Desassociar</a>
                                 </td>
                             </tr>

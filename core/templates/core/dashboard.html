@@ -1,213 +1,279 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Adicionar Chart.js para gráficos interativos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4">{% trans "Dashboard" %}</h1>
+<div class="container">
+    <h2 class="mb-4">Dashboard</h2>
     
-    <!-- Cards principais com estatísticas -->
+    <!-- Métricas Principais -->
     <div class="row mb-4">
-        <!-- Card de Clientes -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                {% trans "Clientes" %}
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
+                    <h5 class="card-title">Total de PATs</h5>
+                    <h2 class="display-4">{{ total_pats }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Clientes</h5>
+                    <h2 class="display-4">{{ total_clientes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Equipamentos</h5>
+                    <h2 class="display-4">{{ total_equipamentos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card {% if tendencia_positiva %}bg-warning{% else %}bg-danger{% endif %} text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Tendência de PATs (30 dias)</h5>
+                    <h2 class="display-4">
+                        {{ tendencia_percentual|floatformat:1 }}% 
+                        {% if tendencia_positiva %}<i class="fas fa-arrow-up"></i>{% else %}<i class="fas fa-arrow-down"></i>{% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+        <!-- Gráficos Interativos -->
+        <div class="row mb-4">
+            <!-- Gráfico de Linha - Evolução de PATs -->
+            <div class="col-md-8">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">Evolução de PATs nos Últimos 6 Meses</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="patsChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Pizza - PATs por Estado -->
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">PATs por Estado</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="estadosChart" height="250"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Card de PATs no último mês -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                {% trans "PATs (Último Mês)" %}
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pat_ultimo_mes }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% if pats_abertos is not None %}
-        <!-- Card de PATs Abertos -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                {% trans "PATs Abertos" %}
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pats_abertos }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if pats_concluidos is not None %}
-        <!-- Card de PATs Concluídos -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                {% trans "PATs Concluídos" %}
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pats_concluidos }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
-
-    <!-- Seções adicionais baseadas no grupo do usuário -->
-    <div class="row">
-        {% if pats_recentes %}
+    
+    <!-- PATs por Estado -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">PATs por Estado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-danger text-white mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_por_estado.aberto }}</h3>
+                                </div>
+                            </div>
+                            <h6>Abertos</h6>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-warning text-dark mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_por_estado.em_curso }}</h3>
+                                </div>
+                            </div>
+                            <h6>Em Curso</h6>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-info text-white mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_por_estado.em_diagnostico }}</h3>
+                                </div>
+                            </div>
+                            <h6>Em Diagnóstico</h6>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-success text-white mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_por_estado.concluido }}</h3>
+                                </div>
+                            </div>
+                            <h6>Concluídos</h6>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-secondary text-white mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_por_estado.cancelado }}</h3>
+                                </div>
+                            </div>
+                            <h6>Cancelados</h6>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="card bg-primary text-white mb-2">
+                                <div class="card-body py-3">
+                                    <h3>{{ pats_ultimos_30_dias }}</h3>
+                                </div>
+                            </div>
+                            <h6>Últimos 30 dias</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Segunda linha com 3 colunas -->
+    <div class="row mb-4">
         <!-- PATs Recentes -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">{% trans "PATs Recentes" %}</h6>
-                    <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-sm btn-primary">
-                        {% trans "Ver Todos" %}
-                    </a>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">PATs Recentes</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>{% trans "PAT #" %}</th>
-                                    <th>{% trans "Cliente" %}</th>
-                                    <th>{% trans "Data" %}</th>
-                                    <th>{% trans "Estado" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pat in pats_recentes %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'assistencia:detalhes_pat' pat.id %}">
-                                            {{ pat.pat_number }}
-                                        </a>
-                                    </td>
-                                    <td>{{ pat.cliente.nome }}</td>
-                                    <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ pat.get_estado_class }}">
-                                            {{ pat.get_estado_display }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group">
+                        {% for pat in pats_recentes %}
+                        <li class="list-group-item">
+                            <div>
+                                <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="fw-bold">{{ pat.pat_number }}</a>
+                                <span class="badge {% if pat.estado == 'aberto' %}bg-danger{% elif pat.estado == 'em_curso' %}bg-warning text-dark{% elif pat.estado == 'em_diagnostico' %}bg-info{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ pat.get_estado_display }}
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                {{ pat.cliente.nome }} - {{ pat.data_entrada|date:"d/m/Y" }}
+                            </small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">Nenhuma PAT registrada</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-sm btn-primary">Ver todas</a>
                 </div>
             </div>
         </div>
-        {% endif %}
-
-        {% if top_clientes %}
-        <!-- Top Clientes -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Top Clientes" %}</h6>
+        
+        <!-- Clientes Mais Ativos -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">Clientes Mais Ativos</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>{% trans "Cliente" %}</th>
-                                    <th>{% trans "Total PATs" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cliente in top_clientes %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'clientes:detalhes_cliente' cliente.id %}">
-                                            {{ cliente.nome }}
-                                        </a>
-                                    </td>
-                                    <td>{{ cliente.total_pats }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group">
+                        {% for cliente in clientes_ativos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'clientes:detalhes_cliente' cliente.id %}">{{ cliente.nome }}</a>
+                            <span class="badge bg-primary rounded-pill">{{ cliente.num_pats }} PATs</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">Nenhum cliente com PATs</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-sm btn-primary">Ver todos</a>
                 </div>
             </div>
         </div>
-        {% endif %}
-
-        {% if clientes_recentes %}
-        <!-- Clientes Recentes -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Clientes Recentes" %}</h6>
-                    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-sm btn-primary">
-                        {% trans "Ver Todos" %}
-                    </a>
+        
+        <!-- Equipamentos em Assistência -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">Equipamentos Mais Frequentes</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>{% trans "Nome" %}</th>
-                                    <th>{% trans "Contato" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cliente in clientes_recentes %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'clientes:detalhes_cliente' cliente.id %}">
-                                            {{ cliente.nome }}
-                                        </a>
-                                    </td>
-                                    <td>{{ cliente.telefone }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group">
+                        {% for eq in top_equipamentos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'equipamentos:detalhes_equipamento' eq.id %}">{{ eq.nome }}</a>
+                            <span class="badge bg-primary rounded-pill">{{ eq.num_pats }} PATs</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">Nenhum equipamento com PATs</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'equipamentos:listar_equipamentos_fabricados' %}" class="btn btn-sm btn-primary">Ver todos</a>
                 </div>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
+<script>
+// Inicializar gráficos quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de linha - Evolução de PATs
+    const lineCtx = document.getElementById('patsChart').getContext('2d');
+    const lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for item in dados_grafico %}'{{ item.mes }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'PATs Criados',
+                data: [{% for item in dados_grafico %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    precision: 0
+                }
+            }
+        }
+    });
+    
+    // Gráfico de pizza - Estados de PATs
+    const pieCtx = document.getElementById('estadosChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in dados_pizza %}'{{ item.estado }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for item in dados_pizza %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: [{% for item in dados_pizza %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
