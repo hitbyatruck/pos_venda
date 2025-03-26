@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transferir Equipamento{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Breadcrumbs -->
+  {% include "includes/breadcrumbs.html" with items=breadcrumbs %}
+  
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-arrow-left-right me-2 text-warning"></i>
+      Transferir Equipamento
+    </h2>
+    <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-2"></i>Voltar ao Histórico
+    </a>
+  </div>
+  
+  <!-- Informações do Equipamento -->
+  <div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalhes do Equipamento</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-4">Modelo:</dt>
+            <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.nome }}</dd>
+            
+            <dt class="col-sm-4">Nº Série:</dt>
+            <dd class="col-sm-8">{{ equipamento.numero_serie }}</dd>
+            
+            <dt class="col-sm-4">Cliente Atual:</dt>
+            <dd class="col-sm-8">
+              <strong>{{ equipamento.cliente.nome }}</strong>
+            </dd>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-4">Data Aquisição:</dt>
+            <dd class="col-sm-8">{{ equipamento.data_aquisicao|date:"d/m/Y" }}</dd>
+            
+            <dt class="col-sm-4">Categoria:</dt>
+            <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.categoria.nome }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Formulário de Transferência -->
+  <div class="card border-warning">
+    <div class="card-header bg-warning text-dark">
+      <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Dados da Transferência</h5>
+    </div>
+    <div class="card-body">
+      <!-- Mensagens de erro -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+      
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+          <label for="novo_cliente_id" class="form-label">Novo Cliente *</label>
+          <select class="form-select" id="novo_cliente_id" name="novo_cliente_id" required>
+            <option value="">-- Selecione o Novo Proprietário --</option>
+            {% for cliente in clientes %}
+              {% if cliente.id != equipamento.cliente.id %}
+                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <div class="form-text">Selecione o cliente para quem este equipamento será transferido</div>
+        </div>
+
+        {% if pats_abertas %}
+        <div class="alert alert-warning mb-4">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Atenção: PATs em aberto</h5>
+        <p>Existem {{ pats_abertas.count }} PATs em aberto para este equipamento:</p>
+        <ul>
+            {% for pat in pats_abertas %}
+            <li>
+            <strong>PAT #{{ pat.pat_number }}</strong> - 
+            Estado: <span class="badge 
+                {% if pat.estado == 'aberto' %}bg-danger{% else %}bg-warning{% endif %}">
+                {{ pat.get_estado_display }}
+            </span> -
+            Data: {{ pat.data_entrada|date:"d/m/Y" }}
+            <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="ms-2" target="_blank">
+                <i class="bi bi-box-arrow-up-right"></i> Ver detalhes
+            </a>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="fechar_pats" name="fechar_pats">
+            <label class="form-check-label" for="fechar_pats">
+            <strong>Fechar automaticamente todas as PATs abertas</strong>
+            </label>
+            <div class="form-text">
+            Se marcada, todas as PATs em aberto serão fechadas automaticamente antes da transferência.
+            </div>
+        </div>
+        </div>
+        {% endif %}
+        
+        <div class="mb-3">
+          <label for="data_transferencia" class="form-label">Data da Transferência *</label>
+          <input type="date" class="form-control" id="data_transferencia" name="data_transferencia" value="{% now 'Y-m-d' %}" required>
+        </div>
+        
+        <div class="mb-3">
+          <label for="motivo" class="form-label">Motivo da Transferência</label>
+          <textarea class="form-control" id="motivo" name="motivo" rows="3" placeholder="Descreva o motivo da transferência..."></textarea>
+        </div>
+        
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Atenção:</strong> Transferir este equipamento mudará o proprietário, mantendo todo o histórico de assistência técnica. Esta ação não pode ser desfeita automaticamente.
+        </div>
+        
+        <div class="d-flex justify-content-end mt-4">
+          <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}" class="btn btn-secondary me-2">
+            Cancelar
+          </a>
+          <button type="submit" class="btn btn-warning">
+            <i class="bi bi-arrow-left-right me-2"></i>Confirmar Transferência
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

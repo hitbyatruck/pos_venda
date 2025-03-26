@@ -2,15 +2,18 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
 from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
-from clientes.models import EquipamentoCliente
+from clientes.models import EquipamentoCliente, Cliente
 from assistencia.models import PedidoAssistencia
 from notas.models import Nota
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError, FieldError
 from django.db.models import Q
 from core.utils import group_required
+from core.search import AdvancedSearch
 from django.urls import reverse
 from django.contrib import messages
 import unicodedata
@@ -27,77 +30,82 @@ def normalize_text(text):
 @login_required
 @group_required(['Administradores', 'Técnicos'])
 def listar_equipamentos_fabricados(request):
-    # Parâmetros de busca e filtro
-    q = request.GET.get('q', '')
-    categoria_id = request.GET.get('categoria', '')
-    normalized_query = ""
+    # Parâmetros de pesquisa
+    categoria = request.GET.get('categoria', '')
+    estado = request.GET.get('estado', '')
     
-    # Query base com pré-carregamento de relacionamentos
-    equipamentos = EquipamentoFabricado.objects.all().select_related('categoria')
+    # Consulta base com todos os relacionamentos relevantes
+    queryset = EquipamentoFabricado.objects.all().prefetch_related(
+        'equipamentoscliente_set', 'pecas'
+    )
     
-    # Filtro por categoria
-    if categoria_id:
-        try:
-            categoria_id = int(categoria_id)
-            equipamentos = equipamentos.filter(categoria_id=categoria_id)
-        except (ValueError, TypeError):
-            pass
+    # Inicializar o serviço de pesquisa com campos expandidos
+    search_service = AdvancedSearch(
+        request=request,
+        model_class=EquipamentoFabricado,
+        fields_to_search=[
+            'nome', 'modelo', 'categoria', 'descricao', 
+            'especificacoes', 'referencia_interna'
+        ],
+        related_searches={
+            # Buscar também nos equipamentos de clientes relacionados
+            'equipamentoscliente_set': ['numero_serie', 'observacoes'],
+            # Buscar nas peças relacionadas
+            'pecas': ['nome', 'referencia', 'descricao']
+        }
+    )
     
-    # Busca por texto
-    if q:
-        normalized_query = normalize_text(q)
-        search_terms = normalized_query.split()
-        
-        matched_results = set()
-        first_iteration = True
-        
-        for term in search_terms:
-            results = list(equipamentos)
-            matching_ids = []
-            
-            for eq in results:
-                fields_to_check = [
-                    eq.nome or '',
-                    eq.referencia_interna or '',
-                    eq.descricao or '',
-                    eq.especificacoes or '',
-                    eq.categoria.nome if eq.categoria else ''
-                ]
-                
-                combined_text = normalize_text(' '.join([str(field) for field in fields_to_check if field]))
-                
-                if term in combined_text:
-                    matching_ids.append(eq.id)
-            
-            term_results = set(matching_ids)
-            
-            if first_iteration:
-                matched_results = term_results
-                first_iteration = False
-            else:
-                matched_results &= term_results
-        
-        if matched_results:
-            equipamentos = equipamentos.filter(id__in=matched_results)
-        else:
-            equipamentos = EquipamentoFabricado.objects.none()
+    # Executar a pesquisa normalizada
+    equipamentos = search_service.search(queryset)
     
-    # Ordenação padrão
+    # Aplicar os filtros adicionais
+    if categoria:
+        equipamentos = AdvancedSearch.apply_filter(equipamentos, 'categoria', categoria, 'icontains')
+    
+    if estado:
+        if estado == 'ativo':
+            equipamentos = equipamentos.filter(ativo=True)
+        elif estado == 'inativo':
+            equipamentos = equipamentos.filter(ativo=False)
+    
+    # Ordenação
     equipamentos = equipamentos.order_by('nome')
     
-    # Categorias para o filtro dropdown
-    categorias = CategoriaEquipamento.objects.all()
-    
-    breadcrumbs = [
-        {'title': ('Equipamentos'), 'url': None}
-    ]
+    # HTML para os filtros avançados
+    filter_html = """
+    <div class="col-md-4">
+      <label for="q" class="form-label">Pesquisar</label>
+      <input type="text" class="form-control" id="q" name="q" value="{q}" 
+        placeholder="Nome, modelo, referência, nº série...">
+    </div>
+    <div class="col-md-4">
+      <label for="categoria" class="form-label">Categoria</label>
+      <input type="text" class="form-control" id="categoria" name="categoria" value="{categoria}">
+    </div>
+    <div class="col-md-4">
+      <label for="estado" class="form-label">Estado</label>
+      <select class="form-select" id="estado" name="estado">
+        <option value="">Todos</option>
+        <option value="ativo" {ativo_selected}>Ativo</option>
+        <option value="inativo" {inativo_selected}>Inativo</option>
+      </select>
+    </div>
+    """.format(
+        q=request.GET.get('q', ''),
+        categoria=request.GET.get('categoria', ''),
+        ativo_selected='selected' if estado == 'ativo' else '',
+        inativo_selected='selected' if estado == 'inativo' else ''
+    )
     
     return render(request, 'equipamentos/listar_equipamentos_fabricados.html', {
         'equipamentos': equipamentos,
-        'categorias': categorias,
-        'query': q,
-        'categoria_selecionada': categoria_id,
-        'breadcrumbs': breadcrumbs
+        'query': search_service.query,
+        'categoria': categoria,
+        'estado': estado,
+        'filter_html': filter_html,
+        'breadcrumbs': [
+            {'title': 'Equipamentos', 'url': None}
+        ]
     })
 
 
@@ -287,3 +295,164 @@ def adicionar_categoria(request):
     else:
         form = CategoriaEquipamentoForm()
     return render(request, 'equipamentos/adicionar_categoria.html', {'form': form})
+
+
+
+@login_required
+def historico_equipamento_cliente(request, equipamento_id):
+    """
+    View para mostrar o histórico completo de um equipamento de cliente.
+    Inclui detalhes do equipamento, histórico de propriedade e reparações.
+    """
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
+    
+    # Determinar a aba ativa a partir da query string
+    active_tab = request.GET.get('tab', 'detalhes')
+    
+    # Processar formulário de notas
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo')
+        conteudo = request.POST.get('conteudo')
+        
+        if titulo and conteudo:
+            try:
+                # Criar nova nota associada ao equipamento
+                Nota.objects.create(
+                    titulo=titulo,
+                    conteudo=conteudo,
+                    equipamento=equipamento
+                )
+                # Redirecionar para a aba de notas após adicionar uma nova
+                return redirect(f"{reverse('equipamentos:historico_equipamento_cliente', args=[equipamento.id])}?tab=notas")
+            except Exception as e:
+                print(f"Erro ao salvar nota: {str(e)}")
+                messages.error(request, f"Erro ao salvar nota: {str(e)}")
+    
+    # Buscar histórico de pedidos de assistência para este equipamento
+    numero_serie = equipamento.numero_serie
+    historico_pats = PedidoAssistencia.objects.filter(
+        Q(equipamento=equipamento) | 
+        Q(numero_serie_equipamento=numero_serie)
+    ).order_by('-data_criacao').distinct()
+    
+    # Buscar histórico de mudanças no objeto (requer django-simple-history)
+    try:
+        historico_mudancas = equipamento.history.all()
+    except AttributeError:
+        # Caso simple_history não esteja configurado para este modelo
+        historico_mudancas = []
+    
+    # Buscar notas relacionadas a este equipamento
+    try:
+        notas = Nota.objects.filter(equipamento=equipamento).order_by('-data_criacao')
+    except Exception as e:
+        print(f"Erro ao buscar notas: {str(e)}")
+        notas = []
+    
+    # Configurar breadcrumbs
+    breadcrumbs = [
+        {'title': 'Equipamentos', 'url': reverse('equipamentos:listar_equipamentos_cliente')},
+        {'title': f'{equipamento.equipamento_fabricado.nome}', 
+        'url': reverse('equipamentos:detalhes_equipamento', args=[equipamento.equipamento_fabricado.id])},
+        {'title': f'Histórico (S/N: {equipamento.numero_serie})'}
+    ]
+    
+    # Configurar abas de navegação específicas para o histórico
+    nav_tabs = [
+        {'id': 'detalhes', 'name': 'Detalhes', 'icon': 'bi-info-circle'},
+        {'id': 'assistencia', 'name': 'Assistência Técnica', 'icon': 'bi-tools', 
+         'badge': historico_pats.count() if historico_pats else 0},
+        {'id': 'alteracoes', 'name': 'Mudanças', 'icon': 'bi-clock-history',
+         'badge': historico_mudancas.count() if historico_mudancas else 0},
+        {'id': 'notas', 'name': 'Notas', 'icon': 'bi-journal-text', 
+         'badge': notas.count() if notas else 0}
+    ]
+    
+    return render(request, 'equipamentos/historico_equipamento.html', {
+        'equipamento': equipamento,
+        'historico_pats': historico_pats,
+        'historico_mudancas': historico_mudancas,
+        'notas': notas,
+        'breadcrumbs': breadcrumbs,
+        'nav_tabs': nav_tabs,
+        'active_tab': active_tab
+    })
+
+@login_required
+def transferir_equipamento(request, equipamento_id):
+    """Transfere um equipamento de um cliente para outro, mantendo o histórico"""
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
+    
+    pats_abertas = PedidoAssistencia.objects.filter(
+    equipamento=equipamento,
+    estado__in=['aberto', 'em_andamento', 'em_diagnostico', 'em_curso']
+    )
+
+    novo_cliente_id = request.POST.get('novo_cliente_id')
+    data_transferencia = request.POST.get('data_transferencia')
+    motivo = request.POST.get('motivo', '')
+    fechar_pats = request.POST.get('fechar_pats') == 'on'
+
+    if request.method == 'POST':
+        novo_cliente_id = request.POST.get('novo_cliente_id')
+        data_transferencia = request.POST.get('data_transferencia')
+        motivo = request.POST.get('motivo', '')
+        
+        # Validar entradas
+        if not novo_cliente_id or not data_transferencia:
+            messages.error(request, "Por favor preencha todos os campos obrigatórios.")
+            return redirect('equipamentos:transferir_equipamento', equipamento_id=equipamento_id)
+            
+        try:
+            # Buscar o novo cliente
+            novo_cliente = Cliente.objects.get(id=novo_cliente_id)
+            
+            # Registrar a transferência no histórico
+            cliente_anterior = equipamento.cliente
+            
+            # Processar PATs abertas se solicitado
+            if fechar_pats and pats_abertas.exists():
+                for pat in pats_abertas:
+                    pat.estado = 'concluido'
+                    pat.data_conclusao = timezone.now()
+                    pat.observacoes_tecnico = f"{pat.observacoes_tecnico or ''}\n\nPAT fechada automaticamente devido à transferência do equipamento para {novo_cliente.nome}."
+                    pat.save()
+
+            # Adicionar detalhes da transferência como comentário para o histórico
+            equipamento._change_reason = f"Transferido de {cliente_anterior.nome} para {novo_cliente.nome}. Motivo: {motivo}"
+            
+            # Atualizar o equipamento com o novo cliente
+            equipamento.cliente = novo_cliente
+            equipamento.save()
+
+            # Atualizar PATs existentes para refletir o novo cliente
+            PedidoAssistencia.objects.filter(equipamento=equipamento).update(
+                cliente=novo_cliente
+)
+            
+            messages.success(request, f"Equipamento transferido com sucesso de {cliente_anterior.nome} para {novo_cliente.nome}.")
+            return redirect('equipamentos:historico_equipamento_cliente', equipamento_id=equipamento_id)
+            
+        except Cliente.DoesNotExist:
+            messages.error(request, "Cliente não encontrado.")
+            return redirect('equipamentos:transferir_equipamento', equipamento_id=equipamento_id)
+        except Exception as e:
+            messages.error(request, f"Erro ao transferir equipamento: {str(e)}")
+            return redirect('equipamentos:transferir_equipamento', equipamento_id=equipamento_id)
+    
+    # Configurar breadcrumbs
+    breadcrumbs = [
+        {'title': 'Equipamentos', 'url': reverse('equipamentos:listar_equipamentos_cliente')},
+        {'title': f'Histórico: {equipamento.numero_serie}', 
+         'url': reverse('equipamentos:historico_equipamento_cliente', args=[equipamento.id])},
+        {'title': 'Transferir Equipamento'}
+    ]
+    
+    # Renderizar formulário de transferência
+    clientes = Cliente.objects.all().order_by('nome')
+    return render(request, 'equipamentos/transferir_equipamento.html', {
+        'equipamento': equipamento,
+        'clientes': clientes,
+        'breadcrumbs': breadcrumbs,
+        'pats_abertas': pats_abertas
+    })

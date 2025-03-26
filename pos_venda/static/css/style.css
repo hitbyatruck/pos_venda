@@ -192,3 +192,46 @@ body.dark-mode .detalhes-equipamento table {
     font-size: 80%;
     color: #dc3545;
 }
+
+/* Cards padronizados */
+.app-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1.5rem;
+  }
+  
+  .app-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  /* Tabelas de dados */
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .data-table th {
+    background-color: var(--bs-light);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  /* Formulários consistentes */
+  .form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+  
+  /* Filtros de pesquisa */
+  .filter-container {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    background-color: var(--bs-light);
+  }

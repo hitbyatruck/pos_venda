@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from core.utils import group_required
+from core.search import AdvancedSearch
 from django.urls import reverse
 
 @login_required
@@ -100,16 +101,6 @@ def criar_pat(request):
         'formset': formset
     })
 
-# Função auxiliar para normalizar texto (remover acentos e converter para minúsculas)
-def normalize_text(text):
-    if not text:
-        return ""
-    # Normalizar texto para remover acentos
-    normalized = unicodedata.normalize('NFKD', str(text))
-    normalized = ''.join([c for c in normalized if not unicodedata.combining(c)])
-    # Converter para minúsculas e remover espaços extras
-    return normalized.lower().strip()
-
 @login_required
 @group_required(['Administradores', 'Técnicos'])
 def listar_pats(request):
@@ -118,86 +109,31 @@ def listar_pats(request):
     direcao = request.GET.get('direcao', 'desc')
     ordem = '-' + ordenar_por if direcao == 'desc' else ordenar_por
     
-    # Filtros - por padrão, mostrar apenas PATs abertas se nenhum estado especificado
+    # Parâmetros de pesquisa
     estado = request.GET.get('estado', 'aberto')
-    q = request.GET.get('q', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
     
-    # Inicializar variáveis
-    normalized_query = ""  # Inicializa aqui para evitar o erro
-    
-    # Query base com pré-carregamento de relacionamentos
-    pats = PedidoAssistencia.objects.all().select_related(
+    # Inicializar a consulta base
+    queryset = PedidoAssistencia.objects.all().select_related(
         'cliente', 
         'equipamento', 
         'equipamento__equipamento_fabricado'
     ).prefetch_related('itens')
     
-    # Aplicar filtros de estado - Apenas filtrar se não for 'todos'
+    # Aplicar filtro de estado - Apenas filtrar se não for 'todos'
     if estado and estado != 'todos':
-        pats = pats.filter(estado=estado)
+        queryset = queryset.filter(estado=estado)
+        
+    # Inicializar o serviço de pesquisa
+    search_service = AdvancedSearch(
+        request=request,
+        model_class=PedidoAssistencia,
+        fields_to_search=['pat_number', 'relatorio']
+    )
     
-    # Pesquisa por texto ignorando acentos
-    if q:
-        # Normalizar o termo de pesquisa
-        normalized_query = normalize_text(q)
-        search_terms = normalized_query.split()
-        
-        # Criar listas de campos para buscas diretas e relacionadas
-        text_fields = []
-        
-        # Conjunto de resultados para cada termo de pesquisa
-        matched_results = set()
-        first_iteration = True
-        
-        # Para cada termo de pesquisa, encontrar PATs que o contenham
-        for term in search_terms:
-            # Buscar PATs diretamente no banco
-            results = list(pats)
-            matching_ids = []
-            
-            # Verificar cada PAT individualmente
-            for pat in results:
-                # Construir um texto combinando vários campos
-                fields_to_check = [
-                    pat.pat_number,
-                    f"{pat.cliente.nome if pat.cliente else ''} {pat.cliente.empresa if pat.cliente else ''}",
-                    f"{pat.equipamento.equipamento_fabricado.nome if pat.equipamento and pat.equipamento.equipamento_fabricado else ''}",
-                    pat.equipamento.numero_serie if pat.equipamento else '',
-                    pat.relatorio or '',
-                ]
-                
-                # Adicionar itens
-                item_text = ' '.join([
-                    f"{item.designacao or ''} {item.referencia or ''}"
-                    for item in pat.itens.all()
-                ])
-                fields_to_check.append(item_text)
-                
-                # Combinar e normalizar todos os campos
-                combined_text = normalize_text(' '.join([str(field) for field in fields_to_check if field]))
-                
-                # Verificar se o termo está presente no texto normalizado
-                if term in combined_text:
-                    matching_ids.append(pat.id)
-            
-            # Filtrar os resultados para esta iteração
-            term_results = set(matching_ids)
-            
-            # Interseção com resultados anteriores (AND lógico entre termos)
-            if first_iteration:
-                matched_results = term_results
-                first_iteration = False
-            else:
-                matched_results &= term_results
-        
-        # Aplicar o filtro final usando os IDs identificados
-        if matched_results:
-            pats = pats.filter(id__in=matched_results)
-        else:
-            # Se não houver correspondências, retornar conjunto vazio
-            pats = PedidoAssistencia.objects.none()
+    # Executar a pesquisa normalizada com campos relacionados
+    pats = search_service.search(queryset)
     
     # Filtro por período de data
     if data_inicio:
@@ -218,8 +154,8 @@ def listar_pats(request):
     pats = pats.order_by(ordem)
     
     # Paginação
-    page = request.GET.get('page', 1)
     paginator = Paginator(pats, 20)  # 20 PATs por página
+    page = request.GET.get('page', 1)
     
     try:
         pats = paginator.page(page)
@@ -228,22 +164,44 @@ def listar_pats(request):
     except EmptyPage:
         pats = paginator.page(paginator.num_pages)
     
-    # Adicione logs para debug
-    print(f"Total de PATs: {PedidoAssistencia.objects.count()}")
-    print(f"Termo de pesquisa: '{q}' (normalizado: '{normalized_query}')")
-    print(f"PATs filtradas: {paginator.count if 'paginator' in locals() else 'N/A'}")
+    # HTML para os filtros avançados
+    filter_html = """
+    <!-- Campo de pesquisa geral -->
+    <div class="col-md-6">
+      <label for="q" class="form-label">Pesquisar</label>
+      <input type="text" class="form-control" id="q" name="q" value="{q}" 
+        placeholder="PAT, cliente, equipamento, número de série...">
+    </div>
+
+    <!-- Filtros específicos -->
+    <div class="col-md-3">
+      <label for="data_inicio" class="form-label">Data Início</label>
+      <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{data_inicio}">
+    </div>
     
+    <div class="col-md-3">
+      <label for="data_fim" class="form-label">Data Fim</label>
+      <input type="date" class="form-control" id="data_fim" name="data_fim" value="{data_fim}">
+    </div>
+    """.format(
+        q=request.GET.get('q', ''),
+        data_inicio=request.GET.get('data_inicio', ''),
+        data_fim=request.GET.get('data_fim', ''),
+    )
+    
+    # Contexto
     context = {
         'pats': pats,
         'direcao': 'asc' if direcao == 'desc' else 'desc',  # Inverte para próximo clique
         'ordenar_por': ordenar_por,
         'estado_atual': estado,
-        'query': q,
+        'query': search_service.query,
         'data_inicio': data_inicio,
         'data_fim': data_fim,
         'status_choices': PedidoAssistencia.ESTADO_CHOICES,
+        'filter_html': filter_html,
         'breadcrumbs': [
-            {'title': ('Assistência'), 'url': None}
+            {'title': 'Assistência', 'url': None}
         ]
     }
     
@@ -253,12 +211,12 @@ def listar_pats(request):
 @group_required(['Administradores', 'Técnicos'])
 def detalhes_pat(request, pat_id):
     pat = get_object_or_404(PedidoAssistencia, id=pat_id)
-    historico = HistoricoPAT.objects.filter(pat=pat).order_by('-data_criacao')
+    historico = HistoricoPAT.objects.filter(pat=pat).order_by('-data_registo')
     
     # Adicione breadcrumbs
     breadcrumbs = [
         {'title': ('Assistências'), 'url': reverse('assistencia:listar_pats')},
-        {'title': f'PAT #{pat.numero}', 'url': None}
+        {'title': f'PAT #{pat.pat_number}', 'url': None}
     ]
     
     return render(request, 'assistencia/detalhes_pat.html', {
@@ -289,7 +247,7 @@ def editar_pat(request, pat_id):
 
         # Tentar uma abordagem mais direta para encontrar items excluídos
         print("==== TENTANDO ENCONTRAR ITENS PARA EXCLUIR DE FORMA ALTERNATIVA ====")
-        # Remova todo o código redundante e substitua por:
+
         for key, value in request.POST.items():
             if key.endswith('-DELETE') and value in ('on', 'true', '1', 'checked'):
                 try:

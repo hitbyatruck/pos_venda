@@ -18,6 +18,7 @@ from equipamentos.models import EquipamentoCliente  # Add this line to import Eq
 from notas.models import Nota
 from core.utils import group_required
 from .forms import ClienteForm, EquipamentoClienteForm  # Add this line to import ClienteForm and EquipamentoClienteForm
+from core.search import AdvancedSearch
 
 # LISTAGEM DE FUNÇÕES DE CLIENTES
 @login_required
@@ -47,28 +48,80 @@ def adicionar_cliente(request):
 @login_required
 @group_required(['Administradores', 'Técnicos', 'Comerciais'])
 def listar_clientes(request):
-    query = request.GET.get('q', '')
-    clientes = Cliente.objects.all()
+    # Parâmetros adicionais de pesquisa
+    cidade = request.GET.get('cidade', '')
+    tipo = request.GET.get('tipo', '')
     
-    if query:
-        clientes = clientes.filter(
-            Q(nome__icontains=query) | 
-            Q(codigo__icontains=query) |
-            Q(email__icontains=query) |
-            Q(telefone__icontains=query)
-        )
+    # Consulta base com todos os relacionamentos relevantes
+    queryset = Cliente.objects.all().prefetch_related('equipamentos', 'pats')
     
+    # Inicializar o serviço de pesquisa expandido
+    search_service = AdvancedSearch(
+        request=request,
+        model_class=Cliente,
+        fields_to_search=[
+            'nome', 'nif', 'email', 'telefone', 'empresa', 
+            'morada', 'localidade', 'codigo_postal'
+        ],
+        related_searches={
+            # Buscar pelos equipamentos do cliente
+            'equipamentos': ['numero_serie', 'observacoes'],
+            'equipamentos__equipamento_fabricado': ['nome', 'referencia_interna'],
+            # Buscar pelos PATs do cliente
+            'pats': ['pat_number', 'relatorio']
+        }
+    )
+    
+    # Executar a pesquisa normalizada
+    clientes = search_service.search(queryset)
+    
+    # Aplicar os filtros adicionais
+    if cidade:
+        clientes = AdvancedSearch.apply_filter(clientes, 'localidade', cidade, 'icontains')
+    
+    if tipo == 'empresa':
+        clientes = clientes.exclude(empresa='')
+    elif tipo == 'sem_empresa':
+        clientes = clientes.filter(empresa='')
+    
+    # Ordenação
     clientes = clientes.order_by('nome')
     
-    # Adicione breadcrumbs
-    breadcrumbs = [
-        {'title': _('Clientes'), 'url': None}
-    ]
+    # HTML para os filtros avançados
+    filter_html = """
+    <div class="col-md-4">
+      <label for="q" class="form-label">Pesquisar</label>
+      <input type="text" class="form-control" id="q" name="q" value="{q}" 
+        placeholder="Nome, NIF, telefone, nº série...">
+    </div>
+    <div class="col-md-4">
+      <label for="cidade" class="form-label">Localidade</label>
+      <input type="text" class="form-control" id="cidade" name="cidade" value="{cidade}">
+    </div>
+    <div class="col-md-4">
+      <label for="tipo" class="form-label">Empresa/Pessoa</label>
+      <select class="form-select" id="tipo" name="tipo">
+        <option value="">Todos</option>
+        <option value="empresa" {empresa_selected}>Com Empresa</option>
+        <option value="sem_empresa" {sem_empresa_selected}>Sem Empresa</option>
+      </select>
+    </div>
+    """.format(
+        q=request.GET.get('q', ''),
+        cidade=request.GET.get('cidade', ''),
+        empresa_selected='selected' if tipo == 'empresa' else '',
+        sem_empresa_selected='selected' if tipo == 'sem_empresa' else ''
+    )
     
     return render(request, 'clientes/listar_clientes.html', {
         'clientes': clientes,
-        'query': query,
-        'breadcrumbs': breadcrumbs  # Adicione esta linha
+        'query': search_service.query,
+        'cidade': cidade,
+        'tipo': tipo,
+        'filter_html': filter_html,
+        'breadcrumbs': [
+            {'title': 'Clientes', 'url': None}
+        ]
     })
 
 @login_required

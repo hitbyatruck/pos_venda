@@ -8,29 +8,14 @@
     {% if breadcrumbs %}
         {% include 'includes/breadcrumbs.html' %}
     {% endif %}
+    <!-- Procure onde está o formulário de pesquisa atual e substitua por: -->
+
+    <!-- Formulário de Pesquisa Avançada -->
     <div class="card mb-4">
         <div class="card-body">
-          <form method="get" action="{% url 'equipamentos:listar_equipamentos_fabricados' %}" class="row g-3">
-            <div class="col-md-6">
-              <input type="text" class="form-control" id="q" name="q" value="{{ request.GET.q|default:'' }}" 
-                placeholder="Pesquisar por nome, referência, modelo...">
-            </div>
-            
-            <div class="col-md-4">
-              <select class="form-select" id="categoria" name="categoria">
-                <option value="">Todas as categorias</option>
-                {% for cat in categorias %}
-                  <option value="{{ cat.id }}" {% if categoria_selecionada == cat.id|stringformat:"i" %}selected{% endif %}>{{ cat.nome }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            
-            <div class="col-md-2">
-              <button type="submit" class="btn btn-primary w-100">Pesquisar</button>
-            </div>
-          </form>
+        {% include 'includes/advanced_search.html' with filter_content=filter_html %}
         </div>
-      </div>
+    </div>
     {% include 'includes/mini_nav.html' %}
 
     <a href="{% url 'equipamentos:adicionar_equipamento_fabricado' %}" class="btn btn-primary mb-3">Adicionar Equipamento</a>

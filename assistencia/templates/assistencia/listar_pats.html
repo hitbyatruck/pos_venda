@@ -28,39 +28,10 @@
     <a href="{% url 'assistencia:listar_pats' %}?estado=todos" class="btn {% if request.GET.estado == 'todos' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todos</a>
   </div>
 
-  <!-- Formulário de Pesquisa -->
+  <!-- Formulário de Pesquisa - Substituir pelo componente avançado -->
   <div class="card mb-4">
     <div class="card-body">
-      <form method="get" action="{% url 'assistencia:listar_pats' %}" class="row g-3">
-        <!-- Manter os parâmetros existentes -->
-        {% if request.GET.estado %}
-        <input type="hidden" name="estado" value="{{ request.GET.estado }}">
-        {% endif %}
-        
-        <!-- Campo de pesquisa geral -->
-        <div class="col-md-6">
-          <label for="q" class="form-label">Pesquisar</label>
-          <input type="text" class="form-control" id="q" name="q" value="{{ request.GET.q|default:'' }}" 
-            placeholder="PAT, cliente, equipamento, número de série...">
-        </div>
-
-        <!-- Filtros específicos -->
-        <div class="col-md-3">
-          <label for="data_inicio" class="form-label">Data Início</label>
-          <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ request.GET.data_inicio|default:'' }}">
-        </div>
-        
-        <div class="col-md-3">
-          <label for="data_fim" class="form-label">Data Fim</label>
-          <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ request.GET.data_fim|default:'' }}">
-        </div>
-        
-        <!-- Botões -->
-        <div class="col-12 d-flex justify-content-end">
-          <a href="{% url 'assistencia:listar_pats' %}{% if request.GET.estado %}?estado={{ request.GET.estado }}{% endif %}" class="btn btn-secondary me-2">Limpar</a>
-          <button type="submit" class="btn btn-primary">Pesquisar</button>
-        </div>
-      </form>
+      {% include 'includes/advanced_search.html' with filter_content=filter_html %}
     </div>
   </div>
 

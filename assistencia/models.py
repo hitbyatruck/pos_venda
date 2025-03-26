@@ -46,6 +46,27 @@ class PedidoAssistencia(models.Model):
         related_name="pats",
         verbose_name="Equipamento"
     )
+    numero_serie_equipamento = models.CharField(
+        max_length=100, 
+        blank=True,
+        verbose_name="Número de Série (histórico)",
+        help_text="Preserva o número de série mesmo que o equipamento seja transferido"
+    )
+    proprietario_original = models.CharField(
+        max_length=255, 
+        blank=True,
+        verbose_name="Proprietário Original"
+    )
+    proprietario_atual = models.CharField(
+        max_length=255, 
+        blank=True,
+        verbose_name="Proprietário Atual"
+    )
+    data_ultima_transferencia = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Data da Última Transferência"
+    )
     relatorio = models.TextField(
         blank=True, 
         null=True, 
@@ -82,11 +103,7 @@ class PedidoAssistencia(models.Model):
     def __str__(self):
         return f"PAT {self.pat_number or '---'} - {self.cliente.nome}"
 
-    def save(self, *args, **kwargs):
-        if not self.pat_number:
-            self.pat_number = self._generate_pat_number()
-        super().save(*args, **kwargs)
-
+    
     def get_estado_class(self):
         """Retorna a classe Bootstrap adequada para o estado"""
         estado_classes = {
@@ -115,6 +132,25 @@ class PedidoAssistencia(models.Model):
             new_number = 1
 
         return f"{year}{month:02d}{new_number:04d}"
+
+    def save(self, *args, **kwargs):
+        # Gerar número de PAT se não existir
+        if not self.pat_number:
+            self.pat_number = self._generate_pat_number()
+        
+        # Preservar número de série ao salvar
+        if self.equipamento and not self.numero_serie_equipamento:
+            self.numero_serie_equipamento = self.equipamento.numero_serie
+            
+        # Preservar proprietário original se ainda não estiver definido
+        if self.cliente and not self.proprietario_original:
+            self.proprietario_original = self.cliente.nome
+            
+        # Atualizar proprietário atual
+        if self.cliente:
+            self.proprietario_atual = self.cliente.nome
+        
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validações personalizadas"""

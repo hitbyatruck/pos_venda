@@ -1,10 +1,26 @@
 import logging
+import unicodedata
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+def normalize_text(text):
+    """
+    Normaliza um texto removendo acentos e convertendo para minúsculas.
+    """
+    if not text:
+        return ''
+    # Converter para string caso seja outro tipo
+    text = str(text)
+    # Normalizar para form NFD e remover acentos
+    normalized = unicodedata.normalize('NFD', text).encode('ascii', 'ignore').decode('ascii')
+    # Converter para minúsculas
+    normalized = normalized.lower()
+    return normalized
+
 
 def group_required(group_names):
     def decorator(view_func):

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Resultados da Pesquisa: {{ query }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Resultados da Pesquisa</h2>
+  
+  <div class="alert alert-info">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-search me-2 fs-4"></i>
+      <div>
+        {% if query %}
+          Resultados para: <strong>{{ query }}</strong>
+          {% if total_results %}
+            <span class="ms-2 badge bg-primary">{{ total_results }} resultado{{ total_results|pluralize }}</span>
+          {% endif %}
+        {% else %}
+          Introduza um termo de pesquisa
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  {% if query and total_results == 0 %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Não foram encontrados resultados para a sua pesquisa.
+  </div>
+  {% endif %}
+  
+  <!-- Resultados organizados por categoria -->
+  <div class="row">
+    {% if results.clientes %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-people me-2"></i> Clientes ({{ results.clientes|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.clientes %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon }} fs-4 text-primary"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  <!-- Mostrar relacionamentos desta entidade -->
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if results.equipamentos_fabricados %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-cpu me-2"></i> Equipamentos ({{ results.equipamentos_fabricados|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.equipamentos_fabricados %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon }} fs-4 text-success"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if results.equipamentos_cliente %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <i class="bi bi-cpu-fill me-2"></i> Equipamentos de Cliente ({{ results.equipamentos_cliente|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.equipamentos_cliente %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon }} fs-4 text-info"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if results.pats %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+          <i class="bi bi-tools me-2"></i> PATs ({{ results.pats|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.pats %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon }} fs-4 text-warning"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if results.tarefas %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+          <i class="bi bi-check2-square me-2"></i> Tarefas ({{ results.tarefas|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.tarefas %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon|default:'bi-check2-square' }} fs-4 text-danger"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if results.pecas %}
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+          <i class="bi bi-gear me-2"></i> Peças ({{ results.pecas|length }})
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for item in results.pecas %}
+          <li class="list-group-item">
+            <a href="{{ item.url }}" class="text-decoration-none">
+              <div class="d-flex">
+                <div class="me-3">
+                  <i class="{{ item.icon|default:'bi-gear' }} fs-4 text-secondary"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body">{{ item.title }}</div>
+                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
+                  
+                  {% if item.related_items %}
+                  <div class="mt-2 small">
+                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                      {% for related in item.related_items %}
+                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
+                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -31,7 +31,7 @@
       <p><strong>{% trans "Email:" %}</strong> {{ pat.cliente.email }}</p>
       <p><strong>{% trans "Telefone:" %}</strong> {{ pat.cliente.telefone }}</p>
       <div class="mt-3">
-        <a href="{% url 'editar_cliente' pat.cliente.id %}" class="btn btn-primary">{% trans "Editar Cliente" %}</a>
+        <a href="{% url 'clientes:editar_cliente' pat.cliente.id %}" class="btn btn-primary">{% trans "Editar Cliente" %}</a>
       </div>
     </div>
     
@@ -46,8 +46,8 @@
       <p><strong>{% trans "Equipamento:" %}</strong> {{ pat.equipamento.equipamento_fabricado.nome }}</p>
       <p><strong>{% trans "Número de Série:" %}</strong> {{ pat.equipamento.numero_serie }}</p>
       <div class="mt-3">
-        <a href="{% url 'editar_equipamento_fabricado' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-primary">{% trans "Editar Equipamento" %}</a>
-        <a href="{% url 'detalhes_equipamento' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-secondary">{% trans "Ver Detalhes do Equipamento" %}</a>
+        <a href="{% url 'equipamentos:editar_equipamento_fabricado' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-primary">{% trans "Editar Equipamento" %}</a>
+        <a href="{% url 'equipamentos:detalhes_equipamento' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-secondary">{% trans "Ver Detalhes do Equipamento" %}</a>
       </div>
     </div>
     

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Histórico: {{ equipamento.numero_serie }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Breadcrumbs -->
+  {% include "includes/breadcrumbs.html" with items=breadcrumbs %}
+  
+  <!-- Cabeçalho com botões de ação -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+      <i class="bi bi-cpu-fill me-2 text-primary"></i>
+      {{ equipamento.equipamento_fabricado.nome }} - S/N: {{ equipamento.numero_serie }}
+    </h2>
+    <div>
+      <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}" class="btn btn-outline-primary">
+        <i class="bi bi-person me-2"></i>Ver Cliente
+      </a>
+      {% if user.is_staff %}
+      <a href="{% url 'equipamentos:transferir_equipamento' equipamento_id=equipamento.id %}" class="btn btn-outline-warning ms-2">
+        <i class="bi bi-arrow-left-right me-2"></i>Transferir
+      </a>
+      <a href="/admin/equipamentos/equipamentocliente/{{ equipamento.id }}/change/" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-pencil-square me-2"></i>Editar
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Mini Nav para a página de histórico -->
+  <ul class="nav nav-tabs mb-4">
+    {% for tab in nav_tabs %}
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == tab.id %}active{% endif %}" 
+         href="?tab={{ tab.id }}">
+        <i class="{{ tab.icon }} me-1"></i> {{ tab.name }}
+        {% if tab.badge and tab.badge > 0 %}
+        <span class="badge bg-secondary ms-1">{{ tab.badge }}</span>
+        {% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  
+  <!-- Conteúdo das abas -->
+  <div class="tab-content mt-4">
+    <!-- Tab: Detalhes -->
+    <div class="{% if active_tab == 'detalhes' %}d-block{% else %}d-none{% endif %}" id="detalhes">
+      <!-- Detalhes do Equipamento -->
+      <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalhes do Equipamento</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Modelo:</dt>
+                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.nome }}</dd>
+                
+                <dt class="col-sm-4">Nº Série:</dt>
+                <dd class="col-sm-8">{{ equipamento.numero_serie }}</dd>
+                
+                <dt class="col-sm-4">Cliente Atual:</dt>
+                <dd class="col-sm-8">
+                  <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}">
+                    {{ equipamento.cliente.nome }}
+                  </a>
+                </dd>
+              </dl>
+            </div>
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Data Aquisição:</dt>
+                <dd class="col-sm-8">{{ equipamento.data_aquisicao|date:"d/m/Y" }}</dd>
+                
+                <dt class="col-sm-4">Categoria:</dt>
+                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.categoria.nome }}</dd>
+                
+                <dt class="col-sm-4">Referência:</dt>
+                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.referencia_interna }}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab: Assistência -->
+    <div class="{% if active_tab == 'assistencia' %}d-block{% else %}d-none{% endif %}" id="assistencia">
+      <!-- Histórico de Assistência -->
+      <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0"><i class="bi bi-tools me-2"></i>Histórico de Assistência Técnica</h5>
+        </div>
+        <div class="card-body">
+          {% if historico_pats %}
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Nº PAT</th>
+                    <th>Data</th>
+                    <th>Estado</th>
+                    <th>Descrição</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pat in historico_pats %}
+                  <tr>
+                    <td>{{ pat.pat_number }}</td>
+                    <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
+                    <td>
+                      <span class="badge 
+                        {% if pat.estado == 'aberto' %}bg-danger{% endif %}
+                        {% if pat.estado == 'em_andamento' %}bg-warning{% endif %}
+                        {% if pat.estado == 'concluido' %}bg-success{% endif %}
+                        {% if pat.estado == 'cancelado' %}bg-secondary{% endif %}
+                      ">
+                        {{ pat.get_estado_display }}
+                      </span>
+                    </td>
+                    <td>{{ pat.problema|truncatechars:50 }}</td>
+                    <td>
+                      <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>
+              Este equipamento não possui registros de assistência técnica.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab: Alterações -->
+    <div class="{% if active_tab == 'alteracoes' %}d-block{% else %}d-none{% endif %}" id="alteracoes">
+      <!-- Histórico de Alterações -->
+      <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico de Alterações</h5>
+        </div>
+        <div class="card-body">
+          {% if historico_mudancas %}
+            <div class="timeline">
+              {% for mudanca in historico_mudancas %}
+                <div class="timeline-item">
+                  <div class="timeline-date">
+                    {{ mudanca.history_date|date:"d/m/Y H:i" }}
+                  </div>
+                  <div class="timeline-badge {% if mudanca.history_type == '+' %}bg-success{% elif mudanca.history_type == '-' %}bg-danger{% else %}bg-info{% endif %}">
+                    {% if mudanca.history_type == '+' %}<i class="bi bi-plus-lg"></i>{% elif mudanca.history_type == '-' %}<i class="bi bi-dash-lg"></i>{% else %}<i class="bi bi-pencil"></i>{% endif %}
+                  </div>
+                  <div class="timeline-content">
+                    <div class="mb-2">
+                      {% if mudanca.history_type == '+' %}
+                        <strong>Equipamento registrado</strong>
+                      {% elif mudanca.history_type == '-' %}
+                        <strong>Equipamento removido</strong>
+                      {% else %}
+                        <strong>Equipamento atualizado</strong>
+                      {% endif %}
+                      por {{ mudanca.history_user.username|default:"Sistema" }}
+                      {% if mudanca.history_change_reason %}
+                        <div class="mt-1 p-2 alert alert-secondary">
+                            <i class="bi bi-quote me-1"></i>{{ mudanca.history_change_reason }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% with old=mudanca.prev_record new=mudanca %}
+                        {% if old.cliente != new.cliente %}
+                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
+                                <strong>Cliente:</strong> 
+                                <span class="badge bg-danger">{{ old.cliente.nome }}</span> → 
+                                <span class="badge bg-success">{{ new.cliente.nome }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if old.numero_serie != new.numero_serie %}
+                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
+                                <strong>Nº Série:</strong> 
+                                <span class="badge bg-danger">{{ old.numero_serie }}</span> → 
+                                <span class="badge bg-success">{{ new.numero_serie }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if old.data_aquisicao != new.data_aquisicao %}
+                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
+                                <strong>Data Aquisição:</strong> 
+                                <span class="badge bg-danger">{{ old.data_aquisicao|date:"d/m/Y" }}</span> → 
+                                <span class="badge bg-success">{{ new.data_aquisicao|date:"d/m/Y" }}</span>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>
+              Não há registros de alterações para este equipamento.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab: Notas -->
+    <div class="{% if active_tab == 'notas' %}d-block{% else %}d-none{% endif %}" id="notas">
+      <!-- Notas e Observações -->
+      <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Notas e Observações</h5>
+        </div>
+        <div class="card-body">
+          {% if notas %}
+            {% for nota in notas %}
+              <div class="card mb-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="bi bi-journal-text me-2"></i>
+                    <strong>{{ nota.titulo }}</strong>
+                  </div>
+                  <small class="text-muted">{{ nota.data_criacao|date:"d/m/Y H:i" }}</small>
+                </div>
+                <div class="card-body">
+                  {{ nota.conteudo|linebreaks }}
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-info-circle me-2"></i>
+              Não há notas registradas para este equipamento.
+            </div>
+          {% endif %}
+          
+          <!-- Formulário para adicionar nova nota -->
+          <form method="post" action="">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="titulo">Título:</label>
+              <input type="text" class="form-control" id="titulo" name="titulo" required>
+            </div>
+            
+            <div class="form-group mt-2">
+              <label for="conteudo">Descrição:</label>
+              <textarea class="form-control" id="conteudo" name="conteudo" rows="3" required></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary mt-2">
+              <i class="bi bi-plus-circle me-2"></i>Adicionar Nota
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSS para timeline -->
+<style>
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    
+    .timeline:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15px;
+      height: 100%;
+      width: 2px;
+      background: var(--bs-border-color);
+    }
+    
+    .timeline-item {
+      position: relative;
+      margin-bottom: 30px;
+      padding-left: 40px;
+    }
+    
+    .timeline-badge {
+      position: absolute;
+      left: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      text-align: center;
+      color: white;
+      line-height: 30px;
+    }
+    
+    .timeline-date {
+      color: var(--bs-secondary-color);
+      font-size: 0.875rem;
+      margin-bottom: 5px;
+    }
+    
+    .timeline-content {
+      padding: 15px;
+      background: var(--bs-light-bg-subtle);
+      border-radius: 4px;
+      border-left: 3px solid var(--bs-primary);
+    }
+  </style>
+{% endblock %}

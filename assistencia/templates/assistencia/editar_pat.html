@@ -15,8 +15,16 @@
         {% csrf_token %}
         
         <!-- Include formset management form -->
-        {{ formset.management_form }}
-        
+        <div style="display: none;">
+            {{ formset.management_form }}
+            
+            <!-- Esconder checkboxes DELETE que podem estar aparecendo incorretamente -->
+            {% for form in formset %}
+                {% if form.DELETE %}
+                    <div>{{ form.DELETE }}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
         <!-- PAT Details Section -->
         <div class="row mb-4">
             <!-- Left Column -->
@@ -111,8 +119,7 @@
                         
                     {% if form.instance.pk %}
                         {{ form.id }}
-                        <!-- SOLUÇÃO: renderize o campo DELETE diretamente sem divs/spans envolvendo -->
-                        {{ form.DELETE }}
+                        <div style="display: none;">{{ form.DELETE }}</div>
                     {% endif %}
                         
                         <td>
@@ -147,23 +154,26 @@
                         </td>
                         <td>
                             <div class="form-group">
-                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="{{ form.quantidade.value|default:1 }}">
-                                {% if form.quantidade.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.quantidade.errors|striptags }}
-                                    </div>
-                                {% endif %}
+                                <input type="number" 
+                                       name="{{ form.quantidade.html_name }}" 
+                                       class="form-control quantidade" 
+                                       min="1" 
+                                       step="1" 
+                                       value="{{ form.quantidade.value|floatformat:'0' }}" 
+                                       onchange="this.value=Math.floor(this.value)">
                             </div>
                         </td>
                         <td>
                             <div class="form-group">
-                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="{{ form.preco.value|default:0 }}">
-                                {% if form.preco.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.preco.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
+                                <!-- Garantir que o valor seja float com 2 casas decimais -->
+                                <div class="form-group">
+                                    <input type="number" 
+                                           name="{{ form.preco.html_name }}" 
+                                           class="form-control preco" 
+                                           step="0.01"
+                                           value="{{ form.instance.preco|floatformat:2 }}" 
+                                           data-original-value="{{ form.instance.preco|floatformat:2 }}">
+                                </div>
                         </td>
                         <td class="row-total">0.00</td>
                         <td>
@@ -173,45 +183,47 @@
                 {% endfor %}
                 
                 <!-- Template row for new items -->
+            
                 <tr class="item-row template-row" style="display: none;">
-                    {% with form=formset.empty_form %}
-                        <td>
-                            <div class="form-group">
-                                {{ form.tipo }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.referencia }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.designacao }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="1">
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="0.00">
-                            </div>
-                        </td>
-                        <td class="row-total">0.00</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                        </td>
-                    {% endwith %}
-                </tr>
+                        {% with form=formset.empty_form %}
+                            <td>
+                                <div class="form-group">
+                                    {{ form.tipo }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    {{ form.referencia }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    {{ form.designacao }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" step="1" value="{{ form.quantidade.value|default:'1' }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="{{ form.preco.value|default:'0.00' }}">                                </div>
+                            </td>
+                            <td class="row-total">0.00</td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
+                            </td>
+                        {% endwith %}
+                    </tr>
                 
                 <!-- Grand Total Row -->
                 <tr id="grandTotalRow">
                     <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
                     <td class="text-end" id="grandTotalValue">0.00</td>
-                    <td></td>
+                    <td>
+                        <input type="hidden" name="total_geral" id="total_geral_input" value="0.00">
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -230,25 +242,4 @@
 {% endblock %}
 {% block scripts %}
     <script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
-{% endblock %}
-{% block extra_scripts %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // SOLUÇÃO DE EMERGÊNCIA - adicionar função global para remover itens
-    window.excluirItemDiretamente = function(itemId) {
-        // Localizar o checkbox DELETE correspondente ao item
-        document.querySelectorAll('.item-row').forEach(row => {
-            const idField = row.querySelector('input[name$="-id"]');
-            if (idField && idField.value == itemId) {
-                const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
-                if (deleteCheckbox) {
-                    console.log("Marcando para exclusão:", itemId);
-                    deleteCheckbox.checked = true;
-                    row.style.display = 'none';
-                }
-            }
-        });
-    }
-});
-</script>
 {% endblock %}

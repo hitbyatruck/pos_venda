@@ -30,6 +30,9 @@
                     <td>
                         <a href="#" class="btn btn-info btn-sm">Detalhes</a>
                         <a href="#" class="btn btn-warning btn-sm">Editar</a>
+                        <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}" class="btn btn-sm btn-info" title="Ver histórico completo">
+                          <i class="bi bi-clock-history"></i> Histórico
+                        </a>
                         <button class="btn btn-danger btn-sm deassociate-equipment"
                                 data-id="{{ equipamento.id }}"
                                 data-url="{% url 'clientes:desassociar_equipamento' equipamento.id %}">
