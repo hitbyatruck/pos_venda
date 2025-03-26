@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
@@ -6,10 +7,6 @@ from clientes.models import Cliente, EquipamentoCliente
 from equipamentos.models import EquipamentoFabricado
 from datetime import datetime, timedelta
 from django.utils import timezone
-
-def permission_denied_view(request, exception=None):
-    """View personalizada para erros 403 Permission Denied"""
-    return render(request, '403.html', status=403)
 
 @login_required
 def dashboard(request):
@@ -35,20 +32,18 @@ def dashboard(request):
         'cliente', 'equipamento', 'equipamento__equipamento_fabricado'
     ).order_by('-data_entrada')[:5]
     
-    # Clientes mais ativos (com mais PATs) - corrigido para usar 'pats' em vez de 'pedidoassistencia'
+    # Clientes mais ativos (com mais PATs)
     clientes_ativos = Cliente.objects.annotate(
-        num_pats=Count('pats')  # Corrigido aqui
+        num_pats=Count('pats')
     ).filter(num_pats__gt=0).order_by('-num_pats')[:5]
     
     # Equipamentos mais frequentes em PATs
     try:
-        # Aqui também precisamos verificar o relacionamento correto
         top_equipamentos = EquipamentoFabricado.objects.annotate(
-            num_pats=Count('equipamentocliente__pats', distinct=True)  # Ajuste conforme necessário
+            num_pats=Count('equipamentocliente__pats', distinct=True)
         ).filter(num_pats__gt=0).order_by('-num_pats')[:5]
     except Exception as e:
         print(f"Erro ao consultar equipamentos mais frequentes: {e}")
-        # Use uma abordagem alternativa se a consulta falhar
         top_equipamentos = []
     
     # Atividade recente (últimos 30 dias)
@@ -68,19 +63,7 @@ def dashboard(request):
     else:
         tendencia_percentual = 100 if pats_ultimos_30_dias > 0 else 0
     
-    context = {
-        'total_clientes': total_clientes,
-        'total_equipamentos': total_equipamentos,
-        'total_pats': total_pats,
-        'pats_por_estado': pats_por_estado,
-        'pats_recentes': pats_recentes,
-        'clientes_ativos': clientes_ativos,
-        'top_equipamentos': top_equipamentos,
-        'pats_ultimos_30_dias': pats_ultimos_30_dias,
-        'tendencia_percentual': tendencia_percentual,
-        'tendencia_positiva': tendencia_percentual >= 0,
-    }
-    
+    # Dados para gráfico de evolução de PATs ao longo do tempo (últimos 6 meses)
     hoje = timezone.now().date()
     dados_grafico = []
     
@@ -111,10 +94,25 @@ def dashboard(request):
         {'estado': 'Cancelados', 'count': pats_por_estado['cancelado'], 'cor': '#6c757d'}
     ]
     
-    # Adicionar os dados ao contexto
-    context.update({
+    # Converter para JSON para uso no JavaScript
+    dados_grafico_json = json.dumps(dados_grafico)
+    dados_pizza_json = json.dumps(dados_pizza)
+    
+    context = {
+        'total_clientes': total_clientes,
+        'total_equipamentos': total_equipamentos,
+        'total_pats': total_pats,
+        'pats_por_estado': pats_por_estado,
+        'pats_recentes': pats_recentes,
+        'clientes_ativos': clientes_ativos,
+        'top_equipamentos': top_equipamentos,
+        'pats_ultimos_30_dias': pats_ultimos_30_dias,
+        'tendencia_percentual': tendencia_percentual,
+        'tendencia_positiva': tendencia_percentual >= 0,
         'dados_grafico': dados_grafico,
         'dados_pizza': dados_pizza,
-    })
+        'dados_grafico_json': dados_grafico_json,  # Adicionando o JSON para o gráfico
+        'dados_pizza_json': dados_pizza_json,      # Adicionando o JSON para o pizza
+    }
     
     return render(request, 'core/dashboard.html', context)

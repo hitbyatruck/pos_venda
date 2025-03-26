@@ -4,8 +4,7 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block extra_head %}
-<!-- Adicionar Chart.js para gráficos interativos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -49,29 +48,28 @@
                 </div>
             </div>
         </div>
-        <!-- Gráficos Interativos -->
-        <div class="row mb-4">
-            <!-- Gráfico de Linha - Evolução de PATs -->
-            <div class="col-md-8">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="card-title">Evolução de PATs nos Últimos 6 Meses</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="patsChart" height="250"></canvas>
-                    </div>
+    </div>
+    
+    <!-- Gráficos Interativos -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">Evolução de PATs nos Últimos 6 Meses</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="patsChart" style="width:100%; height:250px;"></canvas>
                 </div>
             </div>
-            
-            <!-- Gráfico de Pizza - PATs por Estado -->
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="card-title">PATs por Estado</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="estadosChart" height="250"></canvas>
-                    </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">PATs por Estado</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="estadosChart" style="width:100%; height:250px;"></canvas>
                 </div>
             </div>
         </div>
@@ -222,58 +220,95 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Ignore os erros de sintaxe do VS Code nas variáveis Django -->
 <script>
-// Inicializar gráficos quando a página carrega
+// @ts-nocheck
+// Dados para os gráficos definidos diretamente no template
+const graficoData = {
+    meses: [
+        {% for item in dados_grafico %}
+        {
+            mes: "{{ item.mes }}",
+            count: {{ item.count }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    pizza: [
+        {% for item in dados_pizza %}
+        {
+            estado: "{{ item.estado }}",
+            count: {{ item.count }},
+            cor: "{{ item.cor }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+};
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Gráfico de linha - Evolução de PATs
-    const lineCtx = document.getElementById('patsChart').getContext('2d');
-    const lineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: [{% for item in dados_grafico %}'{{ item.mes }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-            datasets: [{
-                label: 'PATs Criados',
-                data: [{% for item in dados_grafico %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    precision: 0
+    try {
+        // Gráfico de linha
+        const lineCtx = document.getElementById('patsChart').getContext('2d');
+        
+        if (lineCtx) {
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: graficoData.meses.map(function(item) { return item.mes; }),
+                    datasets: [{
+                        label: 'PATs Criados',
+                        data: graficoData.meses.map(function(item) { return item.count; }),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
                 }
-            }
+            });
         }
-    });
-    
-    // Gráfico de pizza - Estados de PATs
-    const pieCtx = document.getElementById('estadosChart').getContext('2d');
-    const pieChart = new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-            labels: [{% for item in dados_pizza %}'{{ item.estado }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-            datasets: [{
-                data: [{% for item in dados_pizza %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: [{% for item in dados_pizza %}'{{ item.cor }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right'
+        
+        // Gráfico de pizza
+        const pieCtx = document.getElementById('estadosChart').getContext('2d');
+        
+        if (pieCtx) {
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: graficoData.pizza.map(function(item) { return item.estado; }),
+                    datasets: [{
+                        data: graficoData.pizza.map(function(item) { return item.count; }),
+                        backgroundColor: graficoData.pizza.map(function(item) { return item.cor; }),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
                 }
-            }
+            });
         }
-    });
+    } catch (e) {
+        console.error("Erro ao renderizar gráficos:", e);
+    }
 });
 </script>
 {% endblock %}
