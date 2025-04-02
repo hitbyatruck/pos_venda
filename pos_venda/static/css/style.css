@@ -235,3 +235,30 @@ body.dark-mode .detalhes-equipamento table {
     border-radius: 0.5rem;
     background-color: var(--bs-light);
   }
+
+  .timeline-flow {
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-left: 2px solid #e3e6f0;
+}
+
+.timeline-badge {
+  position: absolute;
+  left: -40px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  text-align: center;
+  color: white;
+  line-height: 32px;
+}
+
+.timeline-content {
+  padding-left: 15px;
+}

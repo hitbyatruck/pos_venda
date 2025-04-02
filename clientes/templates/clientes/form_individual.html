@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% if form.instance.id %}{% trans "Editar Cliente Individual" %}{% else %}{% trans "Novo Cliente
+Individual" %}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            {% if form.instance.id %}
+            <i class="fas fa-edit me-2"></i>{% trans "Editar" %} {{ form.instance.nome }}
+            {% else %}
+            <i class="fas fa-plus me-2"></i>{% trans "Novo Cliente Individual" %}
+            {% endif %}
+        </h1>
+    </div>
+
+    {% include "clientes/includes/breadcrumbs.html" %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3 class="h5 mb-3">{% trans "Informações Básicas" %}</h3>
+
+                        <div class="mb-3">
+                            {{ form.nome.label_tag }}
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                            <div class="invalid-feedback d-block">{{ form.nome.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.empresa_associada.label_tag }}
+                            {{ form.empresa_associada }}
+                            {% if form.empresa_associada.errors %}
+                            <div class="invalid-feedback d-block">{{ form.empresa_associada.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.cargo.label_tag }}
+                            {{ form.cargo }}
+                            {% if form.cargo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.cargo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.website.label_tag }}
+                            {{ form.website }}
+                            {% if form.website.errors %}
+                            <div class="invalid-feedback d-block">{{ form.website.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.imagem.label_tag }}
+                            {{ form.imagem }}
+                            {% if form.imagem.errors %}
+                            <div class="invalid-feedback d-block">{{ form.imagem.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h3 class="h5 mb-3">{% trans "Informações Fiscais" %}</h3>
+
+                        <div class="mb-3">
+                            {{ form.nif.label_tag }}
+                            {{ form.nif }}
+                            {% if form.nif.errors %}
+                            <div class="invalid-feedback d-block">{{ form.nif.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.regime_iva.label_tag }}
+                            {{ form.regime_iva }}
+                            {% if form.regime_iva.errors %}
+                            <div class="invalid-feedback d-block">{{ form.regime_iva.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.desconto_padrao.label_tag }}
+                            {{ form.desconto_padrao }}
+                            {% if form.desconto_padrao.errors %}
+                            <div class="invalid-feedback d-block">{{ form.desconto_padrao.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="h5 mb-3">{% trans "Endereço" %}</h3>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    {{ form.morada.label_tag }}
+                                    {{ form.morada }}
+                                    {% if form.morada.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.morada.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.codigo_postal.label_tag }}
+                                    {{ form.codigo_postal }}
+                                    {% if form.codigo_postal.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.codigo_postal.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.cidade.label_tag }}
+                                    {{ form.cidade }}
+                                    {% if form.cidade.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.cidade.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.pais.label_tag }}
+                                    {{ form.pais }}
+                                    {% if form.pais.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.pais.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="h5 mb-3">{% trans "Observações" %}</h3>
+
+                        <div class="mb-3">
+                            {{ form.observacoes.label_tag }}
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">{{ form.observacoes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="h5 mb-3">{% trans "Contactos" %}</h3>
+
+                        {{ formset.management_form }}
+                        <div class="contacto-formset">
+                            {% for contacto_form in formset %}
+                            <div class="card contacto-form mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title m-0">
+                                        <span class="form-index">{{ forloop.counter }}</span> - {% trans "Contacto" %}
+                                    </h5>
+                                    {% if not forloop.first %}
+                                    <button type="button" class="btn btn-sm btn-danger btn-remove-form">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    {{ contacto_form.id }}
+                                    {% if contacto_form.DELETE %}
+                                    <div class="d-none">{{ contacto_form.DELETE }}</div>
+                                    {% endif %}
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ contacto_form.tipo.id_for_label }}" class="form-label">
+                                                    {{ _("Tipo de Contacto") }}
+                                                </label>
+                                                {{ contacto_form.tipo }}
+                                                {% if contacto_form.tipo.errors %}
+                                                <div class="invalid-feedback d-block">{{ contacto_form.tipo.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ contacto_form.valor.id_for_label }}" class="form-label">
+                                                    {{ _("Valor") }}
+                                                </label>
+                                                {{ contacto_form.valor }}
+                                                {% if contacto_form.valor.errors %}
+                                                <div class="invalid-feedback d-block">{{ contacto_form.valor.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ contacto_form.nome_contacto.id_for_label }}"
+                                                    class="form-label">
+                                                    {{ _("Nome do Contacto") }}
+                                                </label>
+                                                {{ contacto_form.nome_contacto }}
+                                                {% if contacto_form.nome_contacto.errors %}
+                                                <div class="invalid-feedback d-block">{{
+                                                    contacto_form.nome_contacto.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ contacto_form.cargo.id_for_label }}" class="form-label">
+                                                    {{ _("Cargo") }}
+                                                </label>
+                                                {{ contacto_form.cargo }}
+                                                {% if contacto_form.cargo.errors %}
+                                                <div class="invalid-feedback d-block">{{ contacto_form.cargo.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        {{ contacto_form.principal }}
+                                        <label class="form-check-label"
+                                            for="{{ contacto_form.principal.id_for_label }}">
+                                            {{ _("Contacto Principal") }}
+                                        </label>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ contacto_form.observacoes.id_for_label }}" class="form-label">
+                                            {{ _("Observações") }}
+                                        </label>
+                                        {{ contacto_form.observacoes }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" class="btn btn-outline-success" id="add-contacto-btn">
+                            <i class="fas fa-plus me-1"></i> {% trans "Adicionar Contacto" %}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    {{ form.ativo }}
+                    <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                        {% trans "Cliente Ativo" %}
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'clientes:listar_individuais' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {% trans "Salvar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'clientes/js/formset_handler.js' %}"></script>
+{% endblock %}

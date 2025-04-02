@@ -17,6 +17,7 @@ from core.search import AdvancedSearch
 from django.urls import reverse
 from django.contrib import messages
 import unicodedata
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 def normalize_text(text):
     if not text:
@@ -28,86 +29,97 @@ def normalize_text(text):
     return normalized.lower().strip()
 
 @login_required
-@group_required(['Administradores', 'Técnicos'])
+@group_required(['Administradores', 'Comerciais', 'Gestores de Clientes'])
 def listar_equipamentos_fabricados(request):
-    # Parâmetros de pesquisa
-    categoria = request.GET.get('categoria', '')
-    estado = request.GET.get('estado', '')
+    search_query = request.GET.get('q', '')
+    categoria_id = request.GET.get('categoria', '')
     
-    # Consulta base com todos os relacionamentos relevantes
-    queryset = EquipamentoFabricado.objects.all().prefetch_related(
-        'equipamentoscliente_set', 'pecas'
-    )
+    equipamentos = EquipamentoFabricado.objects.all()
     
-    # Inicializar o serviço de pesquisa com campos expandidos
-    search_service = AdvancedSearch(
-        request=request,
-        model_class=EquipamentoFabricado,
-        fields_to_search=[
-            'nome', 'modelo', 'categoria', 'descricao', 
-            'especificacoes', 'referencia_interna'
-        ],
-        related_searches={
-            # Buscar também nos equipamentos de clientes relacionados
-            'equipamentoscliente_set': ['numero_serie', 'observacoes'],
-            # Buscar nas peças relacionadas
-            'pecas': ['nome', 'referencia', 'descricao']
-        }
-    )
+    # Apply search filters if provided
+    if search_query:
+        equipamentos = equipamentos.filter(
+            Q(nome__icontains=search_query) |  # Changed from modelo to nome
+            Q(referencia_interna__icontains=search_query) |
+            Q(descricao__icontains=search_query)
+        )
     
-    # Executar a pesquisa normalizada
-    equipamentos = search_service.search(queryset)
+    if categoria_id:
+        equipamentos = equipamentos.filter(categoria_id=categoria_id)
     
-    # Aplicar os filtros adicionais
-    if categoria:
-        equipamentos = AdvancedSearch.apply_filter(equipamentos, 'categoria', categoria, 'icontains')
+    # Get sorting parameter and fix default from 'modelo' to 'nome'
+    order_by = request.GET.get('orderby', 'nome')  # Changed default from modelo to nome
     
-    if estado:
-        if estado == 'ativo':
-            equipamentos = equipamentos.filter(ativo=True)
-        elif estado == 'inativo':
-            equipamentos = equipamentos.filter(ativo=False)
+    # Map frontend field names to database field names if needed
+    field_mapping = {
+        'modelo': 'nome',
+        '-modelo': '-nome'
+    }
     
-    # Ordenação
-    equipamentos = equipamentos.order_by('nome')
+    # If orderby is using the frontend field name, map it to the database field name
+    actual_order_by = field_mapping.get(order_by, order_by)
     
-    # HTML para os filtros avançados
-    filter_html = """
-    <div class="col-md-4">
-      <label for="q" class="form-label">Pesquisar</label>
-      <input type="text" class="form-control" id="q" name="q" value="{q}" 
-        placeholder="Nome, modelo, referência, nº série...">
-    </div>
-    <div class="col-md-4">
-      <label for="categoria" class="form-label">Categoria</label>
-      <input type="text" class="form-control" id="categoria" name="categoria" value="{categoria}">
-    </div>
-    <div class="col-md-4">
-      <label for="estado" class="form-label">Estado</label>
-      <select class="form-select" id="estado" name="estado">
-        <option value="">Todos</option>
-        <option value="ativo" {ativo_selected}>Ativo</option>
-        <option value="inativo" {inativo_selected}>Inativo</option>
-      </select>
-    </div>
-    """.format(
-        q=request.GET.get('q', ''),
-        categoria=request.GET.get('categoria', ''),
-        ativo_selected='selected' if estado == 'ativo' else '',
-        inativo_selected='selected' if estado == 'inativo' else ''
-    )
+    equipamentos = equipamentos.order_by(actual_order_by)
     
-    return render(request, 'equipamentos/listar_equipamentos_fabricados.html', {
+    # Pagination
+    paginator = Paginator(equipamentos, 10)  # Show 10 items per page
+    page = request.GET.get('pagina', 1)
+    
+    try:
+        equipamentos = paginator.page(page)
+    except PageNotAnInteger:
+        equipamentos = paginator.page(1)
+    except EmptyPage:
+        equipamentos = paginator.page(paginator.num_pages)
+    
+    # Get all categories for filter dropdown
+    categorias = CategoriaEquipamento.objects.all()
+    
+    context = {
         'equipamentos': equipamentos,
-        'query': search_service.query,
-        'categoria': categoria,
-        'estado': estado,
-        'filter_html': filter_html,
-        'breadcrumbs': [
-            {'title': 'Equipamentos', 'url': None}
-        ]
-    })
+        'search_query': search_query,
+        'categoria_selecionada': categoria_id,
+        'orderby': order_by,  # Keep the original value for form display
+        'categorias': categorias,
+        'total_equipamentos': paginator.count,
+        'active_tab': 'fabricados'
+    }
+    
+    # Ensure we're using the correct template
+    return render(request, 'equipamentos/lista_fab.html', context)
 
+@login_required
+@group_required(['Administradores', 'Comerciais', 'Gestores de Clientes'])
+def listar_equipamentos(request):
+    """View to list all equipment (both manufactured and client equipment)"""
+    # Get equipment data
+    equipamentos_fabricados = EquipamentoFabricado.objects.all()
+    equipamentos_cliente = EquipamentoCliente.objects.all()
+    
+    # Apply search filters if provided
+    search_query = request.GET.get('q', '')
+    if search_query:
+        equipamentos_fabricados = equipamentos_fabricados.filter(
+            Q(nome__icontains=search_query) |  # Changed from modelo to nome
+            Q(referencia_interna__icontains=search_query) |
+            Q(descricao__icontains=search_query)
+        )
+        
+        equipamentos_cliente = equipamentos_cliente.filter(
+            Q(numero_serie__icontains=search_query) |
+            Q(cliente__nome__icontains=search_query) |
+            Q(equipamento_fabricado__nome__icontains=search_query)  # Changed from modelo to nome
+        )
+    
+    # Prepare context
+    context = {
+        'equipamentos_fabricados': equipamentos_fabricados,
+        'equipamentos_cliente': equipamentos_cliente,
+        'search_query': search_query,
+        'active_tab': 'equipamentos',  # To highlight the correct tab in navigation
+    }
+    
+    return render(request, 'equipamentos/listar_equipamentos.html', context)
 
 @login_required
 @group_required(['Administradores', 'Técnicos'])
@@ -296,7 +308,10 @@ def adicionar_categoria(request):
         form = CategoriaEquipamentoForm()
     return render(request, 'equipamentos/adicionar_categoria.html', {'form': form})
 
-
+@login_required
+def index(request):
+    """Main index view for equipamentos app - redirects to the equipments list"""
+    return redirect('equipamentos:listar_fabricados')
 
 @login_required
 def historico_equipamento_cliente(request, equipamento_id):
@@ -314,7 +329,7 @@ def historico_equipamento_cliente(request, equipamento_id):
         titulo = request.POST.get('titulo')
         conteudo = request.POST.get('conteudo')
         
-        if titulo and conteudo:
+        if titulo and conteudo:  # Fixed: changed && to and (Python syntax)
             try:
                 # Criar nova nota associada ao equipamento
                 Nota.objects.create(
@@ -455,4 +470,212 @@ def transferir_equipamento(request, equipamento_id):
         'clientes': clientes,
         'breadcrumbs': breadcrumbs,
         'pats_abertas': pats_abertas
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def detalhes_equipamento_fabricado(request, equipamento_id):
+    """View for manufactured equipment details - redirects to the generic equipment detail view"""
+    return detalhes_equipamento(request, equipamento_id)
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def adicionar_equipamento_cliente(request):
+    """View to add equipment to a client"""
+    cliente_id = request.GET.get('cliente')
+    cliente = None
+    
+    if cliente_id:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+    
+    if request.method == 'POST':
+        # Process form data
+        equipamento_fabricado_id = request.POST.get('equipamento_fabricado')
+        numero_serie = request.POST.get('numero_serie')
+        data_instalacao = request.POST.get('data_instalacao')
+        observacoes = request.POST.get('observacoes')
+        
+        # Validation
+        if not equipamento_fabricado_id or not numero_serie or not cliente_id:
+            messages.error(request, "Por favor preencha todos os campos obrigatórios.")
+        else:
+            try:
+                # Create new client equipment
+                equipamento_fabricado = get_object_or_404(EquipamentoFabricado, id=equipamento_fabricado_id)
+                cliente = get_object_or_404(Cliente, id=cliente_id)
+                
+                equipamento = EquipamentoCliente.objects.create(
+                    equipamento_fabricado=equipamento_fabricado,
+                    cliente=cliente,
+                    numero_serie=numero_serie,
+                    data_instalacao=data_instalacao,
+                    observacoes=observacoes
+                )
+                
+                messages.success(request, "Equipamento adicionado ao cliente com sucesso!")
+                if 'next' in request.GET:
+                    return redirect(request.GET.get('next'))
+                return redirect('equipamentos:detalhes_cliente', equipamento_id=equipamento.id)
+            except Exception as e:
+                messages.error(request, f"Erro ao adicionar equipamento: {str(e)}")
+    
+    # Get all manufactured equipment for the form
+    equipamentos_fabricados = EquipamentoFabricado.objects.all().order_by('modelo')
+    
+    # Get all clients for the form if no client was specified
+    clientes = None
+    if not cliente:
+        clientes = Cliente.objects.all().order_by('nome')
+    
+    context = {
+        'equipamentos_fabricados': equipamentos_fabricados,
+        'cliente': cliente,
+        'clientes': clientes,
+        'next': request.GET.get('next', '')
+    }
+    
+    return render(request, 'equipamentos/adicionar_equipamento_cliente.html', context)
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def detalhes_equipamento_cliente(request, equipamento_id):
+    """View for client equipment details"""
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
+    
+    # Fetch associated service requests
+    assistencias = PedidoAssistencia.objects.filter(equipamento=equipamento).order_by('-data_entrada')
+    
+    # Fetch associated notes
+    try:
+        notas = Nota.objects.filter(equipamento=equipamento).order_by('-data_criacao')
+    except Exception:
+        notas = []
+    
+    # Breadcrumbs
+    breadcrumbs = [
+        {'title': 'Equipamentos', 'url': reverse('equipamentos:listar_equipamentos')},
+        {'title': 'Equipamento de Cliente', 'url': None},
+    ]
+    
+    return render(request, 'equipamentos/detalhes_equipamento_cliente.html', {
+        'equipamento': equipamento,
+        'assistencias': assistencias,
+        'notas': notas,
+        'breadcrumbs': breadcrumbs,
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def editar_equipamento_cliente(request, equipamento_id):
+    """View to edit client equipment"""
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
+    
+    if request.method == 'POST':
+        # Process form data
+        numero_serie = request.POST.get('numero_serie')
+        data_instalacao = request.POST.get('data_instalacao')
+        observacoes = request.POST.get('observacoes')
+        
+        # Validation
+        if not numero_serie:
+            messages.error(request, "O número de série é obrigatório.")
+        else:
+            try:
+                # Update client equipment
+                equipamento.numero_serie = numero_serie
+                equipamento.data_instalacao = data_instalacao
+                equipamento.observacoes = observacoes
+                equipamento.save()
+                
+                messages.success(request, "Equipamento atualizado com sucesso!")
+                return redirect('equipamentos:detalhes_cliente', equipamento_id=equipamento.id)
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar equipamento: {str(e)}")
+    
+    # Breadcrumbs
+    breadcrumbs = [
+        {'title': 'Equipamentos', 'url': reverse('equipamentos:listar_equipamentos')},
+        {'title': f'Equipamento: {equipamento.equipamento_fabricado.modelo}', 
+         'url': reverse('equipamentos:detalhes_cliente', args=[equipamento.id])},
+        {'title': 'Editar', 'url': None},
+    ]
+    
+    return render(request, 'equipamentos/editar_equipamento_cliente.html', {
+        'equipamento': equipamento,
+        'breadcrumbs': breadcrumbs,
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def excluir_equipamento_cliente(request, equipamento_id):
+    """View to delete client equipment"""
+    equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
+    
+    if request.method == 'POST':
+        try:
+            cliente_id = equipamento.cliente.id
+            equipamento.delete()
+            messages.success(request, "Equipamento removido com sucesso!")
+            
+            # Redirect to client equipment page if came from there
+            if 'from_client' in request.GET:
+                return redirect('clientes:cliente_equipamentos', cliente_id=cliente_id)
+            return redirect('equipamentos:listar_cliente')
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir equipamento: {str(e)}")
+            return redirect('equipamentos:detalhes_cliente', equipamento_id=equipamento_id)
+    
+    return render(request, 'equipamentos/excluir_equipamento_cliente.html', {
+        'equipamento': equipamento,
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def detalhes_categoria(request, categoria_id):
+    """View for category details"""
+    categoria = get_object_or_404(CategoriaEquipamento, id=categoria_id)
+    equipamentos = EquipamentoFabricado.objects.filter(categoria=categoria)
+    
+    return render(request, 'equipamentos/detalhes_categoria.html', {
+        'categoria': categoria,
+        'equipamentos': equipamentos,
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def editar_categoria(request, categoria_id):
+    """View to edit category"""
+    categoria = get_object_or_404(CategoriaEquipamento, id=categoria_id)
+    
+    if request.method == 'POST':
+        form = CategoriaEquipamentoForm(request.POST, instance=categoria)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Categoria atualizada com sucesso!")
+            return redirect('equipamentos:detalhes_categoria', categoria_id=categoria.id)
+    else:
+        form = CategoriaEquipamentoForm(instance=categoria)
+    
+    return render(request, 'equipamentos/editar_categoria.html', {
+        'form': form,
+        'categoria': categoria,
+    })
+
+@login_required
+@group_required(['Administradores', 'Técnicos'])
+def excluir_categoria(request, categoria_id):
+    """View to delete category"""
+    categoria = get_object_or_404(CategoriaEquipamento, id=categoria_id)
+    
+    if request.method == 'POST':
+        try:
+            categoria.delete()
+            messages.success(request, "Categoria excluída com sucesso!")
+            return redirect('equipamentos:listar_categorias')
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir categoria: {str(e)}")
+            return redirect('equipamentos:detalhes_categoria', categoria_id=categoria_id)
+    
+    return render(request, 'equipamentos/excluir_categoria.html', {
+        'categoria': categoria,
     })

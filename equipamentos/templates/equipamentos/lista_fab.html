@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Equipamentos Fabricados" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-industry me-2"></i>{% trans "Equipamentos Fabricados" %}
+        </h1>
+        <div>
+            <div class="btn-group">
+                <a href="{% url 'equipamentos:adicionar_fabricado' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "Novo Equipamento Fabricado" %}
+                </a>
+            </div>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=excel">
+                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=csv">
+                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=pdf">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Equipamentos Fabricados" %}
+    {% include 'equipamentos/includes/menu_equipamentos.html' with active_tab='fabricados' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Modelo, referência, descrição...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label">{% trans "Categoria" %}</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">{% trans "Todas" %}</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria_selecionada==categoria.id %}selected{% endif
+                            %}>
+                            {{ categoria.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
+                    <select class="form-select" id="orderby" name="orderby">
+                        <option value="nome" {% if orderby=='nome' %}selected{% endif %}>
+                            {% trans "Modelo (A-Z)" %}
+                        </option>
+                        <option value="-nome" {% if orderby=='-nome' %}selected{% endif %}>
+                            {% trans "Modelo (Z-A)" %}
+                        </option>
+                        <option value="-data_lancamento" {% if orderby=='-data_lancamento' %}selected{% endif %}>
+                            {% trans "Mais recentes" %}
+                        </option>
+                        <option value="data_lancamento" {% if orderby=='data_lancamento' %}selected{% endif %}>
+                            {% trans "Mais antigos" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if equipamentos %}
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Modelo" %}</th>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Data de Lançamento" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% if equipamento.fotografia %}
+                                    <img src="{{ equipamento.fotografia.url }}" alt="{{ equipamento.nome }}"
+                                        class="img-thumbnail me-2"
+                                        style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-cog text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ equipamento.nome }}
+                                </a>
+                            </td>
+                            <td>{{ equipamento.referencia_interna }}</td>
+                            <td>
+                                {% if equipamento.categoria %}
+                                <span class="badge bg-info">{{ equipamento.categoria.nome }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipamento.data_lancamento|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:editar_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:excluir_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-danger" title="{% trans 'Excluir' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if equipamentos.has_other_pages %}
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                {% trans "Mostrando" %} {{ equipamentos.start_index }} - {{ equipamentos.end_index }}
+                {% trans "de" %} {{ total_equipamentos }}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    <!-- ...existing pagination code... -->
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        {% if search_query or request.GET.categoria %}
+        {% trans "Nenhum equipamento encontrado com os filtros selecionados." %}
+        <a href="{% url 'equipamentos:listar_fabricados' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+        {% else %}
+        {% trans "Nenhum equipamento fabricado cadastrado no sistema." %}
+        <a href="{% url 'equipamentos:adicionar_fabricado' %}" class="alert-link">
+            {% trans "Adicionar Equipamento Fabricado" %}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

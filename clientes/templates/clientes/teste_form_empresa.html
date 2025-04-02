@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Teste de Formulário de Empresa</h1>
+<p>Se você está vendo esta página, a view está funcionando corretamente.</p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>
+{% endblock %}

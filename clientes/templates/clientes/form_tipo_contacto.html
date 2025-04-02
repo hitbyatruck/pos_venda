@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_new %}
+        {% trans "Adicionar Tipo de Contacto" %}
+    {% else %}
+        {% trans "Editar Tipo de Contacto" %} - {{ tipo_contacto.nome }}
+    {% endif %}
+    | {% trans "Configurações" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-address-card me-2"></i>
+                {% if is_new %}
+                    {% trans "Adicionar Novo Tipo de Contacto" %}
+                {% else %}
+                    {% trans "Editar Tipo de Contacto" %} - {{ tipo_contacto.nome }}
+                {% endif %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                        {{ form.nome }}
+                        {% if form.nome.help_text %}
+                            <div class="form-text">{{ form.nome.help_text }}</div>
+                        {% endif %}
+                        {% if form.nome.errors %}
+                            <div class="invalid-feedback d-block">{{ form.nome.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.icone.id_for_label }}" class="form-label">{{ form.icone.label }}</label>
+                        {{ form.icone }}
+                        {% if form.icone.help_text %}
+                            <div class="form-text">{{ form.icone.help_text }}</div>
+                        {% endif %}
+                        {% if form.icone.errors %}
+                            <div class="invalid-feedback d-block">{{ form.icone.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.validador_regex.id_for_label }}" class="form-label">{{ form.validador_regex.label }}</label>
+                    {{ form.validador_regex }}
+                    {% if form.validador_regex.help_text %}
+                        <div class="form-text">{{ form.validador_regex.help_text }}</div>
+                    {% endif %}
+                    {% if form.validador_regex.errors %}
+                        <div class="invalid-feedback d-block">{{ form.validador_regex.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {{ form.ativo }}
+                    <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
+                    {% if form.ativo.errors %}
+                        <div class="invalid-feedback d-block">{{ form.ativo.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {% trans "Guardar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if not is_new %}
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">{% trans "Prévia do Ícone" %}</h5>
+        </div>
+        <div class="card-body text-center">
+            <div class="mb-3">
+                <h3>
+                    {% if tipo_contacto.icone %}
+                        <i class="fas {{ tipo_contacto.icone }}"></i>
+                    {% else %}
+                        <i class="fas fa-address-card"></i>
+                    {% endif %}
+                </h3>
+            </div>
+            <p class="text-muted">{% trans "Use o prefixo 'fa-' seguido do nome do ícone. Consulte a documentação do FontAwesome para ver todos os ícones disponíveis." %}</p>
+            <a href="https://fontawesome.com/icons" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-external-link-alt me-1"></i> {% trans "Ver Biblioteca de Ícones" %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

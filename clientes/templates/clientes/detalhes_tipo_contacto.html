@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ tipo.nome }} | {% trans "Tipos de Contacto" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            {% if tipo.icone %}
+            <i class="fas {{ tipo.icone }} me-2"></i>
+            {% else %}
+            <i class="fas fa-address-card me-2"></i>
+            {% endif %}
+            {{ tipo.nome }}
+        </h2>
+        <div>
+            <a href="{% url 'clientes:editar_tipo_contacto' tipo_id=tipo.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+            </a>
+            <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteTipoModal">
+                <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+            </button>
+        </div>
+    </div>
+
+    {% include "clientes/includes/breadcrumbs.html" %}
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">{% trans "Informações" %}</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>{% trans "Nome" %}</th>
+                                <td>{{ tipo.nome }}</td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Ícone" %}</th>
+                                <td>
+                                    {% if tipo.icone %}
+                                    <i class="fas {{ tipo.icone }} me-2"></i>
+                                    <code>{{ tipo.icone }}</code>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Validador RegEx" %}</th>
+                                <td>
+                                    {% if tipo.validador_regex %}
+                                    <code>{{ tipo.validador_regex }}</code>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>{% trans "Estado" %}</th>
+                                <td>
+                                    {% if tipo.ativo %}
+                                    <span class="badge bg-success">{% trans "Ativo" %}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{% trans "Inativo" %}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{% trans "Contactos Associados" %}</h5>
+                    <span class="badge bg-primary">{{ total_contactos }}</span>
+                </div>
+                <div class="card-body">
+                    {% if contactos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Cliente" %}</th>
+                                    <th>{% trans "Valor" %}</th>
+                                    <th>{% trans "Nome do Contacto" %}</th>
+                                    <th>{% trans "Principal" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contacto in contactos %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=contacto.cliente.id %}">
+                                            {{ contacto.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td>{{ contacto.valor }}</td>
+                                    <td>{{ contacto.nome_contacto|default:"-" }}</td>
+                                    <td>
+                                        {% if contacto.principal %}
+                                        <span class="badge bg-success">{% trans "Sim" %}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "Nenhum contacto associado a este tipo." %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTipoModal" tabindex="-1" aria-labelledby="deleteTipoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteTipoModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir o tipo de contacto" %} <strong>{{ tipo.nome }}</strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e poderá afetar os contactos associados a este tipo." %}
+                </p>
+                {% if total_contactos > 0 %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Este tipo possui" %} <strong>{{ total_contactos }}</strong> {% trans "contactos
+                    associados. Ao excluir este tipo, os contactos serão afetados." %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form method="post" action="{% url 'clientes:excluir_tipo_contacto' tipo_id=tipo.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        {% trans "Excluir" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

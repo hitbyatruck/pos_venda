@@ -1,35 +1,118 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Equipamento" %} - {{ cliente.nome }}{% endblock %}
 
 {% block content %}
-  <h1>Adicionar Equipamento ao Cliente</h1>
-  <form method="post">
-    {% csrf_token %}
-    <!-- Drop down dos equipamentos fabricados -->
-    <div class="mb-3">
-      <label for="{{ equipamento_form.equipamento_fabricado.id_for_label }}">Equipamento Fabricado</label>
-      {{ equipamento_form.equipamento_fabricado }}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-laptop me-2"></i>
+                {% trans "Adicionar Equipamento para" %} {{ cliente.nome }}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h4 class="border-bottom pb-2">{% trans "Informações do Equipamento" %}</h4>
+                    </div>
+                </div>
+                
+                <!-- Hidden fields -->
+                {{ form.cliente.as_hidden }}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.equipamento_fabricado.id_for_label }}" class="form-label">{{ form.equipamento_fabricado.label }}</label>
+                        {{ form.equipamento_fabricado }}
+                        {% if form.equipamento_fabricado.help_text %}
+                            <div class="form-text">{{ form.equipamento_fabricado.help_text }}</div>
+                        {% endif %}
+                        {% if form.equipamento_fabricado.errors %}
+                            <div class="invalid-feedback d-block">{{ form.equipamento_fabricado.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.numero_serie.id_for_label }}" class="form-label">{{ form.numero_serie.label }}</label>
+                        {{ form.numero_serie }}
+                        {% if form.numero_serie.help_text %}
+                            <div class="form-text">{{ form.numero_serie.help_text }}</div>
+                        {% endif %}
+                        {% if form.numero_serie.errors %}
+                            <div class="invalid-feedback d-block">{{ form.numero_serie.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.data_aquisicao.id_for_label }}" class="form-label">{{ form.data_aquisicao.label }}</label>
+                        {{ form.data_aquisicao }}
+                        {% if form.data_aquisicao.help_text %}
+                            <div class="form-text">{{ form.data_aquisicao.help_text }}</div>
+                        {% endif %}
+                        {% if form.data_aquisicao.errors %}
+                            <div class="invalid-feedback d-block">{{ form.data_aquisicao.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.data_instalacao.id_for_label }}" class="form-label">{{ form.data_instalacao.label }}</label>
+                        {{ form.data_instalacao }}
+                        {% if form.data_instalacao.help_text %}
+                            <div class="form-text">{{ form.data_instalacao.help_text }}</div>
+                        {% endif %}
+                        {% if form.data_instalacao.errors %}
+                            <div class="invalid-feedback d-block">{{ form.data_instalacao.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.observacoes.id_for_label }}" class="form-label">{{ form.observacoes.label }}</label>
+                    {{ form.observacoes }}
+                    {% if form.observacoes.help_text %}
+                        <div class="form-text">{{ form.observacoes.help_text }}</div>
+                    {% endif %}
+                    {% if form.observacoes.errors %}
+                        <div class="invalid-feedback d-block">{{ form.observacoes.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'clientes:cliente_equipamentos' cliente_id=cliente.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {% trans "Guardar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-    <!-- Linha única para Número de Série e Data de Aquisição -->
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="{{ equipamento_form.numero_serie.id_for_label }}">Número de Série</label>
-            {{ equipamento_form.numero_serie }}
-            {% if equipamento_form.numero_serie.errors %}
-              <div class="text-danger">
-                {% for error in equipamento_form.numero_serie.errors %}
-                  <small>{{ error }}</small>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-          
-      <div class="col-md-6">
-        <label for="{{ equipamento_form.data_aquisicao.id_for_label }}">Data de Aquisição</label>
-        {{ equipamento_form.data_aquisicao }}
-      </div>
-    </div>
-    <button type="submit" class="btn btn-primary">Adicionar Equipamento</button>
-    <a href="{% url 'clientes:detalhes_cliente' cliente.id %}" class="btn btn-secondary">Cancelar</a>
-  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2 for the equipment selector
+        $(document).ready(function() {
+            $('#{{ form.equipamento_fabricado.id_for_label }}').select2({
+                placeholder: "{% trans 'Selecione um equipamento...' %}",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    });
+</script>
 {% endblock %}
 

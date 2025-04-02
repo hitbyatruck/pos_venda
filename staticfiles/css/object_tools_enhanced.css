@@ -1,0 +1,112 @@
+/* Enhanced Object Tools Styling */
+
+/* Improve the basic object tools styling */
+.object-tools {
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding-left: 0;
+    float: right;
+    position: relative;
+    margin-top: -48px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.object-tools li {
+    display: block;
+    float: left;
+    height: 1.25rem;
+    margin-left: 0;
+}
+
+.object-tools a {
+    border-radius: 15px;
+    display: block;
+    padding: 4px 12px;
+    background: var(--object-tools-bg, #417690);
+    color: var(--object-tools-fg, #fff);
+    font-weight: 400;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.object-tools a:link, .object-tools a:visited {
+    display: block;
+    float: left;
+}
+
+.object-tools a:focus, .object-tools a:hover {
+    background-color: var(--object-tools-hover-bg, #609ab6);
+}
+
+/* Make sure icons in buttons align properly */
+.object-tools a i {
+    margin-right: 0.25rem;
+}
+
+/* Responsive fixes for object tools */
+@media (max-width: 767px) {
+    .object-tools {
+        float: none;
+        margin: 0 0 1rem 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .object-tools li {
+        height: auto;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Modal enhancements */
+.modal-object-tools .modal-header {
+    background-color: var(--object-tools-bg, #417690);
+    color: white;
+}
+
+.modal-object-tools .btn-confirm {
+    background-color: var(--object-tools-bg, #417690);
+    border-color: var(--object-tools-bg, #417690);
+    color: white;
+}
+
+.modal-object-tools .btn-confirm:hover {
+    background-color: var(--object-tools-hover-bg, #609ab6);
+    border-color: var(--object-tools-hover-bg, #609ab6);
+}
+
+/* Warning modal specific styling */
+.modal-warning .modal-header {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.modal-warning .modal-body {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.modal-warning .btn-confirm {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.modal-warning .btn-confirm:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Toast notifications */
+#toast-container {
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 250px;
+}

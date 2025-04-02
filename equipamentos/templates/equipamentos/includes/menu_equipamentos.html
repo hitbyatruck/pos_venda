@@ -1,0 +1,24 @@
+{% load i18n %}
+
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="btn-group w-100">
+            <a href="{% url 'equipamentos:listar_equipamentos' %}"
+                class="btn {% if active_tab == 'equipamentos' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-0">
+                <i class="fas fa-cogs me-1"></i> {% trans "Todos os Equipamentos" %}
+            </a>
+            <a href="{% url 'equipamentos:listar_fabricados' %}"
+                class="btn {% if active_tab == 'fabricados' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-0">
+                <i class="fas fa-industry me-1"></i> {% trans "Equipamentos Fabricados" %}
+            </a>
+            <a href="{% url 'equipamentos:listar_cliente' %}"
+                class="btn {% if active_tab == 'cliente' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-0">
+                <i class="fas fa-user-cog me-1"></i> {% trans "Equipamentos de Clientes" %}
+            </a>
+            <a href="{% url 'equipamentos:listar_categorias' %}"
+                class="btn {% if active_tab == 'categorias' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-0">
+                <i class="fas fa-tags me-1"></i> {% trans "Categorias" %}
+            </a>
+        </div>
+    </div>
+</div>

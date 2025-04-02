@@ -1,63 +1,51 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
 
-{% block title %}Adicionar Cliente{% endblock %}
+{% block title %}{% trans "Adicionar Cliente" %}{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Adicionar Novo Cliente</h2>
-        {% if breadcrumbs %}
-            {% include 'includes/breadcrumbs.html' %}
-        {% endif %}
-
-        {% include 'includes/mini_nav.html' %}
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                <strong>Erro!</strong> Por favor, corrija os seguintes erros:
-                <ul>
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <li><strong>{{ field }}:</strong> {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-
-        <form method="POST" class="row g-3">
-            {% csrf_token %}
-
-            <div class="col-md-6">
-                <label for="id_nome" class="form-label">Nome</label>
-                {{ form.nome }}
-            </div>
-
-            <div class="col-md-6">
-                <label for="id_empresa" class="form-label">Empresa</label>
-                {{ form.empresa }}
-            </div>
-
-            <div class="col-md-6">
-                <label for="id_email" class="form-label">Email</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                    <div class="text-danger">{{ form.email.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="col-md-6">
-                <label for="id_telefone" class="form-label">Telefone</label>
-                {{ form.telefone }}
-            </div>
-
-            <div class="col-12">
-                <label for="id_endereco" class="form-label">Endereço</label>
-                {{ form.endereco }}
-            </div>
-
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Salvar</button>
-                <a href="{% url 'listar_clientes' %}" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">{% trans "Que tipo de cliente deseja adicionar?" %}</h1>
     </div>
+
+    {% include "clientes/includes/breadcrumbs.html" %}
+
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="display-1 mb-4 text-primary">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="card-title">{% trans "Empresa" %}</h3>
+                    <p class="card-text text-muted">
+                        {% trans "Adicione uma organização ou empresa como cliente" %}
+                    </p>
+                    <a href="{% url 'clientes:adicionar_empresa' %}" class="btn btn-primary btn-lg mt-3">
+                        <i class="fas fa-plus me-2"></i>{% trans "Nova Empresa" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="display-1 mb-4 text-info">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="card-title">{% trans "Individual" %}</h3>
+                    <p class="card-text text-muted">
+                        {% trans "Adicione uma pessoa como cliente individual" %}
+                    </p>
+                    <a href="{% url 'clientes:adicionar_individual' %}" class="btn btn-info btn-lg mt-3">
+                        <i class="fas fa-plus me-2"></i>{% trans "Novo Individual" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

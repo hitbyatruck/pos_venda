@@ -1,0 +1,9 @@
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'equipamentos:index' %}">{% trans "Equipamentos" %}</a></li>
+        {% if view_title %}
+        <li class="breadcrumb-item active" aria-current="page">{{ view_title }}</li>
+        {% endif %}
+    </ol>
+</nav>

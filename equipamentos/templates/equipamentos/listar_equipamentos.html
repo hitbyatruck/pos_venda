@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Todos os Equipamentos" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>{% trans "Todos os Equipamentos" %}
+        </h1>
+        <div>
+            <div class="btn-group">
+                <a href="{% url 'equipamentos:adicionar_fabricado' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "Novo Equipamento" %}
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">{% trans "Opções" %}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:adicionar_fabricado' %}">
+                            <i class="fas fa-industry me-1"></i> {% trans "Novo Equipamento Fabricado" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:adicionar_cliente' %}">
+                            <i class="fas fa-user-cog me-1"></i> {% trans "Novo Equipamento de Cliente" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Todos os Equipamentos" %}
+    {% include 'equipamentos/includes/menu_equipamentos.html' with active_tab='equipamentos' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Modelo, série, cliente...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Equipamentos Fabricados -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <h5 class="mb-0">{% trans "Equipamentos Fabricados" %}</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if equipamentos_fabricados %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Modelo" %}</th>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos_fabricados %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% if equipamento.fotografia %}
+                                    <img src="{{ equipamento.fotografia.url }}" alt="{{ equipamento.nome }}"
+                                        class="img-thumbnail me-2"
+                                        style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-cog text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ equipamento.nome }}
+                                </a>
+                            </td>
+                            <td>{{ equipamento.referencia_interna }}</td>
+                            <td>
+                                {% if equipamento.categoria %}
+                                <span class="badge bg-info">{{ equipamento.categoria.nome }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:editar_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4">
+                <div class="alert alert-info mb-0">
+                    {% trans "Nenhum equipamento fabricado encontrado." %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Equipamentos de Cliente -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <h5 class="mb-0">{% trans "Equipamentos de Clientes" %}</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if equipamentos_cliente %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Modelo" %}</th>
+                            <th>{% trans "Nº Série" %}</th>
+                            <th>{% trans "Cliente" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos_cliente %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equipamento.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    <i class="fas fa-user-cog text-secondary me-2"></i>
+                                    {{ equipamento.equipamento_fabricado.nome }}
+                                </a>
+                            </td>
+                            <td>{{ equipamento.numero_serie }}</td>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {{ equipamento.cliente.nome }}
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:editar_cliente' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4">
+                <div class="alert alert-info mb-0">
+                    {% trans "Nenhum equipamento de cliente encontrado." %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

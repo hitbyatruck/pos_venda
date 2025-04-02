@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'simple_history',
     'core',
     'stock',
+    'django_countries',
+    'configuracao',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +76,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.navigation',
+                'configuracao.context_processors.configuracao_sistema',
+
             ],
         },
     },

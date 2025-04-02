@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from clientes.models import EquipamentoCliente
 from simple_history.models import HistoricalRecords
 
 class CategoriaEquipamento(models.Model):
@@ -23,14 +22,13 @@ class EquipamentoFabricado(models.Model):
 
     def delete(self, *args, **kwargs):
         """Deletes equipment and all its associations"""
-        from clientes.models import EquipamentoCliente
         from assistencia.models import PedidoAssistencia
         
         # Extract and remove 'force' from kwargs before passing to super().delete()
         force = kwargs.pop('force', False)
         
         # Check for associations
-        equipamentos_cliente = EquipamentoCliente.objects.filter(equipamento_fabricado=self)
+        equipamentos_cliente = self.cliente_equipamentos.all()
         pats = PedidoAssistencia.objects.filter(equipamento__equipamento_fabricado=self)
         
         if equipamentos_cliente.exists() or pats.exists():
@@ -78,3 +76,13 @@ class DocumentoEquipamento(models.Model):
 
     def __str__(self):
         return f"Documento: {self.arquivo.name}"
+
+class EquipamentoCliente(models.Model):
+    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE, related_name='equipamentos_fabricados')
+    equipamento_fabricado = models.ForeignKey(EquipamentoFabricado, on_delete=models.CASCADE, related_name='cliente_equipamentos')
+    numero_serie = models.CharField(max_length=100, blank=True, null=True)
+    data_aquisicao = models.DateField(blank=True, null=True)
+    notas = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.equipamento_fabricado.nome} - {self.numero_serie or 'S/N'}"

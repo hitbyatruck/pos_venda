@@ -1,106 +1,68 @@
-/**
- * Handles client management operations including:
- * - Client deletion with dependency checks
- * - Modal management for client operations
- * - CSRF token handling for client requests
- */
-
-document.addEventListener("DOMContentLoaded", function() {
-    console.log("clients_scripts.js loaded");
-
-    // Initialize variables
-    let clientIdToDelete = null;
-    let clientDeleteUrl = null;
-
-    // Initialize modals
-    const clientConfirmModalEl = document.getElementById("clientConfirmModal");
-    const clientWarningModalEl = document.getElementById("clientWarningModal");
+document.addEventListener('DOMContentLoaded', function() {
+    // Processamento dos campos de formulário para estilização
+    const formInputs = document.querySelectorAll('input, select, textarea');
+    formInputs.forEach(input => {
+        // Adicionar classes para tratamento de dark mode e estilo consistente
+        if (input.type !== 'checkbox' && input.type !== 'radio') {
+            input.classList.add('form-control');
+            
+            // Adicionar borda arredondada e sombra sutil
+            input.style.borderRadius = '.25rem';
+            input.style.boxShadow = 'none';
+            
+            // Ajustar cores para compatibilidade com dark mode
+            input.addEventListener('focus', function() {
+                this.style.borderColor = '#4e73df';
+                this.style.boxShadow = '0 0 0 0.2rem rgba(78, 115, 223, 0.25)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.style.boxShadow = 'none';
+            });
+        }
+    });
     
-    if (!clientConfirmModalEl || !clientWarningModalEl) {
-        console.error("Client deletion modals not found");
-        return;
-    }
-
-    const clientConfirmModal = new bootstrap.Modal(clientConfirmModalEl);
-    const clientWarningModal = new bootstrap.Modal(clientWarningModalEl);
-
-    // Delete button click handler
-    document.addEventListener("click", function(event) {
-        const deleteBtn = event.target.closest(".client-delete");
-        if (deleteBtn) {
-            event.preventDefault();
-            clientIdToDelete = deleteBtn.getAttribute("data-id");
-            clientDeleteUrl = deleteBtn.getAttribute("data-url");
-            console.log("Delete requested for client:", clientIdToDelete);
-            clientConfirmModal.show();
-        }
-    });
-
-    // Initial confirmation button handler
-    document.getElementById("clientConfirmModalBtn").addEventListener("click", function() {
-        console.log("Initial confirmation for client:", clientIdToDelete);
-        excluirCliente(false);
-    });
-
-    // Warning confirmation button handler
-    document.getElementById("clientWarningModalBtn").addEventListener("click", function() {
-        console.log("Force delete confirmation for client:", clientIdToDelete);
-        excluirCliente(true);
-    });
-
-    function excluirCliente(force) {
-        console.log(`Attempting to delete client ${clientIdToDelete} (force: ${force})`);
-        
-        fetch(clientDeleteUrl, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": getCSRFToken(),
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: new URLSearchParams({ force: force ? "true" : "false" })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Server response:", data);
-            if (data.success) {
-                const row = document.getElementById(`client-row-${clientIdToDelete}`);
-                if (row) {
-                    row.remove();
-                }
-                clientConfirmModal.hide();
-                clientWarningModal.hide();
-            } else if (data.has_dependencies) {
-                document.getElementById("clientWarningModalBody").textContent = data.message;
-                clientConfirmModal.hide();
-                clientWarningModal.show();
+    // Manipulação do endereço igual à empresa
+    const enderecoCheckbox = document.getElementById('id_endereco_igual_empresa');
+    const empresaSelect = document.getElementById('id_empresa');
+    
+    if (enderecoCheckbox && empresaSelect) {
+        function toggleEnderecoFields() {
+            const enderecoFields = document.querySelectorAll('.endereco-field');
+            if (enderecoCheckbox.checked && empresaSelect.value) {
+                enderecoFields.forEach(field => {
+                    field.style.opacity = '0.5';
+                    field.querySelector('input, select').setAttribute('readonly', true);
+                });
             } else {
-                throw new Error(data.message || "Erro ao excluir cliente");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert(error.message);
-            clientConfirmModal.hide();
-            clientWarningModal.hide();
-        });
-    }
-
-
-
-    function getCSRFToken() {
-        const name = "csrftoken";
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + "=")) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+                enderecoFields.forEach(field => {
+                    field.style.opacity = '1';
+                    field.querySelector('input, select').removeAttribute('readonly');
+                });
             }
         }
-        return cookieValue;
+        
+        enderecoCheckbox.addEventListener('change', toggleEnderecoFields);
+        empresaSelect.addEventListener('change', toggleEnderecoFields);
+        
+        // Inicializar estado
+        toggleEnderecoFields();
+    }
+    
+    // Lembrar a aba ativa
+    const triggerTabList = [].slice.call(document.querySelectorAll('#clienteTabs button'));
+    triggerTabList.forEach(function(triggerEl) {
+        triggerEl.addEventListener('shown.bs.tab', function(event) {
+            localStorage.setItem('activeClienteTab', event.target.getAttribute('data-bs-target'));
+        });
+    });
+    
+    // Restaurar aba ativa
+    const activeTab = localStorage.getItem('activeClienteTab');
+    if (activeTab) {
+        const trigger = document.querySelector(`#clienteTabs button[data-bs-target="${activeTab}"]`);
+        if (trigger) {
+            new bootstrap.Tab(trigger).show();
+        }
     }
 });
-

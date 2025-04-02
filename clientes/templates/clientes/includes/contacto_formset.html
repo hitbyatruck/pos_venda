@@ -1,0 +1,191 @@
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Contactos</h6>
+        <button type="button" class="btn btn-sm btn-primary add-form-row">
+            <i class="fas fa-plus-circle"></i> Adicionar Contacto
+        </button>
+    </div>
+    <div class="card-body">
+        {{ contacto_formset.management_form }}
+        <div class="contacto-forms">
+            {% for form in contacto_formset.forms %}
+                <div class="contacto-form row mb-3 {% if forloop.last %}empty-form{% endif %}" id="form-{{ forloop.counter0 }}">
+                    {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }}</label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.tipo.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="{{ form.valor.id_for_label }}">{{ form.valor.label }}</label>
+                            {{ form.valor }}
+                            {% if form.valor.errors %}
+                                <div class="invalid-feedback d-block">{{ form.valor.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="{{ form.nome_contacto.id_for_label }}">{{ form.nome_contacto.label }}</label>
+                            {{ form.nome_contacto }}
+                            {% if form.nome_contacto.errors %}
+                                <div class="invalid-feedback d-block">{{ form.nome_contacto.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="{{ form.cargo.id_for_label }}">{{ form.cargo.label }}</label>
+                            {{ form.cargo }}
+                            {% if form.cargo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.cargo.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
+                            {{ form.principal }}
+                            <label class="form-check-label" for="{{ form.principal.id_for_label }}">
+                                {{ form.principal.label }}
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
+                            {{ form.observacoes }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 d-flex align-items-end">
+                        {% if not forloop.last %}
+                            <button type="button" class="btn btn-sm btn-danger remove-form-row mb-3">
+                                <i class="fas fa-trash"></i> Remover
+                            </button>
+                        {% endif %}
+                    </div>
+                    
+                    {% for hidden_field in form.hidden_fields %}
+                        {{ hidden_field }}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        const formsetPrefix = "{{ contacto_formset.prefix }}";
+        const totalFormsInput = $(`#id_${formsetPrefix}-TOTAL_FORMS`);
+        const maxNumForms = parseInt($(`#id_${formsetPrefix}-MAX_NUM_FORMS`).val());
+        
+        // Clone o formulário vazio
+        const emptyForm = $(`.contacto-form.empty-form`).clone(true);
+        emptyForm.removeClass('empty-form');
+        
+        // Função para atualizar atributos de formulário clonado
+        function updateElementAttributes(element, index) {
+            const oldName = element.attr('name');
+            const oldId = element.attr('id');
+            const oldFor = element.attr('for');
+            
+            if (oldName) {
+                const newName = oldName.replace(/-__prefix__-/, `-${index}-`);
+                element.attr('name', newName);
+            }
+            
+            if (oldId) {
+                const newId = oldId.replace(/-__prefix__-/, `-${index}-`);
+                element.attr('id', newId);
+            }
+            
+            if (oldFor) {
+                const newFor = oldFor.replace(/-__prefix__-/, `-${index}-`);
+                element.attr('for', newFor);
+            }
+        }
+        
+        // Adicionar um novo formulário
+        $('.add-form-row').click(function() {
+            const totalForms = parseInt(totalFormsInput.val());
+            
+            if (totalForms < maxNumForms) {
+                const newForm = emptyForm.clone(true);
+                newForm.attr('id', `form-${totalForms}`);
+                
+                // Atualizar os atributos do novo formulário
+                newForm.find('input, select, textarea, label').each(function() {
+                    updateElementAttributes($(this), totalForms);
+                });
+                
+                // Adicionar o botão de remover
+                newForm.find('.col-md-3:last').html(`
+                    <button type="button" class="btn btn-sm btn-danger remove-form-row mb-3">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                `);
+                
+                // Inserir o novo formulário antes do formulário vazio
+                $('.contacto-forms').append(newForm);
+                
+                // Incrementar o contador de formulários
+                totalFormsInput.val(totalForms + 1);
+                
+                // Inicializa Select2 nos novos selects
+                newForm.find('.select2').select2({
+                    placeholder: "Selecione o tipo",
+                    allowClear: true
+                });
+            }
+        });
+        
+        // Remover um formulário
+        $('.contacto-forms').on('click', '.remove-form-row', function() {
+            const formRow = $(this).closest('.contacto-form');
+            const formId = formRow.attr('id');
+            const formIndex = parseInt(formId.replace('form-', ''));
+            
+            // Se for um formulário existente (com ID de instância), marcar para exclusão
+            const formInstanceId = formRow.find('input[name$="-id"]').val();
+            if (formInstanceId) {
+                formRow.find('input[name$="-DELETE"]').prop('checked', true);
+                formRow.hide();
+            } else {
+                // Se for um formulário novo, remover do DOM
+                formRow.remove();
+                
+                // Atualizar os índices dos formulários seguintes
+                const totalForms = parseInt(totalFormsInput.val());
+                for (let i = formIndex + 1; i < totalForms; i++) {
+                    const form = $(`#form-${i}`);
+                    form.attr('id', `form-${i - 1}`);
+                    
+                    form.find('input, select, textarea, label').each(function() {
+                        updateElementAttributes($(this), i - 1);
+                    });
+                }
+                
+                // Decrementar o contador de formulários
+                totalFormsInput.val(totalForms - 1);
+            }
+        });
+        
+        // Inicializar Select2 para todos os selects
+        $('.select2').select2({
+            placeholder: "Selecione o tipo",
+            allowClear: true
+        });
+    });
+</script>

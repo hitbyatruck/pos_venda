@@ -1,0 +1,54 @@
+{% load i18n %}
+
+
+
+<form method="get" class="mb-0">
+    <div class="row">
+        <div class="col-md-3 mb-3 mb-md-0">
+            <label for="nome" class="form-label">{% trans "Nome" %}</label>
+            <input type="text" class="form-control" id="nome" name="nome" value="{{ request.GET.nome|default:'' }}">
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <label for="empresa" class="form-label">{% trans "Empresa" %}</label>
+            <input type="text" class="form-control" id="empresa" name="empresa" value="{{ request.GET.empresa|default:'' }}">
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <label for="email" class="form-label">{% trans "Email" %}</label>
+            <input type="text" class="form-control" id="email" name="email" value="{{ request.GET.email|default:'' }}">
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <label for="telefone" class="form-label">{% trans "Telefone" %}</label>
+            <input type="text" class="form-control" id="telefone" name="telefone" value="{{ request.GET.telefone|default:'' }}">
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-search me-1"></i> {% trans "Filtrar" %}
+            </button>
+            <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+                <i class="fas fa-undo me-1"></i> {% trans "Limpar" %}
+            </a>
+        </div>
+    </div>
+</form>
+
+
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label for="nome" class="form-label">{% trans "Nome" %}</label>
+        <input type="text" class="form-control" id="nome" name="nome" value="{{ request.GET.nome|default:'' }}">
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <label for="nif" class="form-label">{% trans "NIF" %}</label>
+        <input type="text" class="form-control" id="nif" name="nif" value="{{ request.GET.nif|default:'' }}">
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <label for="cidade" class="form-label">{% trans "Cidade" %}</label>
+        <input type="text" class="form-control" id="cidade" name="cidade" value="{{ request.GET.cidade|default:'' }}">
+    </div>
+</div>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Clientes - {{ timestamp }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .report-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .report-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom:
+            20px;
+        }
+        th {
+            background-color: #4F81BD;
+            color: white;
+            text-align: left;
+            padding: 8px;
+            font-weight: bold;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .report-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .no-print {
+            text-align: center;
+            margin: 20px 0;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <div class="report-title">Lista de Clientes</div>
+        <div class="report-meta">Total de clientes: {{ total_clientes }}</div>
+        <div class="report-meta">Gerado em: {{ data_geracao }} por {{ usuario }}</div>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                {% for campo in campos %}
+                <th>{{ campos_display|get_item:campo }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr>
+                {% for campo in campos %}
+                <td>
+                    {% if campo == 'tipo' %}
+                        {{ cliente.get_tipo_display }}
+                    {% elif campo == 'data_criacao' or campo == 'ultima_atualizacao' %}
+                        {{ cliente|getattr:campo|date:"d/m/Y H:i" }}
+                    {% else %}
+                        {{ cliente|getattr:campo }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="report-footer">
+        Este relatório foi gerado pelo sistema de Gestão Pós-Venda em {{ data_geracao }}
+    </div>
+    
+    <div class="no-print">
+        <button onclick="window.print();" class="btn btn-primary">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <button onclick="window.close();" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Fechar
+        </button>
+    </div>
+</body>
+</html>

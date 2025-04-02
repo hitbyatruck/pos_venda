@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if is_new %}
+        {% trans "Adicionar Setor" %}
+    {% else %}
+        {% trans "Editar Setor" %} - {{ setor.nome }}
+    {% endif %}
+    | {% trans "Configurações" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-industry me-2"></i>
+                {% if is_new %}
+                    {% trans "Adicionar Novo Setor" %}
+                {% else %}
+                    {% trans "Editar Setor" %} - {{ setor.nome }}
+                {% endif %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                    {{ form.nome }}
+                    {% if form.nome.help_text %}
+                        <div class="form-text">{{ form.nome.help_text }}</div>
+                    {% endif %}
+                    {% if form.nome.errors %}
+                        <div class="invalid-feedback d-block">{{ form.nome.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}</label>
+                    {{ form.descricao }}
+                    {% if form.descricao.help_text %}
+                        <div class="form-text">{{ form.descricao.help_text }}</div>
+                    {% endif %}
+                    {% if form.descricao.errors %}
+                        <div class="invalid-feedback d-block">{{ form.descricao.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'clientes:listar_setores' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {% trans "Guardar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

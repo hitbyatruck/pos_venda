@@ -1,56 +1,327 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 {% load i18n %}
 
-{% block title %}{{ cliente.nome }} - Contactos{% endblock %}
+{% block title %}{{ cliente.nome }} - {% trans "Gerir Contactos" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
-    
-    {% include 'includes/mini_nav.html' %}
-    
+    <!-- Breadcrumbs -->
+    {% include 'clientes/includes/breadcrumbs.html' with view_title="Contactos" %}
+
+    <!-- Mini Navigation -->
+    {% include 'clientes/includes/menu_clientes.html' %}
+
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Contactos de {{ cliente.nome }}</h6>
-            <a href="#" class="btn btn-sm btn-success">
-                <i class="fas fa-plus-circle"></i> Adicionar Contacto
-            </a>
+            <h5 class="mb-0 font-weight-bold">
+                <i class="fas fa-address-book me-2"></i>
+                {% trans "Contactos de" %} {{ cliente.nome }}
+            </h5>
+            <button class="btn btn-primary" id="addContactBtn">
+                <i class="fas fa-plus me-1"></i> {% trans "Adicionar Contacto" %}
+            </button>
         </div>
         <div class="card-body">
             {% if contactos %}
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Email</th>
-                                <th>Telefone</th>
-                                <th>Posição</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for contacto in contactos %}
-                            <tr>
-                                <td>{{ contacto.nome }}</td>
-                                <td>{{ contacto.email }}</td>
-                                <td>{{ contacto.telefone }}</td>
-                                <td>{{ contacto.posicao }}</td>
-                                <td>
-                                    <a href="#" class="btn btn-sm btn-info">Editar</a>
-                                    <a href="#" class="btn btn-sm btn-danger">Excluir</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>{% trans "Tipo" %}</th>
+                            <th>{% trans "Valor" %}</th>
+                            <th>{% trans "Nome do Contacto" %}</th>
+                            <th>{% trans "Cargo" %}</th>
+                            <th>{% trans "Principal" %}</th>
+                            <th>{% trans "Observações" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contacto in contactos %}
+                        <tr>
+                            <td>
+                                {% if contacto.tipo.icone %}
+                                <i class="fas {{ contacto.tipo.icone }} me-2"></i>
+                                {% endif %}
+                                {{ contacto.tipo.nome }}
+                            </td>
+                            <td>
+                                {% if contacto.tipo.nome == 'Email' %}
+                                <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                {% elif contacto.tipo.nome == 'Telefone' or contacto.tipo.nome == 'Celular' %}
+                                <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                {% else %}
+                                {{ contacto.valor }}
+                                {% endif %}
+                            </td>
+                            <td>{{ contacto.nome_contacto|default:"-" }}</td>
+                            <td>{{ contacto.cargo|default:"-" }}</td>
+                            <td class="text-center">
+                                {% if contacto.principal %}
+                                <span class="badge bg-success">{% trans "Sim" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ contacto.observacoes|default:"-"|truncatechars:30 }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary edit-contact-btn" data-id="{{ contacto.id }}"
+                                        data-tipo="{{ contacto.tipo.id }}" data-valor="{{ contacto.valor }}"
+                                        data-nome="{{ contacto.nome_contacto|default:'' }}"
+                                        data-cargo="{{ contacto.cargo|default:'' }}"
+                                        data-principal="{{ contacto.principal|yesno:'true,false' }}"
+                                        data-obs="{{ contacto.observacoes|default:'' }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger delete-contact-btn"
+                                        data-id="{{ contacto.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-                <p class="text-center">Não há contactos cadastrados para este cliente.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                {% trans "Nenhum contacto registrado para este cliente." %}
+            </div>
             {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar para Detalhes do Cliente" %}
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contactModalLabel">{% trans "Adicionar Contacto" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="contacto_id" name="contacto_id">
+
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">{{ _("Tipo de Contacto") }}*</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">{{ _("Selecione...") }}</option>
+                            {% for tipo in tipos_contacto %}
+                            <option value="{{ tipo.id }}">{{ tipo.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback" id="tipo-error"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="valor" class="form-label">{{ _("Valor") }}*</label>
+                        <input type="text" class="form-control" id="valor" name="valor" required>
+                        <div class="invalid-feedback" id="valor-error"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nome_contacto" class="form-label">{{ _("Nome do Contacto") }}</label>
+                        <input type="text" class="form-control" id="nome_contacto" name="nome_contacto">
+                        <div class="invalid-feedback" id="nome_contacto-error"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cargo" class="form-label">{{ _("Cargo") }}</label>
+                        <input type="text" class="form-control" id="cargo" name="cargo">
+                        <div class="invalid-feedback" id="cargo-error"></div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="principal" name="principal">
+                        <label class="form-check-label" for="principal">{{ _("Contacto Principal") }}</label>
+                        <small class="form-text text-muted d-block">
+                            {{ _("Marcar como principal para este tipo de contacto") }}
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">{{ _("Observações") }}</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                        <div class="invalid-feedback" id="observacoes-error"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                <button type="button" class="btn btn-primary" id="saveContactBtn">{% trans "Salvar" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Contact Modal -->
+<div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteContactModalLabel">{% trans "Confirmar Exclusão" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir este contacto?" %}</p>
+                <p class="text-danger">{% trans "Esta ação não pode ser desfeita." %}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">{% trans "Excluir" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const contactModal = new bootstrap.Modal(document.getElementById('contactModal'));
+        const deleteContactModal = new bootstrap.Modal(document.getElementById('deleteContactModal'));
+        let contactToDelete = null;
+
+        // Add Contact Button
+        document.getElementById('addContactBtn').addEventListener('click', function () {
+            document.getElementById('contactModalLabel').textContent = "{% trans 'Adicionar Contacto' %}";
+            document.getElementById('contactForm').reset();
+            document.getElementById('contacto_id').value = '';
+            resetFormErrors();
+            contactModal.show();
+        });
+
+        // Edit Contact Buttons
+        document.querySelectorAll('.edit-contact-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                resetFormErrors();
+                const contactId = this.getAttribute('data-id');
+                const tipo = this.getAttribute('data-tipo');
+                const valor = this.getAttribute('data-valor');
+                const nome = this.getAttribute('data-nome');
+                const cargo = this.getAttribute('data-cargo');
+                const principal = this.getAttribute('data-principal') === 'true';
+                const obs = this.getAttribute('data-obs');
+
+                document.getElementById('contactModalLabel').textContent = "{% trans 'Editar Contacto' %}";
+                document.getElementById('contacto_id').value = contactId;
+                document.getElementById('tipo').value = tipo;
+                document.getElementById('valor').value = valor;
+                document.getElementById('nome_contacto').value = nome;
+                document.getElementById('cargo').value = cargo;
+                document.getElementById('principal').checked = principal;
+                document.getElementById('observacoes').value = obs;
+
+                contactModal.show();
+            });
+        });
+
+        // Delete Contact Buttons
+        document.querySelectorAll('.delete-contact-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                contactToDelete = this.getAttribute('data-id');
+                deleteContactModal.show();
+            });
+        });
+
+        // Confirm Delete Button
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+            if (contactToDelete) {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch("{% url 'clientes:excluir_contacto' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        contacto_id: contactToDelete,
+                        cliente_id: "{{ cliente.id }}"
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert(data.message || "{% trans 'Erro ao excluir contacto.' %}");
+                            deleteContactModal.hide();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert("{% trans 'Ocorreu um erro ao processar sua solicitação.' %}");
+                        deleteContactModal.hide();
+                    });
+            }
+        });
+
+        // Save Contact
+        document.getElementById('saveContactBtn').addEventListener('click', function () {
+            const form = document.getElementById('contactForm');
+            const formData = new FormData(form);
+
+            fetch("{% url 'clientes:cliente_contactos' cliente_id=cliente.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        contactModal.hide();
+                        window.location.reload();
+                    } else {
+                        displayFormErrors(data.errors);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("{% trans 'Ocorreu um erro ao processar sua solicitação.' %}");
+                });
+        });
+
+        function resetFormErrors() {
+            document.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.textContent = '';
+            });
+            document.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+        }
+
+        function displayFormErrors(errors) {
+            resetFormErrors();
+
+            for (const field in errors) {
+                const errorElement = document.getElementById(`${field}-error`);
+                const inputElement = document.getElementById(field);
+
+                if (errorElement && inputElement) {
+                    errorElement.textContent = errors[field].join(' ');
+                    inputElement.classList.add('is-invalid');
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

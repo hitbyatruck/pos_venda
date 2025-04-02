@@ -165,15 +165,15 @@
                         </td>
                         <td>
                             <div class="form-group">
-                                <!-- Garantir que o valor seja float com 2 casas decimais -->
-                                <div class="form-group">
-                                    <input type="number" 
-                                           name="{{ form.preco.html_name }}" 
-                                           class="form-control preco" 
-                                           step="0.01"
-                                           value="{{ form.instance.preco|floatformat:2 }}" 
-                                           data-original-value="{{ form.instance.preco|floatformat:2 }}">
-                                </div>
+                                <!-- Mudar para type="text" para evitar problemas com o cursor -->
+                                <input type="text" 
+                                       name="{{ form.preco.html_name }}" 
+                                       class="form-control preco" 
+                                       placeholder="0.00" 
+                                       value="{{ form.instance.preco|floatformat:2 }}" 
+                                       data-original-value="{{ form.instance.preco|floatformat:2 }}"
+                                       onfocus="this.select()">
+                            </div>
                         </td>
                         <td class="row-total">0.00</td>
                         <td>
@@ -208,7 +208,12 @@
                             </td>
                             <td>
                                 <div class="form-group">
-                                    <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="{{ form.preco.value|default:'0.00' }}">                                </div>
+                                    <input type="text" 
+                                           name="{{ form.preco.html_name }}" 
+                                           class="form-control preco" 
+                                           value="0.00" 
+                                           onfocus="this.select()">
+                                </div>
                             </td>
                             <td class="row-total">0.00</td>
                             <td>

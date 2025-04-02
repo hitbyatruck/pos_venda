@@ -1,158 +1,287 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Detalhes do Cliente{% endblock %}
+{% load i18n %}
+
+{% block title %}{{ cliente.nome }} | {% trans "Detalhes do Cliente" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
-    
-    {% include 'includes/mini_nav.html' %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            {% if cliente.tipo == 'empresa' %}
+            <i class="fas fa-building me-2"></i>
+            {% else %}
+            <i class="fas fa-user me-2"></i>
+            {% endif %}
+            {{ cliente.nome }}
+        </h1>
+    </div>
+
+    <!-- Breadcrumbs -->
+    {% include 'clientes/includes/breadcrumbs.html' with view_title=cliente.nome %}
+
+    <!-- Mini Navigation -->
+    {% include 'clientes/includes/menu_clientes.html' %}
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Detalhes do Cliente</h6>
+            <h5 class="mb-0 font-weight-bold">
+                {% if cliente.tipo == 'empresa' %}
+                <i class="fas fa-building me-2"></i>
+                {% else %}
+                <i class="fas fa-user me-2"></i>
+                {% endif %}
+                {{ cliente.nome }}
+            </h5>
             <div>
-                <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i> Editar
+                <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
                 </a>
-                <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-sm btn-success">
-                    <i class="fas fa-plus-circle"></i> Adicionar Equipamento
-                </a>
-                <a href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}" class="btn btn-sm btn-info">
-                    <i class="fas fa-tools"></i> Criar PAT
-                </a>
-                <a href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-sticky-note"></i> Nova Nota
-                </a>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#excluirClienteModal">
+                    <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                </button>
+                <div class="btn-group ms-2">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-plus-circle me-1"></i> {% trans "Ações" %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item"
+                                href="{% url 'clientes:adicionar_equipamento_cliente' cliente_id=cliente.id %}">
+                                <i class="fas fa-cogs me-1"></i> {% trans "Adicionar Equipamento" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'assistencia:criar_pat' %}?cliente={{ cliente.id }}">
+                                <i class="fas fa-tools me-1"></i> {% trans "Criar PAT" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'notas:criar_nota' %}?cliente={{ cliente.id }}">
+                                <i class="fas fa-sticky-note me-1"></i> {% trans "Nova Nota" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <h5 class="border-bottom pb-2">Informações Básicas</h5>
+                    <h5 class="border-bottom pb-2">{% trans "Informações Básicas" %}</h5>
                     <table class="table">
                         <tr>
-                            <th style="width: 30%">Nome:</th>
+                            <th style="width: 30%">{% trans "Nome" %}:</th>
                             <td>{{ cliente.nome }}</td>
                         </tr>
+                        {% if cliente.tipo == 'individual' and cliente.empresa_associada %}
                         <tr>
-                            <th>Empresa:</th>
-                            <td>{{ cliente.empresa }}</td>
+                            <th>{% trans "Empresa" %}:</th>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.empresa_associada.id %}">
+                                    <i class="fas fa-building me-1"></i> {{ cliente.empresa_associada.nome }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% if cliente.cargo %}
+                        <tr>
+                            <th>{% trans "Cargo" %}:</th>
+                            <td>{{ cliente.cargo }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endif %}
+                        <tr>
+                            <th>{% trans "Email" %}:</th>
+                            <td>
+                                {% if primary_email %}
+                                <a href="mailto:{{ primary_email.valor }}">{{ primary_email.valor }}</a>
+                                {% elif first_email %}
+                                <a href="mailto:{{ first_email.valor }}">{{ first_email.valor }}</a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         <tr>
-                            <th>Email:</th>
-                            <td>{{ cliente.email }}</td>
+                            <th>{% trans "Telefone" %}:</th>
+                            <td>
+                                {% with primary_phone=False first_phone=False %}
+                                <!-- Check for primary phone -->
+                                {% for contact in cliente.contactos.all %}
+                                {% if contact.tipo.nome == "Telefone" and contact.principal and not primary_phone %}
+                                <a href="tel:{{ contact.valor }}">{{ contact.valor }}</a>
+                                {% with primary_phone=True %}{% endwith %}
+                                {% endif %}
+                                {% endfor %}
+                                <!-- If no primary phone, use first phone -->
+                                {% if not primary_phone %}
+                                {% for contact in cliente.contactos.all %}
+                                {% if contact.tipo.nome == "Telefone" and forloop.first %}
+                                <a href="tel:{{ contact.valor }}">{{ contact.valor }}</a>
+                                {% with first_phone=True %}{% endwith %}
+                                {% endif %}
+                                {% endfor %}
+                                {% endif %}
+                                <!-- No phones found -->
+                                {% if not primary_phone and not first_phone %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
                         </tr>
+                        {% if cliente.website %}
                         <tr>
-                            <th>Telefone:</th>
-                            <td>{{ cliente.telefone }}</td>
+                            <th>{% trans "Website" %}:</th>
+                            <td><a href="{{ cliente.website }}" target="_blank">{{ cliente.website }}</a></td>
                         </tr>
+                        {% endif %}
+                        {% if cliente.nif %}
+                        <tr>
+                            <th>{% trans "NIF" %}:</th>
+                            <td>{{ cliente.nif }}</td>
+                        </tr>
+                        {% endif %}
                     </table>
                 </div>
                 <div class="col-md-6">
-                    <h5 class="border-bottom pb-2">Endereço</h5>
+                    <h5 class="border-bottom pb-2">{% trans "Endereço" %}</h5>
                     <table class="table">
                         <tr>
-                            <th style="width: 30%">Morada:</th>
-                            <td>{{ cliente.morada }}</td>
+                            <th style="width: 30%">{% trans "Morada" %}:</th>
+                            <td>{{ cliente.morada|default:"-" }}</td>
                         </tr>
                         <tr>
-                            <th>Localidade:</th>
-                            <td>{{ cliente.localidade }}</td>
+                            <th>{% trans "Código Postal" %}:</th>
+                            <td>{{ cliente.codigo_postal|default:"-" }}</td>
                         </tr>
                         <tr>
-                            <th>Código Postal:</th>
-                            <td>{{ cliente.codigo_postal }}</td>
+                            <th>{% trans "Cidade" %}:</th>
+                            <td>{{ cliente.cidade|default:"-" }}</td>
                         </tr>
                         <tr>
-                            <th>País:</th>
-                            <td>{{ cliente.pais }}</td>
+                            <th>{% trans "País" %}:</th>
+                            <td>{{ cliente.pais.name|default:"-" }}</td>
                         </tr>
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="row mt-4">
-                <div class="col-12">
-                    <h5 class="border-bottom pb-2">Resumo</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Contactos</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ contactos|length }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-address-book fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Equipamentos</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ equipamentos|length }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-tools fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Assistências</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ assistencias|length }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-headset fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Notas</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ notas|length }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-sticky-note fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Contacts section -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "Contactos" %}</h5>
+            <a href="{% url 'clientes:cliente_contactos' cliente_id=cliente.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-address-book me-1"></i> {% trans "Gerir Contactos" %}
+            </a>
+        </div>
+        <div class="card-body">
+            {% if cliente.contactos.all %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Tipo" %}</th>
+                            <th>{% trans "Valor" %}</th>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Principal" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contacto in cliente.contactos.all %}
+                        <tr>
+                            <td>
+                                {% if contacto.tipo.icone %}
+                                <i class="fas {{ contacto.tipo.icone }} me-2"></i>
+                                {% endif %}
+                                {{ contacto.tipo.nome }}
+                            </td>
+                            <td>
+                                {% if contacto.tipo.nome == 'Email' %}
+                                <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                {% elif contacto.tipo.nome == 'Telefone' or contacto.tipo.nome == 'Celular' %}
+                                <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                {% else %}
+                                {{ contacto.valor }}
+                                {% endif %}
+                            </td>
+                            <td>{{ contacto.nome_contacto|default:"-" }}</td>
+                            <td>
+                                {% if contacto.principal %}
+                                <span class="badge bg-success">{% trans "Sim" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            
-            <div class="mt-4">
-                <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar à Lista
+            {% else %}
+            <div class="alert alert-info">
+                {% trans "Nenhum contacto registrado para este cliente." %}
+                <a href="{% url 'clientes:cliente_contactos' cliente_id=cliente.id %}" class="alert-link">
+                    {% trans "Adicionar contacto" %}
                 </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        {% if cliente.tipo == 'empresa' %}
+        <a href="{% url 'clientes:listar_empresas' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar à Lista de Empresas" %}
+        </a>
+        {% elif cliente.tipo == 'individual' %}
+        <a href="{% url 'clientes:listar_individuais' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar à Lista de Individuais" %}
+        </a>
+        {% else %}
+        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar à Lista de Clientes" %}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Client Modal -->
+<div class="modal fade" id="excluirClienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir este cliente?" %}</p>
+                <p class="fw-bold">{{ cliente.nome }}</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e todos os dados associados serão perdidos." %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form method="post" action="{% url 'clientes:excluir_cliente' cliente_id=cliente.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> {% trans "Excluir Cliente" %}
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
-{% block scripts %}
-{{ block.super }}
+{% block extra_js %}
 <script src="{% static 'clientes/js/equipment_deassociation.js' %}"></script>
 {% endblock %}

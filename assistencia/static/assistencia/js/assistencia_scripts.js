@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.addEventListener("click", function(event) {
             const deleteBtn = event.target.closest(".pat-delete");
             if (deleteBtn) {
+                // Apenas prevenir o comportamento padrão se for um botão de exclusão
                 event.preventDefault();
                 currentPatId = deleteBtn.getAttribute("data-id");
                 currentPatUrl = deleteBtn.getAttribute("data-url");
@@ -358,23 +359,21 @@ function validateRow(row) {
 
 // TOTAL CALCULATIONS - MODIFICADO PARA CORRIGIR PRESERVAÇÃO DOS PREÇOS
 function updateRowTotal(row) {
-    console.log("Atualizando total da linha");
-    
     const qtyInput = row.querySelector(".quantidade");
     const priceInput = row.querySelector(".preco");
     const totalCell = row.querySelector(".row-total");
     
-    if (!qtyInput || !priceInput || !totalCell) {
-        console.warn("Elementos não encontrados na linha", row);
-        return;
-    }
-    
-    // CORREÇÃO: Garantir que quantidade é inteira
-    if (qtyInput.value === "" || qtyInput.value === "None" || isNaN(parseInt(qtyInput.value))) {
-        qtyInput.value = "1";
-    } else {
-        // Forçar valor inteiro
-        qtyInput.value = Math.floor(parseFloat(qtyInput.value));
+    if (qtyInput && priceInput && totalCell) {
+        // Valores garantidamente numéricos
+        const qty = parseInt(qtyInput.value) || 1;
+        let price = priceInput.value.replace(/[^\d.,]/g, '').replace(',', '.');
+        price = parseFloat(price) || 0;
+        
+        const total = qty * price;
+        
+        // Atualizar valores nos elementos
+        totalCell.textContent = total.toFixed(2);
+        qtyInput.value = qty;
     }
     
     // CORREÇÃO: Recuperar preço do backup se estiver vazio
@@ -478,15 +477,19 @@ function updateGrandTotal() {
     document.querySelectorAll('.item-row:not(.template-row):not([style*="display: none"])').forEach(row => {
         const totalCell = row.querySelector(".row-total");
         if (totalCell) {
-            total += parseFloat(totalCell.textContent || 0);
+            // Garantir que o valor é um número
+            const lineTotal = parseFloat(totalCell.textContent) || 0;
+            total += lineTotal;
+            console.log(`Linha com total: ${lineTotal}`);
         }
     });
     
     grandTotalElement.textContent = total.toFixed(2);
     
-    // CORREÇÃO: Atualizar o campo hidden de total geral
+    // Atualizar o campo hidden do total geral
     if (totalGeralInput) {
         totalGeralInput.value = total.toFixed(2);
+        console.log(`Total geral atualizado: ${total.toFixed(2)}`);
     }
 }
 
@@ -620,3 +623,45 @@ function debugFormValues() {
     
     console.groupEnd();
 }
+
+// CORREÇÃO: Manipulador de eventos de formulário atualizado
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Configurando manipulador de envio do formulário");
+    
+    const patForm = document.getElementById('patForm');
+    if (patForm) {
+        // Remover manipuladores existentes para evitar conflitos
+        const clonedForm = patForm.cloneNode(true);
+        patForm.parentNode.replaceChild(clonedForm, patForm);
+        
+        // Adicionar novo manipulador de eventos
+        clonedForm.addEventListener('submit', function(event) {
+            console.log("Formulário está sendo enviado");
+            
+            // Recalcular todos os totais antes do envio
+            document.querySelectorAll('.item-row:not(.template-row)').forEach(function(row) {
+                if (row.style.display !== 'none') {
+                    // Obter os valores atuais
+                    const qtyInput = row.querySelector('.quantidade');
+                    const priceInput = row.querySelector('.preco');
+                    
+                    if (qtyInput && priceInput) {
+                        // Garantir que são números válidos
+                        const qty = parseInt(qtyInput.value) || 1;
+                        let price = priceInput.value.replace(/[^\d.,]/g, '').replace(',', '.');
+                        price = parseFloat(price) || 0;
+                        
+                        // Definir valores formatados
+                        qtyInput.value = qty;
+                        priceInput.value = price.toFixed(2);
+                        
+                        console.log(`Enviar linha: quantidade=${qty}, preço=${price.toFixed(2)}`);
+                    }
+                }
+            });
+            
+            // Não impede o envio - permite submissão normal
+            return true;
+        });
+    }
+});

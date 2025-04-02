@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Setores" %} | {% trans "Configurações" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-industry me-2"></i>
+            {% trans "Setores de Atuação" %}
+            <small class="text-muted">({{ total_setores }})</small>
+        </h2>
+        <div>
+            <a href="{% url 'clientes:adicionar_setor' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Novo Setor" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros e busca -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}" placeholder="{% trans 'Nome do setor...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                    {% if search_query %}
+                        <a href="{% url 'clientes:listar_setores' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-1"></i> {% trans "Limpar" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if setores %}
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Nome" %}</th>
+                                <th>{% trans "Descrição" %}</th>
+                                <th>{% trans "Empresas Associadas" %}</th>
+                                <th class="text-center">{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for setor in setores %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'clientes:detalhes_setor' setor_id=setor.id %}" class="fw-semibold text-decoration-none">
+                                        <i class="fas fa-industry text-secondary me-2"></i>
+                                        {{ setor.nome }}
+                                    </a>
+                                </td>
+                                <td>{{ setor.descricao|truncatechars:100|default:"-" }}</td>
+                                <td>
+                                    {{ setor.empresa_set.count }}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'clientes:detalhes_setor' setor_id=setor.id %}" class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'clientes:editar_setor' setor_id=setor.id %}" class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-setor-btn" data-id="{{ setor.id }}" data-name="{{ setor.nome }}" title="{% trans 'Excluir' %}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            {% if setores.has_other_pages %}
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div>
+                    {% trans "Mostrando" %} {{ setores.start_index }} - {{ setores.end_index }} {% trans "de" %} {{ total_setores }}
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination mb-0">
+                        {% if setores.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?pagina={{ setores.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for i in setores.paginator.page_range %}
+                            {% if setores.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% elif i > setores.number|add:'-3' and i < setores.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if setores.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?pagina={{ setores.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?pagina={{ setores.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if search_query %}
+                {% trans "Nenhum setor encontrado com os filtros selecionados." %}
+                <a href="{% url 'clientes:listar_setores' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+            {% else %}
+                {% trans "Nenhum setor cadastrado no sistema." %}
+                <a href="{% url 'clientes:adicionar_setor' %}" class="alert-link">{% trans "Adicionar Setor" %}</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteSetorModal" tabindex="-1" aria-labelledby="deleteSetorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteSetorModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir o setor" %} <strong id="setorNameToDelete"></strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e poderá afetar as empresas associadas a este setor." %}
+                </p>
+                <div id="warningDependencies" class="alert alert-warning mt-3 d-none">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="dependencyMessage"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form id="deleteSetorForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="force" id="forceDelete" value="false">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        {% trans "Excluir" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete Setor Modal Setup
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteSetorModal'));
+        const setorNameToDelete = document.getElementById('setorNameToDelete');
+        const warningDependencies = document.getElementById('warningDependencies');
+        const dependencyMessage = document.getElementById('dependencyMessage');
+        const deleteForm = document.getElementById('deleteSetorForm');
+        const forceDeleteInput = document.getElementById('forceDelete');
+        
+        // Add click handlers to all delete buttons
+        document.querySelectorAll('.delete-setor-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const setorId = this.getAttribute('data-id');
+                const setorName = this.getAttribute('data-name');
+                
+                // Set the setor name in the modal
+                setorNameToDelete.textContent = setorName;
+                
+                // Reset the form and hide warnings
+                warningDependencies.classList.add('d-none');
+                forceDeleteInput.value = 'false';
+                
+                // Update the form action URL
+                deleteForm.action = `{% url 'clientes:excluir_setor' setor_id=0 %}`.replace('0', setorId);
+                
+                // Show the modal
+                deleteModal.show();
+            });
+        });
+        
+        // Handle form submission with AJAX for dependency checking
+        deleteForm.addEventListener('submit', function(e) {
+            if (forceDeleteInput.value === 'true') {
+                // If force is true, let the form submit normally
+                return true;
+            }
+            
+            e.preventDefault();
+            
+            // Get form data
+            const formData = new FormData(deleteForm);
+            
+            // Send AJAX request
+            fetch(deleteForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Successful deletion, reload the page
+                    window.location.reload();
+                } else if (data.has_dependencies) {
+                    // Show dependency warning
+                    warningDependencies.classList.remove('d-none');
+                    dependencyMessage.textContent = data.message;
+                    forceDeleteInput.value = 'true';
+                } else {
+                    // Other error
+                    alert(data.message || 'Ocorreu um erro ao excluir o setor.');
+                    deleteModal.hide();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ocorreu um erro ao processar a solicitação.');
+                deleteModal.hide();
+            });
+        });
+    });
+</script>
+{% endblock %}

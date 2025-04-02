@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard de Clientes" %}{% endblock %}
+
+{% block content %}
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans "Dashboard de Clientes" %}</h1>
+    <div>
+      <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> {% trans "Adicionar Cliente" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item active">Clientes</li>
+    </ol>
+  </nav>
+
+  <!-- Mini-navbar -->
+  {% include 'clientes/includes/menu_clientes.html' with active_tab='index' %}
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                  {% trans "Clientes Totais" %}
+                </div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
+              </div>
+              <div class="col-auto">
+                <i class="fas fa-users fa-2x text-gray-300"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Links rápidos -->
+      <div class="col-12 mt-4">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Ações Rápidas" %}</h6>
+          </div>
+          <div class="card-body">
+            <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-info m-1">
+              <i class="fas fa-list"></i> {% trans "Listar Clientes" %}
+            </a>
+            <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-success m-1">
+              <i class="fas fa-user-plus"></i> {% trans "Adicionar Cliente" %}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

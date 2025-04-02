@@ -1,0 +1,42 @@
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginação">
+  <ul class="pagination justify-content-center">
+    <!-- Botão "Anterior" -->
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+          <span aria-hidden="true">&laquo;</span> Anterior
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link"><span aria-hidden="true">&laquo;</span> Anterior</span>
+      </li>
+    {% endif %}
+    
+    <!-- Números das páginas -->
+    {% for i in page_obj.paginator.page_range %}
+      {% if page_obj.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ i }}">{{ i }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+    
+    <!-- Botão "Próxima" -->
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Próxima">
+          Próxima <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">Próxima <span aria-hidden="true">&raquo;</span></span>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

@@ -1,0 +1,65 @@
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Navegação - Clientes</h6>
+    </div>
+    <div class="card-body p-0">
+        <ul class="nav nav-pills nav-fill flex-column flex-sm-row">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}" 
+                   href="{% url 'clientes:dashboard' %}">
+                    <i class="fas fa-chart-pie mr-1"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'clientes' %}active{% endif %}" 
+                   href="{% url 'clientes:listar_clientes' %}">
+                    <i class="fas fa-users mr-1"></i> Clientes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'empresas' %}active{% endif %}" 
+                   href="{% url 'clientes:listar_empresas' %}">
+                    <i class="fas fa-building mr-1"></i> Empresas
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if active_tab == 'adicionar' %}active{% endif %}" 
+                   data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-plus-circle mr-1"></i> Adicionar
+                </a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'clientes:adicionar_individual' %}">
+                        <i class="fas fa-user mr-1"></i> Individual
+                    </a>
+                    <a class="dropdown-item" href="{% url 'clientes:adicionar_empresa' %}">
+                        <i class="fas fa-building mr-1"></i> Empresa
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{% url 'clientes:adicionar_setor' %}">
+                        <i class="fas fa-industry mr-1"></i> Setor
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'importar' %}active{% endif %}" 
+                   href="{% url 'clientes:importar_clientes' %}">
+                    <i class="fas fa-file-import mr-1"></i> Importar
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if active_tab == 'configuracoes' %}active{% endif %}" 
+                   data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-cog mr-1"></i> Configurações
+                </a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'clientes:listar_setores' %}">
+                        <i class="fas fa-industry mr-1"></i> Setores
+                    </a>
+                    <a class="dropdown-item" href="{% url 'clientes:listar_tipos_contacto' %}">
+                        <i class="fas fa-address-book mr-1"></i> Tipos de Contacto
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>

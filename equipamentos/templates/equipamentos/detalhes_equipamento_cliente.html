@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ equipamento.equipamento_fabricado.modelo }} | {% trans "Detalhes do Equipamento" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-cog me-2"></i>{{ equipamento.equipamento_fabricado.modelo }}
+        </h1>
+        <div>
+            <a href="{% url 'equipamentos:editar_cliente' equipamento_id=equipamento.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+            </a>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#excluirEquipamentoModal">
+                <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+            </button>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-plus-circle me-1"></i> {% trans "Ações" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item"
+                            href="{% url 'assistencia:criar_pat' %}?equipamento={{ equipamento.id }}">
+                            <i class="fas fa-tools me-1"></i> {% trans "Criar PAT" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                            href="{% url 'equipamentos:transferir_equipamento' equipamento_id=equipamento.id %}">
+                            <i class="fas fa-exchange-alt me-1"></i> {% trans "Transferir para Outro Cliente" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'notas:criar_nota' %}?equipamento={{ equipamento.id }}">
+                            <i class="fas fa-sticky-note me-1"></i> {% trans "Nova Nota" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title=equipamento.equipamento_fabricado.modelo %}
+
+    <!-- Mini Navigation -->
+    {% include 'equipamentos/includes/menu_equipamentos.html' with active_tab='cliente' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold">
+                <i class="fas fa-cog me-2"></i>{{ equipamento.equipamento_fabricado.modelo }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">{% trans "Informações do Equipamento" %}</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">{% trans "Modelo" %}:</th>
+                            <td>
+                                <a
+                                    href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.equipamento_fabricado.id %}">
+                                    {{ equipamento.equipamento_fabricado.modelo }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Número de Série" %}:</th>
+                            <td>{{ equipamento.numero_serie }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Data de Instalação" %}:</th>
+                            <td>{{ equipamento.data_instalacao|date:"d/m/Y"|default:"-" }}</td>
+                        </tr>
+                        {% if equipamento.equipamento_fabricado.categoria %}
+                        <tr>
+                            <th>{% trans "Categoria" %}:</th>
+                            <td>{{ equipamento.equipamento_fabricado.categoria.nome }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">{% trans "Cliente" %}</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">{% trans "Nome" %}:</th>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}">
+                                    {{ equipamento.cliente.nome }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Tipo" %}:</th>
+                            <td>{{ equipamento.cliente.get_tipo_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Observações" %}:</th>
+                            <td>{{ equipamento.observacoes|default:"-"|linebreaks }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assistências -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "Histórico de Assistências" %}</h5>
+            <a href="{% url 'assistencia:criar_pat' %}?equipamento={{ equipamento.id }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-tools me-1"></i> {% trans "Nova Assistência" %}
+            </a>
+        </div>
+        <div class="card-body">
+            {% if assistencias %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Data" %}</th>
+                            <th>{% trans "Estado" %}</th>
+                            <th>{% trans "Descrição" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assistencia in assistencias %}
+                        <tr>
+                            <td>{{ assistencia.referencia }}</td>
+                            <td>{{ assistencia.data_entrada|date:"d/m/Y" }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if assistencia.estado == 'concluido' %}bg-success{% elif assistencia.estado == 'aguardando' %}bg-warning{% else %}bg-primary{% endif %}">
+                                    {{ assistencia.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>{{ assistencia.descricao_problema|truncatechars:50 }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'assistencia:detalhes_pat' assistencia.id %}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                {% trans "Nenhuma assistência registrada para este equipamento." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notas -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "Notas" %}</h5>
+            <a href="{% url 'notas:criar_nota' %}?equipamento={{ equipamento.id }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-sticky-note me-1"></i> {% trans "Nova Nota" %}
+            </a>
+        </div>
+        <div class="card-body">
+            {% if notas %}
+            <div class="accordion" id="notasAccordion">
+                {% for nota in notas %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ nota.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ nota.id }}" aria-expanded="false"
+                            aria-controls="collapse{{ nota.id }}">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <span>{{ nota.titulo }}</span>
+                                <small class="text-muted">{{ nota.data_criacao|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ nota.id }}" class="accordion-collapse collapse"
+                        aria-labelledby="heading{{ nota.id }}" data-bs-parent="#notasAccordion">
+                        <div class="accordion-body">
+                            {{ nota.conteudo|linebreaks }}
+                            <div class="d-flex justify-content-end">
+                                <a href="{% url 'notas:editar_nota' nota.id %}"
+                                    class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="fas fa-edit"></i> {% trans "Editar" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                {% trans "Nenhuma nota registrada para este equipamento." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Equipment Modal -->
+<div class="modal fade" id="excluirEquipamentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir este equipamento?" %}</p>
+                <p class="fw-bold">{{ equipamento.equipamento_fabricado.modelo }} (S/N: {{ equipamento.numero_serie }})
+                </p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e todos os dados associados serão perdidos." %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form method="post" action="{% url 'equipamentos:excluir_cliente' equipamento_id=equipamento.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> {% trans "Excluir Equipamento" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

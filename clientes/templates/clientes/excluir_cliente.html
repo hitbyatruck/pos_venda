@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Excluir Cliente" %} - {{ cliente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {% trans "Confirmar Exclusão" %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{% trans "Tem certeza que deseja excluir o cliente" %} <strong>{{ cliente.nome }}</strong>?</h5>
+            <p class="card-text text-danger">
+                <i class="fas fa-exclamation-circle me-1"></i>
+                {% trans "Esta ação não pode ser desfeita. Todos os dados relacionados a este cliente serão perdidos." %}
+            </p>
+            
+            <div class="alert alert-warning mt-3">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {% trans "Informações do Cliente" %}
+                </h6>
+                <ul class="mb-0">
+                    <li><strong>{% trans "Nome" %}:</strong> {{ cliente.nome }}</li>
+                    <li><strong>{% trans "Email" %}:</strong> {{ cliente.email }}</li>
+                    <li><strong>{% trans "Telefone" %}:</strong> {{ cliente.telefone }}</li>
+                    <li><strong>{% trans "Tipo" %}:</strong> {{ cliente.get_tipo_display }}</li>
+                </ul>
+            </div>
+            
+            <form method="post" id="formExcluirCliente">
+                {% csrf_token %}
+                <input type="hidden" name="force" id="force" value="false">
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-danger confirm-delete">
+                        <i class="fas fa-trash me-1"></i>
+                        {% trans "Excluir" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmação Modal para dependências -->
+<div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="dependencyModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Atenção" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="dependencyMessage">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmForceDelete">
+                    {% trans "Sim, Excluir" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('formExcluirCliente');
+        const dependencyModal = new bootstrap.Modal(document.getElementById('dependencyModal'));
+        const forceInput = document.getElementById('force');
+        
+        form.addEventListener('submit', function(e) {
+            if (forceInput.value === 'true') {
+                // Já confirmou, deixa enviar normalmente
+                return;
+            }
+            
+            e.preventDefault();
+            
+            // Enviar solicitação AJAX para verificar dependências
+            fetch('{% url "clientes:excluir_cliente" cliente_id=cliente.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Se foi bem-sucedido (sem dependências), redirecionar
+                    window.location.href = data.redirect_url || '{% url "clientes:listar_clientes" %}';
+                } else if (data.has_dependencies) {
+                    // Se houver dependências, mostrar modal de confirmação
+                    document.getElementById('dependencyMessage').textContent = data.message;
+                    dependencyModal.show();
+                } else {
+                    // Outros erros
+                    alert(data.message || 'Ocorreu um erro ao processar a solicitação.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ocorreu um erro ao processar a solicitação.');
+            });
+        });
+        
+        // Quando confirmado no modal, definir force=true e enviar o formulário
+        document.getElementById('confirmForceDelete').addEventListener('click', function() {
+            forceInput.value = 'true';
+            dependencyModal.hide();
+            form.submit();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Lista de Clientes Individuais" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='individuais' %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-user me-2"></i>
+            {% trans "Clientes Individuais" %}
+            <small class="text-muted">({{ total_individuais }})</small>
+        </h2>
+        <div>
+            <a href="{% url 'clientes:adicionar_individual' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Novo Cliente Individual" %}
+            </a>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item"
+                            href="{% url 'clientes:exportar_clientes' %}?formato=excel&tipo=individual">
+                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                            href="{% url 'clientes:exportar_clientes' %}?formato=csv&tipo=individual">
+                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                            href="{% url 'clientes:exportar_clientes' %}?formato=pdf&tipo=individual">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros e busca -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ request.GET.q }}"
+                            placeholder="{% trans 'Nome, email, telefone...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
+                    <select class="form-select" id="orderby" name="orderby">
+                        <option value="nome" {% if orderby_nome_selected %}selected{% endif %}>
+                            {% trans "Nome (A-Z)" %}
+                        </option>
+                        <option value="-nome" {% if orderby_nome_desc_selected %}selected{% endif %}>
+                            {% trans "Nome (Z-A)" %}
+                        </option>
+                        <option value="-data_criacao" {% if orderby_data_criacao_desc_selected %}selected{% endif %}>
+                            {% trans "Mais recentes" %}
+                        </option>
+                        <option value="data_criacao" {% if orderby_data_criacao_selected %}selected{% endif %}>
+                            {% trans "Mais antigos" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if individuais %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Telefone" %}</th>
+                            <th>{% trans "Localidade" %}</th>
+                            <th>{% trans "Data de Nascimento" %}</th>
+                            <th>{% trans "Data de Registo" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for individual in individuais %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_individual' individual_id=individual.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% if individual.foto %}
+                                    <img src="{{ individual.foto.url }}" alt="{{ individual.nome }}"
+                                        class="rounded-circle me-2"
+                                        style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-user text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ individual.nome }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="mailto:{{ individual.email }}" class="text-decoration-none">
+                                    {{ individual.email }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="tel:{{ individual.telefone }}" class="text-decoration-none">
+                                    {{ individual.telefone }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if individual.cidade %}
+                                {{ individual.cidade }}{% if individual.pais %}, {{ individual.pais }}{% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if individual.data_nascimento %}
+                                {{ individual.data_nascimento|date:"d/m/Y" }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ individual.data_criacao|date:"d/m/Y" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'clientes:detalhes_individual' individual_id=individual.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'clientes:editar_individual' individual_id=individual.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'clientes:excluir_cliente' cliente_id=individual.id %}"
+                                        class="btn btn-outline-danger" title="{% trans 'Excluir' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        {% if individuais.has_other_pages %}
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                {% trans "Mostrando" %} {{ individuais.start_index }} - {{ individuais.end_index }} {% trans "de" %} {{
+                total_individuais }}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    {% if individuais.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ individuais.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in individuais.paginator.page_range %}
+                    {% if individuais.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > individuais.number|add:'-3' and i < individuais.number|add:'3' %} <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}">{{
+                            i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if individuais.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ individuais.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ individuais.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if request.GET.q %}
+        {% trans "Nenhum cliente individual encontrado com os filtros selecionados." %}
+        <a href="{% url 'clientes:listar_individuais' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+        {% else %}
+        {% trans "Nenhum cliente individual cadastrado no sistema." %}
+        <a href="{% url 'clientes:adicionar_individual' %}" class="alert-link">{% trans "Adicionar Cliente Individual"
+            %}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

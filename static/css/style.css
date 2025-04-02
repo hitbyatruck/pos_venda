@@ -1,0 +1,38 @@
+/* Mini Navbar Styles */
+.mini-navbar {
+  background-color: #f8f9fc;
+  border-radius: 0.35rem;
+  padding: 0.75rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.mini-navbar .nav-pills .nav-link {
+  color: #5a5c69;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.mini-navbar .nav-pills .nav-link.active {
+  background-color: #4e73df;
+  color: #fff;
+}
+
+.mini-navbar .nav-pills .nav-link:hover:not(.active) {
+  background-color: rgba(78, 115, 223, 0.1);
+}
+
+/* Fix for card headers in dark mode */
+@media (prefers-color-scheme: dark) {
+  .card-header {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: #fff !important;
+  }
+  
+  .breadcrumb-item a {
+    color: #6ea8fe !important;
+  }
+  
+  .breadcrumb-item.active {
+    color: rgba(255, 255, 255, 0.75) !important;
+  }
+}

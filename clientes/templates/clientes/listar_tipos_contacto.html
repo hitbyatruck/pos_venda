@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Tipos de Contacto" %} | {% trans "Configurações" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-address-card me-2"></i>
+            {% trans "Tipos de Contacto" %}
+            <small class="text-muted">({{ total_tipos_contacto }})</small>
+        </h2>
+        <div>
+            <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Novo Tipo de Contacto" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros e busca -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Nome do tipo de contacto...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                    {% if search_query %}
+                    <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-times me-1"></i> {% trans "Limpar" %}
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if tipos_contacto %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Ícone" %}</th>
+                            <th>{% trans "Validador RegEx" %}</th>
+                            <th>{% trans "Estado" %}</th>
+                            <th>{% trans "Contactos Associados" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tipo in tipos_contacto %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_tipo_contacto' tipo_id=tipo.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% if tipo.icone %}
+                                    <i class="fas {{ tipo.icone }} text-secondary me-2"></i>
+                                    {% else %}
+                                    <i class="fas fa-address-card text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ tipo.nome }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if tipo.icone %}
+                                <code>{{ tipo.icone }}</code>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if tipo.validador_regex %}
+                                <code>{{ tipo.validador_regex|truncatechars:30 }}</code>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if tipo.ativo %}
+                                <span class="badge bg-success">{% trans "Ativo" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{% trans "Inativo" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ tipo.contacto_set.count }}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'clientes:detalhes_tipo_contacto' tipo_id=tipo.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'clientes:editar_tipo_contacto' tipo_id=tipo.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger delete-tipo-btn"
+                                        data-id="{{ tipo.id }}" data-name="{{ tipo.nome }}"
+                                        title="{% trans 'Excluir' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        {% if tipos_contacto.has_other_pages %}
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                {% trans "Mostrando" %} {{ tipos_contacto.start_index }} - {{ tipos_contacto.end_index }} {% trans "de"
+                %} {{ total_tipos_contacto }}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    {% if tipos_contacto.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}"
+                            aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ tipos_contacto.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in tipos_contacto.paginator.page_range %}
+                    {% if tipos_contacto.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > tipos_contacto.number|add:'-3' and i < tipos_contacto.number|add:'3' %} <li
+                        class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if tipos_contacto.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ tipos_contacto.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                                aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ tipos_contacto.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                                aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if search_query %}
+        {% trans "Nenhum tipo de contacto encontrado com os filtros selecionados." %}
+        <a href="{% url 'clientes:listar_tipos_contacto' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+        {% else %}
+        {% trans "Nenhum tipo de contacto cadastrado no sistema." %}
+        <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="alert-link">{% trans "Adicionar Tipo de Contacto"
+            %}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTipoModal" tabindex="-1" aria-labelledby="deleteTipoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteTipoModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir o tipo de contacto" %} <strong
+                        id="tipoNameToDelete"></strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e poderá afetar os contactos associados a este tipo." %}
+                </p>
+                <div id="warningDependencies" class="alert alert-warning mt-3 d-none">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="dependencyMessage"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form id="deleteTipoForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="force" id="forceDelete" value="false">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        {% trans "Excluir" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Delete Tipo Modal Setup
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteTipoModal'));
+        const tipoNameToDelete = document.getElementById('tipoNameToDelete');
+        const warningDependencies = document.getElementById('warningDependencies');
+        const dependencyMessage = document.getElementById('dependencyMessage');
+        const deleteForm = document.getElementById('deleteTipoForm');
+        const forceDeleteInput = document.getElementById('forceDelete');
+
+        // Add click handlers to all delete buttons
+        document.querySelectorAll('.delete-tipo-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const tipoId = this.getAttribute('data-id');
+                const tipoName = this.getAttribute('data-name');
+
+                // Set the tipo name in the modal
+                tipoNameToDelete.textContent = tipoName;
+
+                // Reset the form and hide warnings
+                warningDependencies.classList.add('d-none');
+                forceDeleteInput.value = 'false';
+
+                // Update the form action URL
+                deleteForm.action = `{% url 'clientes:excluir_tipo_contacto' tipo_id=0 %}`.replace('0', tipoId);
+
+                // Show the modal
+                deleteModal.show();
+            });
+        });
+
+        // Handle form submission with AJAX for dependency checking
+        deleteForm.addEventListener('submit', function (e) {
+            if (forceDeleteInput.value === 'true') {
+                // If force is true, let the form submit normally
+                return true;
+            }
+
+            e.preventDefault();
+
+            // Get form data
+            const formData = new FormData(deleteForm);
+
+            // Send AJAX request
+            fetch(deleteForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Successful deletion, reload the page
+                        window.location.reload();
+                    } else if (data.has_dependencies) {
+                        // Show dependency warning
+                        warningDependencies.classList.remove('d-none');
+                        dependencyMessage.textContent = data.message;
+                        forceDeleteInput.value = 'true';
+                    } else {
+                        // Other error
+                        alert(data.message || 'Ocorreu um erro ao excluir o tipo de contacto.');
+                        deleteModal.hide();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ocorreu um erro ao processar a solicitação.');
+                    deleteModal.hide();
+                });
+        });
+    });
+</script>
+{% endblock %}

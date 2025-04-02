@@ -88,3 +88,105 @@
 body {
     padding-top: 56px;
 }
+
+/* Adicionar ao arquivo global de estilos */
+
+/* Estilos para cards e listas de clientes */
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-default {
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+}
+
+.cliente-link {
+    color: #4e73df;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.cliente-link:hover {
+    text-decoration: underline;
+}
+
+.contacto-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+    font-size: 0.9em;
+}
+
+.contacto-item i {
+    width: 16px;
+    margin-right: 8px;
+}
+
+.contacto-link {
+    color: #666;
+    text-decoration: none;
+}
+
+.contacto-link:hover {
+    text-decoration: underline;
+}
+
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.cliente-card {
+    transition: transform .2s;
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.cliente-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.cliente-info {
+    font-size: 0.9em;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.border-gray {
+    border-color: #d1d3e2 !important;
+    opacity: 0.8;
+}
+
+/* Estilos para o toggle de filtros em dispositivos móveis */
+@media (max-width: 992px) {
+    .col-lg-3 {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        width: 280px;
+        height: 100%;
+        z-index: 1030;
+        background: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        padding-top: 60px;
+    }
+    
+    .filtros-mobile-expanded {
+        left: 0;
+    }
+}
+
+/* Utilitários */
+.w-15 {
+    width: 15% !important;
+}

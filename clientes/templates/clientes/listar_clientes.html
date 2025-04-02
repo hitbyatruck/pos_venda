@@ -1,95 +1,272 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Lista de Clientes" %}{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Lista de Clientes</h2>
-
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
-
-    {% include 'includes/mini_nav.html' %}
-
-    <div class="card mb-4">
-        <div class="card-body">
-          {% include 'includes/advanced_search.html' with filter_content=filter_html %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">{% trans "Lista de Clientes" %}</h1>
+        <div>
+            <div class="btn-group">
+                <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "Novo Cliente" %}
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">{% trans "Opções" %}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clientes:adicionar_empresa' %}">
+                            <i class="fas fa-building me-1"></i> {% trans "Nova Empresa" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clientes:adicionar_individual' %}">
+                            <i class="fas fa-user me-1"></i> {% trans "Novo Individual" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=excel">
+                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=csv">
+                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=pdf">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
-      </div>
+    </div>
 
-    <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary mb-3">Adicionar Cliente</a>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th><a href="?ordenar_por=nome&direcao={{ direcao }}">Nome</a></th>
-                <th><a href="?ordenar_por=empresa&direcao={{ direcao }}">Empresa</a></th>
-                <th><a href="?ordenar_por=telefone&direcao={{ direcao }}">Telefone</a></th>
-                <th><a href="?ordenar_por=email&direcao={{ direcao }}">Email</a></th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cliente in clientes %}
-            <tr id="client-row-{{ cliente.id }}">
-                <td>{{ cliente.nome }}</td>
-                <td>{{ cliente.empresa }}</td>
-                <td>{{ cliente.telefone }}</td>
-                <td>{{ cliente.email }}</td>
-                <td>
-                    <a href="{% url 'clientes:detalhes_cliente' cliente.id %}" class="btn btn-info btn-sm">Detalhes</a>
-                    <a href="{% url 'clientes:editar_cliente' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-danger btn-sm client-delete"
-                            data-id="{{ cliente.id }}"
-                            data-url="{% url 'clientes:excluir_cliente' cliente.id %}">
-                        Excluir Cliente
+    {% include "clientes/includes/breadcrumbs.html" %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='all' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Nome, email, telefone...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">{% trans "Tipo" %}</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">{% trans "Todos" %}</option>
+                        <option value="empresa" {% if tipo_empresa_selected %}selected{% endif %}>
+                            {% trans "Empresa" %}
+                        </option>
+                        <option value="individual" {% if tipo_individual_selected %}selected{% endif %}>
+                            {% trans "Individual" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
+                    <select class="form-select" id="orderby" name="orderby">
+                        <option value="nome" {% if orderby_nome_selected %}selected{% endif %}>
+                            {% trans "Nome (A-Z)" %}
+                        </option>
+                        <option value="-nome" {% if orderby_nome_desc_selected %}selected{% endif %}>
+                            {% trans "Nome (Z-A)" %}
+                        </option>
+                        <option value="-data_criacao" {% if orderby_data_criacao_desc_selected %}selected{% endif %}>
+                            {% trans "Mais recentes" %}
+                        </option>
+                        <option value="data_criacao" {% if orderby_data_criacao_selected %}selected{% endif %}>
+                            {% trans "Mais antigos" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
                     </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if clientes %}
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Tipo" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Telefone" %}</th>
+                            <th>{% trans "NIF" %}</th>
+                            <th>{% trans "Data de Registo" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>
+                                {% if cliente.tipo == 'empresa' %}
+                                <a href="{% url 'clientes:detalhes_empresa' empresa_id=cliente.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% else %}
+                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                        class="fw-semibold text-decoration-none">
+                                        {% endif %}
+                                        {% if cliente.imagem %}
+                                        <img src="{{ cliente.imagem.url }}" alt="{{ cliente.nome }}"
+                                            class="img-thumbnail me-2"
+                                            style="width: 30px; height: 30px; object-fit: cover;">
+                                        {% else %}
+                                        {% if cliente.tipo == 'empresa' %}
+                                        <i class="fas fa-building text-secondary me-2"></i>
+                                        {% else %}
+                                        <i class="fas fa-user text-secondary me-2"></i>
+                                        {% endif %}
+                                        {% endif %}
+                                        {{ cliente.nome }}
+                                    </a>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if cliente.tipo == 'empresa' %}bg-info{% else %}bg-primary{% endif %}">
+                                    {{ cliente.get_tipo_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="mailto:{{ cliente.email }}" class="text-decoration-none">
+                                    {{ cliente.email }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="tel:{{ cliente.telefone }}" class="text-decoration-none">
+                                    {{ cliente.telefone }}
+                                </a>
+                            </td>
+                            <td>{{ cliente.nif|default:"-" }}</td>
+                            <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    {% if cliente.tipo == 'empresa' %}
+                                    <a href="{% url 'clientes:detalhes_empresa' empresa_id=cliente.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        {% else %}
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                            class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                            {% endif %}
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
+                                            class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'clientes:excluir_cliente' cliente_id=cliente.id %}"
+                                            class="btn btn-outline-danger" title="{% trans 'Excluir' %}">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        {% if clientes.has_other_pages %}
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                {% trans "Mostrando" %} {{ clientes.start_index }} - {{ clientes.end_index }} {% trans "de" }} {{
+                total_clientes }}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    {% if clientes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ clientes.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in clientes.paginator.page_range %}
+                    {% if clientes.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > clientes.number|add:'-3' and i < clientes.number|add:'3' %} <li class="page-item">
+                        <a class="page-link"
+                            href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}">{{
+                            i }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if clientes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ clientes.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?pagina={{ clientes.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if search_query or request.GET.tipo %}
+        {% trans "Nenhum cliente encontrado com os filtros selecionados." %}
+        <a href="{% url 'clientes:listar_clientes' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+        {% else %}
+        {% trans "Nenhum cliente cadastrado no sistema." %}
+        <a href="{% url 'clientes:adicionar_cliente' %}" class="alert-link">{% trans "Adicionar Cliente" %}</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
-
-<!-- Initial Confirmation Modal -->
-<div class="modal fade" id="clientConfirmModal" tabindex="-1">
-  <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title">Confirmar Exclusão</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-              Tem certeza que deseja excluir este cliente?
-          </div>
-          <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" id="clientConfirmModalBtn">Confirmar</button>
-          </div>
-      </div>
-  </div>
-</div>
-
-<!-- Warning Modal for Dependencies -->
-<div class="modal fade" id="clientWarningModal" tabindex="-1">
-  <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title">Atenção!</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body" id="clientWarningModalBody">
-          </div>
-          <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="button" class="btn btn-danger" id="clientWarningModalBtn">
-                  Confirmar Exclusão
-              </button>
-          </div>
-      </div>
-  </div>
-</div>
-
-{% endblock %}
-
-{% block scripts %}
-<script src="{% static 'clientes/js/clients_scripts.js' %}"></script>
 {% endblock %}

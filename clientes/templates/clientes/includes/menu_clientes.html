@@ -1,0 +1,41 @@
+{% load i18n %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-0">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarClientes">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarClientes">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                                href="{% url 'clientes:dashboard' %}">
+                                <i class="fas fa-chart-bar me-1"></i> {% trans "Dashboard" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_individuais' %}active{% endif %}"
+                                href="{% url 'clientes:listar_individuais' %}">
+                                <i class="fas fa-user me-1"></i> {% trans "Individuais" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_empresas' %}active{% endif %}"
+                                href="{% url 'clientes:listar_empresas' %}">
+                                <i class="fas fa-building me-1"></i> {% trans "Empresas" %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' %}active{% endif %}"
+                                href="{% url 'clientes:listar_clientes' %}">
+                                <i class="fas fa-users me-1"></i> {% trans "Todos os Clientes" %}
+                            </a>
+                        </li>
+                        <!-- Removed Setores link as it will be moved to settings page for Administrators only -->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>

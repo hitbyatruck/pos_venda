@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Empresa" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/formset.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-building me-2"></i>
+                {% trans "Adicionar Nova Empresa" %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="formAdicionarEmpresa">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h4 class="border-bottom pb-2">{% trans "Informações Básicas" %}</h4>
+                    </div>
+                </div>
+                
+                <!-- Cliente Form Fields -->
+                <div class="row">
+                    {% for field in cliente_form %}
+                        {% if field.name != 'tipo' %}
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h4 class="border-bottom pb-2">{% trans "Informações da Empresa" %}</h4>
+                    </div>
+                </div>
+                
+                <!-- Empresa Form Fields -->
+                <div class="row">
+                    {% for field in empresa_form %}
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h4 class="border-bottom pb-2">{% trans "Contactos" %}</h4>
+                    </div>
+                </div>
+                
+                <!-- Contacto Formset -->
+                <div id="contacto-formset">
+                    {{ contacto_formset.management_form }}
+                    
+                    <div class="contacto-form-container">
+                        {% for form in contacto_formset %}
+                            <div class="contacto-form card mb-3 {% if forloop.first %}first-form{% endif %}">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{% trans "Contacto" %} #<span class="form-index">{{ forloop.counter }}</span></h5>
+                                    {% if not forloop.first %}
+                                        <button type="button" class="btn btn-sm btn-danger btn-remove-form">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {{ form.id }}
+                                        {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
+                                        
+                                        {% for field in form.visible_fields %}
+                                            <div class="col-md-6 mb-3">
+                                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                                {{ field }}
+                                                {% if field.help_text %}
+                                                    <div class="form-text">{{ field.help_text }}</div>
+                                                {% endif %}
+                                                {% if field.errors %}
+                                                    <div class="invalid-feedback d-block">{{ field.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-4 text-center">
+                        <button type="button" id="add-contacto" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> {% trans "Adicionar Contacto" %}
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        {% trans "Guardar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formsetContainer = document.querySelector('.contacto-form-container');
+        const addButton = document.getElementById('add-contacto');
+        const totalForms = document.getElementById('id_contactos-TOTAL_FORMS');
+        
+        // Add new form
+        addButton.addEventListener('click', function() {
+            const formCount = formsetContainer.querySelectorAll('.contacto-form').length;
+            const newForm = formsetContainer.querySelector('.contacto-form:first-child').cloneNode(true);
+            
+            // Update form index
+            newForm.querySelectorAll('input, select, textarea').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace('-0-', '-' + formCount + '-');
+                    input.id = input.id.replace('-0-', '-' + formCount + '-');
+                }
+                if (input.value && !input.name.includes('tipo_contacto')) {
+                    input.value = '';
+                }
+            });
+            
+            newForm.querySelectorAll('label').forEach(label => {
+                if (label.htmlFor) {
+                    label.htmlFor = label.htmlFor.replace('-0-', '-' + formCount + '-');
+                }
+            });
+            
+            // Add delete button if not present
+            const header = newForm.querySelector('.card-header');
+            if (!header.querySelector('.btn-remove-form')) {
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-sm btn-danger btn-remove-form';
+                removeButton.innerHTML = '<i class="fas fa-trash"></i>';
+                header.appendChild(removeButton);
+            }
+            
+            // Update form index number in header
+            newForm.querySelector('.form-index').textContent = formCount + 1;
+            
+            // Reset errors
+            newForm.querySelectorAll('.invalid-feedback').forEach(feedback => {
+                feedback.textContent = '';
+            });
+            
+            formsetContainer.appendChild(newForm);
+            totalForms.value = formCount + 1;
+        });
+        
+        // Remove form
+        formsetContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-remove-form')) {
+                const form = e.target.closest('.contacto-form');
+                const deleteInput = form.querySelector('input[name$="-DELETE"]');
+                
+                if (deleteInput) {
+                    deleteInput.value = 'on';
+                    form.style.display = 'none';
+                } else {
+                    form.remove();
+                    // Re-index forms
+                    updateFormIndices();
+                }
+            }
+        });
+        
+        function updateFormIndices() {
+            const forms = formsetContainer.querySelectorAll('.contacto-form:not([style*="display: none"])');
+            forms.forEach((form, index) => {
+                form.querySelector('.form-index').textContent = index + 1;
+            });
+            totalForms.value = forms.length;
+        }
+    });
+</script>
+{% endblock %}

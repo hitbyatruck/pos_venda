@@ -1,70 +1,188 @@
 from django import forms
-from .models import EquipamentoCliente, Cliente
-from equipamentos.models import EquipamentoFabricado
+from django.utils.translation import gettext_lazy as _
+from django_countries.widgets import CountrySelectWidget
+from django.forms import inlineformset_factory
+from .models import Cliente, Empresa, Individual, Setor, Contacto, TipoContacto, EquipamentoCliente
+
+class SetorForm(forms.ModelForm):
+    """
+    Form para criação e edição de setores de empresas.
+    """
+    class Meta:
+        model = Setor
+        fields = ['nome', 'descricao']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Nome do setor')}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': _('Descrição do setor')}),
+        }
+
+class ClienteBaseForm(forms.ModelForm):
+    """Form base para os campos comuns de empresa e individual"""
+    class Meta:
+        model = Cliente
+        fields = [
+            'nome', 'website', 'setor', 'imagem',
+            'nif', 'regime_iva', 'desconto_padrao',
+            'morada', 'codigo_postal', 'cidade', 'pais',
+            'observacoes', 'ativo'
+        ]
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'website': forms.URLInput(attrs={'class': 'form-control'}),
+            'setor': forms.Select(attrs={'class': 'form-control select2'}),
+            'imagem': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'nif': forms.TextInput(attrs={'class': 'form-control'}),
+            'regime_iva': forms.Select(attrs={'class': 'form-control'}),
+            'desconto_padrao': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'morada': forms.TextInput(attrs={'class': 'form-control'}),
+            'codigo_postal': forms.TextInput(attrs={'class': 'form-control'}),
+            'cidade': forms.TextInput(attrs={'class': 'form-control'}),
+            'pais': CountrySelectWidget(attrs={'class': 'form-control select2'}),
+            'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'nome': _('Nome'),
+            'website': _('Website'),
+            'setor': _('Setor de Atividade'),
+            'imagem': _('Imagem'),
+            'nif': _('NIF'),
+            'regime_iva': _('Regime de IVA'),
+            'desconto_padrao': _('Desconto Padrão (%)'),
+            'morada': _('Morada'),
+            'codigo_postal': _('Código Postal'),
+            'cidade': _('Cidade'),
+            'pais': _('País'),
+            'observacoes': _('Observações'),
+            'ativo': _('Cliente Ativo'),
+        }
+
+class EmpresaForm(ClienteBaseForm):
+    """Form para Empresas"""
+    class Meta(ClienteBaseForm.Meta):
+        model = Empresa
+        fields = ClienteBaseForm.Meta.fields + ['nome_comercial']
+        widgets = {
+            **ClienteBaseForm.Meta.widgets,
+            'nome_comercial': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial['tipo'] = 'empresa'
+    
+    def save(self, commit=True):
+        # Garantir que o tipo seja sempre "empresa"
+        instance = super().save(commit=False)
+        instance.tipo = 'empresa'
+        if commit:
+            instance.save()
+        return instance
+
+class IndividualForm(ClienteBaseForm):
+    """Form para Clientes Individuais"""
+    class Meta(ClienteBaseForm.Meta):
+        model = Individual
+        fields = ClienteBaseForm.Meta.fields + ['empresa_associada', 'cargo']
+        widgets = {
+            **ClienteBaseForm.Meta.widgets,
+            'empresa_associada': forms.Select(attrs={'class': 'form-control select2'}),
+            'cargo': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial['tipo'] = 'individual'
+    
+    def save(self, commit=True):
+        # Garantir que o tipo seja sempre "individual"
+        instance = super().save(commit=False)
+        instance.tipo = 'individual'
+        if commit:
+            instance.save()
+        return instance
+
+class ContactoForm(forms.ModelForm):
+    """
+    Form para o modelo Contacto com campos melhorados para usabilidade.
+    """
+    
+    class Meta:
+        model = Contacto
+        fields = ['tipo', 'valor', 'nome_contacto', 'cargo', 'principal', 'observacoes']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-control select2', 'placeholder': 'Selecione o tipo'}),
+            'valor': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email, telefone, etc.'}),
+            'nome_contacto': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome da pessoa de contacto'}),
+            'cargo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cargo ou posição'}),
+            'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+        labels = {
+            'tipo': 'Tipo de Contacto',
+            'valor': 'Contacto',
+            'nome_contacto': 'Nome do Contacto',
+            'cargo': 'Cargo',
+            'principal': 'É Principal',
+            'observacoes': 'Observações'
+        }
+
+# Use ModelFormSet_factory para criar um formset para contactos
+ContactoFormSet = forms.inlineformset_factory(
+    Cliente, 
+    Contacto,
+    form=ContactoForm,
+    extra=1, 
+    can_delete=True,
+    can_delete_extra=True
+)
 
 class EquipamentoClienteForm(forms.ModelForm):
+    """Form para associar equipamentos a clientes"""
     class Meta:
         model = EquipamentoCliente
-        fields = ['equipamento_fabricado', 'numero_serie', 'data_aquisicao']
+        fields = ['cliente', 'equipamento_fabricado', 'numero_serie', 'data_aquisicao', 'data_instalacao', 'observacoes']
         widgets = {
-            'equipamento_fabricado': forms.Select(attrs={'class': 'form-control'}),
+            'cliente': forms.Select(attrs={'class': 'form-control select2'}),
+            'equipamento_fabricado': forms.Select(attrs={'class': 'form-control select2'}),
             'numero_serie': forms.TextInput(attrs={'class': 'form-control'}),
             'data_aquisicao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'data_instalacao': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'observacoes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        cliente_id = kwargs.pop('cliente_id', None)
+        super().__init__(*args, **kwargs)
         
-        
-              
+        if cliente_id:
+            self.fields['cliente'].initial = cliente_id
+            self.fields['cliente'].widget.attrs['readonly'] = True
+
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nome', 'empresa', 'telefone', 'email', 'morada', 'codigo_postal', 'localidade', 'pais', 'nif', 'contacto_principal']
+        fields = ['nome', 'email', 'telefone', 'endereco']  # Ensure these fields match the model
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'empresa': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'morada': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'codigo_postal': forms.TextInput(attrs={'class': 'form-control'}),
-            'localidade': forms.TextInput(attrs={'class': 'form-control'}),
-            'pais': forms.TextInput(attrs={'class': 'form-control'}),
-            'nif': forms.TextInput(attrs={'class': 'form-control'}),
-            'contacto_principal': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-        labels = {
-            'nome': 'Nome',
-            'empresa': 'Empresa',
-            'telefone': 'Telefone',
-            'email': 'Email',
-            'morada': 'Morada',
-            'codigo_postal': 'Código Postal',
-            'localidade': 'Localidade',
-            'pais': 'País',
-            'nif': 'NIF',
-            'contacto_principal': 'Contacto Principal',
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
+            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
-class EquipamentoForm(forms.ModelForm):
-    equipamento_fabricado = forms.ModelChoiceField(
-        queryset=EquipamentoFabricado.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label="Equipamento Fabricado"
-    )
-    numero_serie = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        label="Número de Série"
-    )
-    data_aquisicao = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-        label="Data de Aquisição"
-    )
-
+class TipoContactoForm(forms.ModelForm):
+    """
+    Form para criação e edição de tipos de contacto.
+    """
     class Meta:
-        model = EquipamentoCliente
-        fields = ['equipamento_fabricado', 'numero_serie', 'data_aquisicao']
-
-    def clean_numero_serie(self):
-        numero = self.cleaned_data.get('numero_serie')
-        # Verifica se já existe um equipamento com o mesmo número de série
-        if EquipamentoCliente.objects.filter(numero_serie=numero).exists():
-            raise forms.ValidationError("Este número de série já está associado a outro equipamento e/ou cliente.")
-        return numero
+        model = TipoContacto
+        fields = ['nome', 'icone', 'validador_regex', 'ativo']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Nome do tipo de contacto')}),
+            'icone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Ex: fa-envelope, fa-phone')}),
+            'validador_regex': forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('Expressão regular para validação')}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'icone': _('Classe CSS para ícone FontAwesome (ex: fa-envelope, fa-phone).'),
+            'validador_regex': _('Expressão regular para validação do formato do contacto (opcional).'),
+        }

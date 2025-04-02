@@ -1,44 +1,103 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 {% load i18n %}
 
-{% block title %}{{ cliente.nome }} - Equipamentos{% endblock %}
+{% block title %}{{ cliente.nome }} - {% trans "Equipamentos" %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
-    
-    {% include 'includes/mini_nav.html' %}
-    
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Equipamentos de {{ cliente.nome }}</h6>
-            <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente.id %}" class="btn btn-sm btn-success">
-                <i class="fas fa-plus-circle"></i> Adicionar Equipamento
-            </a>
-        </div>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-laptop me-2"></i>
+            {% trans "Equipamentos de" %} {{ cliente.nome }}
+        </h2>
+        <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente_id=cliente.id %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> {% trans "Adicionar Equipamento" %}
+        </a>
+    </div>
+
+    <div class="card">
         <div class="card-body">
-            {% if equipamentos_cliente %}
+            {% if equipamentos %}
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Número de Série</th>
-                                <th>Modelo</th>
-                                <th>Data de Instalação</th>
-                                <th>Ações</th>
+                                <th>{% trans "Equipamento" %}</th>
+                                <th>{% trans "Categoria" %}</th>
+                                <th>{% trans "Número de Série" %}</th>
+                                <th>{% trans "Data de Aquisição" %}</th>
+                                <th>{% trans "Data de Instalação" %}</th>
+                                <th>{% trans "Estado" %}</th>
+                                <th>{% trans "Ações" %}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for equipamento_cliente in equipamentos_cliente %}
+                            {% for equip in equipamentos %}
                             <tr>
-                                <td>{{ equipamento_cliente.numero_serie }}</td>
-                                <td>{{ equipamento_cliente.equipamento_fabricado.modelo.nome }}</td>
-                                <td>{{ equipamento_cliente.data_aquisicao|date:"d/m/Y" }}</td>
                                 <td>
-                                    <a href="{% url 'equipamentos:detalhes_equipamento' equipamento_cliente.equipamento_fabricado.id %}" class="btn btn-sm btn-info">Detalhes</a>
-                                    <a href="{% url 'clientes:desassociar_equipamento' equipamento_cliente.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja desassociar este equipamento?')">Desassociar</a>
+                                    <strong>{{ equip.equipamento_fabricado.modelo }}</strong>
+                                    {% if equip.equipamento_fabricado.fabricante %}
+                                        <br><small class="text-muted">{{ equip.equipamento_fabricado.fabricante }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equip.equipamento_fabricado.categoria %}
+                                        <span class="badge bg-info">{{ equip.equipamento_fabricado.categoria.nome }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ equip.numero_serie|default:"-" }}</td>
+                                <td>
+                                    {% if equip.data_aquisicao %}
+                                        {{ equip.data_aquisicao|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equip.data_instalacao %}
+                                        {{ equip.data_instalacao|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equip.estado %}
+                                        <span class="badge 
+                                              {% if equip.estado == 'ativo' %}bg-success
+                                              {% elif equip.estado == 'em_reparo' %}bg-warning
+                                              {% elif equip.estado == 'inativo' %}bg-danger
+                                              {% else %}bg-secondary{% endif %}">
+                                            {{ equip.get_estado_display|default:"Ativo" }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">{% trans "Ativo" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="#" class="btn btn-outline-primary view-equipment-details" 
+                                           data-id="{{ equip.id }}" 
+                                           data-modelo="{{ equip.equipamento_fabricado.modelo }}"
+                                           data-serie="{{ equip.numero_serie|default:'' }}"
+                                           data-aquisicao="{{ equip.data_aquisicao|date:'Y-m-d'|default:'' }}"
+                                           data-instalacao="{{ equip.data_instalacao|date:'Y-m-d'|default:'' }}"
+                                           data-obs="{{ equip.observacoes|default:'' }}">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-warning edit-equipment" 
+                                           data-id="{{ equip.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-equipment" 
+                                                data-id="{{ equip.id }}"
+                                                data-modelo="{{ equip.equipamento_fabricado.modelo }}"
+                                                data-serie="{{ equip.numero_serie|default:'S/N' }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -46,9 +105,147 @@
                     </table>
                 </div>
             {% else %}
-                <p class="text-center">Não há equipamentos associados a este cliente.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% trans "Nenhum equipamento cadastrado para este cliente." %}
+                    <a href="{% url 'clientes:adicionar_equipamento_cliente' cliente_id=cliente.id %}" class="alert-link">
+                        {% trans "Adicionar Equipamento" %}
+                    </a>
+                </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Delete Equipment Modal -->
+<div class="modal fade" id="deleteEquipmentModal" tabindex="-1" aria-labelledby="deleteEquipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteEquipmentModalLabel">{% trans "Confirmar Exclusão" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja desassociar o equipamento" %} <strong id="equipmentToDelete"></strong>?</p>
+                <p class="text-danger">{% trans "Esta ação não pode ser desfeita." %}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                <form method="post" id="deleteEquipmentForm" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% trans "Desassociar" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Equipment Details Modal -->
+<div class="modal fade" id="viewEquipmentModal" tabindex="-1" aria-labelledby="viewEquipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewEquipmentModalLabel">{% trans "Detalhes do Equipamento" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h5 id="equipmentModel"></h5>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>{% trans "Número de Série" %}:</strong>
+                        <p id="equipmentSerial"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>{% trans "Data de Aquisição" %}:</strong>
+                        <p id="equipmentAcquisitionDate"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>{% trans "Data de Instalação" %}:</strong>
+                        <p id="equipmentInstallationDate"></p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>{% trans "Observações" %}:</strong>
+                    <p id="equipmentNotes"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Fechar" %}</button>
+                <button type="button" class="btn btn-primary edit-equipment-from-modal" data-id="">
+                    <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteEquipmentModal'));
+        const viewModal = new bootstrap.Modal(document.getElementById('viewEquipmentModal'));
+        
+        // Delete Equipment Buttons
+        document.querySelectorAll('.delete-equipment').forEach(button => {
+            button.addEventListener('click', function() {
+                const equipmentId = this.getAttribute('data-id');
+                const modelo = this.getAttribute('data-modelo');
+                const serie = this.getAttribute('data-serie');
+                
+                document.getElementById('equipmentToDelete').textContent = `${modelo} (${serie})`;
+                document.getElementById('deleteEquipmentForm').action = "{% url 'clientes:desassociar_equipamento' equipamento_cliente_id=0 %}".replace('0', equipmentId);
+                
+                deleteModal.show();
+            });
+        });
+        
+        // View Equipment Details
+        document.querySelectorAll('.view-equipment-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const modelo = this.getAttribute('data-modelo');
+                const serie = this.getAttribute('data-serie');
+                const aquisicao = this.getAttribute('data-aquisicao');
+                const instalacao = this.getAttribute('data-instalacao');
+                const obs = this.getAttribute('data-obs');
+                
+                document.getElementById('equipmentModel').textContent = modelo;
+                document.getElementById('equipmentSerial').textContent = serie || '{% trans "Não informado" %}';
+                
+                if (aquisicao) {
+                    const aquisicaoDate = new Date(aquisicao);
+                    document.getElementById('equipmentAcquisitionDate').textContent = aquisicaoDate.toLocaleDateString();
+                } else {
+                    document.getElementById('equipmentAcquisitionDate').textContent = '{% trans "Não informado" %}';
+                }
+                
+                if (instalacao) {
+                    const instalacaoDate = new Date(instalacao);
+                    document.getElementById('equipmentInstallationDate').textContent = instalacaoDate.toLocaleDateString();
+                } else {
+                    document.getElementById('equipmentInstallationDate').textContent = '{% trans "Não informado" %}';
+                }
+                
+                document.getElementById('equipmentNotes').textContent = obs || '{% trans "Nenhuma observação" %}';
+                document.querySelector('.edit-equipment-from-modal').setAttribute('data-id', id);
+                
+                viewModal.show();
+            });
+        });
+        
+        // Edit Equipment (redirect to edit page)
+        document.querySelectorAll('.edit-equipment, .edit-equipment-from-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                const equipmentId = this.getAttribute('data-id');
+                // Redirect to the edit page
+                window.location.href = `/clientes/equipamentos/${equipmentId}/editar/`;
+            });
+        });
+    });
+</script>
 {% endblock %}

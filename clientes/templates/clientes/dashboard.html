@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Dashboard de Clientes" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Page title and action buttons -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title">{% trans "Dashboard de Clientes" %}</h2>
+    <div class="action-buttons">
+      <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary me-2">
+        <i class="fas fa-user-plus"></i> {% trans "Adicionar Cliente" %}
+      </a>
+      <a href="{% url 'clientes:adicionar_empresa' %}" class="btn btn-success">
+        <i class="fas fa-building"></i> {% trans "Adicionar Empresa" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">{% trans "Início" %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans "Dashboard de Clientes" %}</li>
+    </ol>
+  </nav>
+
+  <!-- Mini-navbar -->
+  {% include 'clientes/includes/menu_clientes.html' with active_tab='dashboard' %}
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="fas fa-chart-bar"></i> {% trans "Estatísticas" %}
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="card bg-primary text-white">
+                <div class="card-body">
+                  <h5 class="card-title">{% trans "Total de Clientes" %}</h5>
+                  <h2 class="display-4">{{ total_clientes }}</h2>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="card bg-success text-white">
+                <div class="card-body">
+                  <h5 class="card-title">{% trans "Total de Empresas" %}</h5>
+                  <h2 class="display-4">{{ total_empresas }}</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="fas fa-info-circle"></i> {% trans "Informações" %}
+        </div>
+        <div class="card-body">
+          <p>{% trans "Este dashboard apresenta uma visão geral dos seus clientes e empresas." %}</p>
+          <p>{% trans "Use o menu acima para navegar entre as diferentes seções do módulo de clientes." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

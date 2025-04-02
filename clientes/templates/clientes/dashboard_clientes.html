@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard de Clientes" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">
+        <i class="fas fa-tachometer-alt me-2 text-primary"></i>{% trans "Dashboard de Clientes" %}
+    </h2>
+    
+    {% include 'includes/breadcrumbs.html' with breadcrumbs=breadcrumbs %}
+    
+    {% include 'clientes/includes/menu_clientes.html' %}
+    
+    <!-- KPIs Principais -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {% trans "Total de Clientes" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
+                            <div class="small text-success mt-2">
+                                <i class="fas fa-arrow-up"></i> {{ crescimento_clientes }}% {% trans "vs último mês" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                {% trans "Valor em Contratos Ativos" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ valor_contratos_ativos|floatformat:2 }} €</div>
+                            <div class="small text-muted mt-2">
+                                {{ total_contratos_ativos }} {% trans "contratos" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-euro-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                {% trans "Taxa de Engagement" %}
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ taxa_engagement }}%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ taxa_engagement }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">
+                                {% trans "Últimos 90 dias" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Assistências Pendentes" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ assistencias_pendentes }}</div>
+                            <div class="small text-danger mt-2">
+                                {{ assistencias_atrasadas }} {% trans "atrasadas" %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tools fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Saúde do Relacionamento -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Saúde do Relacionamento" %}</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow">
+                            <a class="dropdown-item" href="#">{% trans "Ver Detalhes" %}</a>
+                            <a class="dropdown-item" href="#">{% trans "Exportar Dados" %}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="clientesHealthChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> {% trans "Saudáveis" %}
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> {% trans "Em Risco" %}
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> {% trans "Críticos" %}
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-secondary"></i> {% trans "Inativos" %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Distribuição de Equipamentos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Equipamentos por Categoria" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="equipamentosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Mapa de Clientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Distribuição Geográfica" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div id="mapaClientes" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Últimas Interações -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Últimas Interações" %}</h6>
+                    <a href="#" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus-circle"></i> {% trans "Nova Interação" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-flow">
+                        {% if ultimas_interacoes %}
+                            {% for interacao in ultimas_interacoes %}
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-{{ interacao.tipo_badge }}">
+                                    <i class="fas fa-{{ interacao.tipo_icone }}"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">{{ interacao.cliente.nome }}</h6>
+                                    <p class="small text-muted mb-1">
+                                        {{ interacao.data|date:"d/m/Y H:i" }} - {{ interacao.get_tipo_display }}
+                                    </p>
+                                    <p class="mb-0">{{ interacao.descricao|truncatechars:120 }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <p class="text-muted">{% trans "Nenhuma interação registrada recentemente." %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="#" class="btn btn-sm btn-link">{% trans "Ver todas as interações" %}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarefas e Alertas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Próximas Ações" %}</h6>
+            <a href="#" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus-circle"></i> {% trans "Nova Tarefa" %}
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="tarefasTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Cliente" %}</th>
+                            <th>{% trans "Tipo" %}</th>
+                            <th>{% trans "Descrição" %}</th>
+                            <th>{% trans "Data Limite" %}</th>
+                            <th>{% trans "Responsável" %}</th>
+                            <th>{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if proximas_tarefas %}
+                            {% for tarefa in proximas_tarefas %}
+                            <tr class="{% if tarefa.is_atrasada %}table-danger{% elif tarefa.is_hoje %}table-warning{% endif %}">
+                                <td>
+                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=tarefa.cliente.id %}">
+                                        {{ tarefa.cliente.nome }}
+                                    </a>
+                                </td>
+                                <td>{{ tarefa.get_tipo_display }}</td>
+                                <td>{{ tarefa.descricao|truncatechars:50 }}</td>
+                                <td>{{ tarefa.data_limite|date:"d/m/Y" }}</td>
+                                <td>{{ tarefa.responsavel.get_full_name|default:tarefa.responsavel.username }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="#" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-info">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">{% trans "Não há tarefas pendentes." %}</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts específicos do dashboard -->
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
+<script src="{% static 'vendor/leaflet.markercluster/leaflet.markercluster.js' %}"></script>
+<link rel="stylesheet" href="{% static 'vendor/leaflet.markercluster/MarkerCluster.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/leaflet.markercluster/MarkerCluster.Default.css' %}">
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Gráfico de Saúde do Relacionamento
+    var ctxClientes = document.getElementById("clientesHealthChart");
+    var clientesHealthChart = new Chart(ctxClientes, {
+        type: 'doughnut',
+        data: {
+            labels: ["Saudáveis", "Em Risco", "Críticos", "Inativos"],
+            datasets: [{
+                data: [{{ clientes_saudaveis }}, {{ clientes_em_risco }}, {{ clientes_criticos }}, {{ clientes_inativos }}],
+                backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b', '#858796'],
+                hoverBackgroundColor: ['#17a673', '#dda20a', '#c23b2c', '#6e707e'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutoutPercentage: 80,
+        },
+    });
+    
+    // Gráfico de Equipamentos
+    var ctxEquipamentos = document.getElementById("equipamentosChart");
+    var equipamentosChart = new Chart(ctxEquipamentos, {
+        type: 'bar',
+        data: {
+            labels: [{% for cat in categorias_equipamentos %}"{{ cat.nome }}",{% endfor %}],
+            datasets: [{
+                label: "Quantidade",
+                backgroundColor: "#4e73df",
+                hoverBackgroundColor: "#2e59d9",
+                borderColor: "#4e73df",
+                data: [{% for cat in categorias_equipamentos %}{{ cat.quantidade }},{% endfor %}],
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 6
+                    },
+                    maxBarThickness: 25,
+                }],
+                yAxes: [{
+                    ticks: {
+                        min: 0,
+                        maxTicksLimit: 5,
+                        padding: 10,
+                    },
+                    gridLines: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+        }
+    });
+    
+    // Mapa de Clientes
+    var clientesData = [
+        {% for cliente in clientes_geo %}
+        {
+            lat: {{ cliente.latitude }},
+            lng: {{ cliente.longitude }},
+            nome: "{{ cliente.nome|escapejs }}",
+            id: {{ cliente.id }},
+            tipo: "{{ cliente.empresa|yesno:'empresa,individual'|escapejs }}"
+        },
+        {% endfor %}
+            lat: {{ cliente.latitude|escapejs }},
+            lng: {{ cliente.longitude|escapejs }},
+    var avgLat = clientesData.reduce((sum, cliente) => sum + cliente.lat, 0) / clientesData.length;
+    var avgLng = clientesData.reduce((sum, cliente) => sum + cliente.lng, 0) / clientesData.length;
+
+    var map = L.map('mapaClientes').setView([avgLat, avgLng], 6);
+    
+    // OpenStreetMap tiles require attribution to comply with their usage policy.
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    // Adicionar marcadores para cada cliente com clustering
+    var clientesData = [
+        {% for cliente in clientes_geo %}
+        {
+            lat: {{ cliente.latitude }},
+            lng: {{ cliente.longitude }},
+            nome: "{{ cliente.nome }}",
+            id: {{ cliente.id }},
+            tipo: "{{ cliente.empresa|yesno:'empresa,individual' }}"
+        },
+        {% endfor %}
+    ];
+        marker.bindPopup(`
+            <strong>${cliente.nome}</strong><br>
+            ${cliente.tipo === "empresa" ? "Empresa" : "Cliente Individual"}<br>
+            <a href="/clientes/${cliente.id}/">Ver detalhes</a>
+        `);
+        marker.bindPopup(
+            "<strong>" + cliente.nome + "</strong><br>" + 
+            (cliente.tipo === "empresa" ? "Empresa" : "Cliente Individual") + 
+            "<br><a href='/clientes/" + cliente.id + "/'>Ver detalhes</a>"
+        );
+        markers.addLayer(marker);
+    });
+
+    map.addLayer(markers);
+    });
+});
+</script>
+{% endblock %}

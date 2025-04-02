@@ -170,6 +170,12 @@
         });
     </script>
 
+    <!-- Extra JavaScript at the bottom -->
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
     <!-- Additional Scripts -->
     {% block scripts %}{% endblock %}
 </body>

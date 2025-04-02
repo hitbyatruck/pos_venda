@@ -104,3 +104,36 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+$(document).ready(function() {
+    // Script para mostrar/ocultar campos de endereço quando checkbox mudar
+    function toggleAddressFields() {
+        var useCompanyAddress = $('#id_endereco_igual_empresa').is(':checked');
+        var companySelected = $('#id_empresa').val() !== '';
+        
+        if (useCompanyAddress && companySelected) {
+            $('#id_morada, #id_codigo_postal, #id_localidade, #id_cidade, #id_pais').closest('.col-md-12, .col-md-4').fadeOut();
+        } else {
+            $('#id_morada, #id_codigo_postal, #id_localidade, #id_cidade, #id_pais').closest('.col-md-12, .col-md-4').fadeIn();
+        }
+    }
+    
+    // Inicializar campos
+    toggleAddressFields();
+    
+    // Adicionar event listeners
+    $('#id_endereco_igual_empresa, #id_empresa').change(function() {
+        toggleAddressFields();
+    });
+    
+    // Manter a aba ativa após submit com erro
+    var activeTab = sessionStorage.getItem('activeClienteTab');
+    if (activeTab) {
+        $('#clienteTabs button[data-bs-target="' + activeTab + '"]').tab('show');
+    }
+    
+    // Salvar aba ativa quando trocar
+    $('#clienteTabs button').on('shown.bs.tab', function (e) {
+        var target = $(e.target).data('bs-target');
+        sessionStorage.setItem('activeClienteTab', target);
+    });
+});
