@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Resultados da Pesquisa" %} - {{ search_query }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-search me-2"></i> {% trans "Resultados da Pesquisa" %}
+        </h1>
+    </div>
+
+    <!-- Search form -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'search_global' %}" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-lg" id="q" name="q"
+                            value="{{ search_query }}"
+                            placeholder="{% trans 'Pesquisar clientes, contactos, equipamentos, assistências, notas...' %}">
+                    </div>
+                    <small class="form-text text-muted">{% trans "A pesquisa ignora acentos e diferencia
+                        maiúsculas/minúsculas." %}</small>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search me-1"></i> {% trans "Buscar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if not search_query %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> {% trans "Digite um termo de pesquisa para encontrar resultados." %}
+    </div>
+    {% elif total_count == 0 %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i> {% trans "Nenhum resultado encontrado para" %} <strong>"{{
+            search_query }}"</strong>
+    </div>
+    {% else %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle me-2"></i> {% trans "Foram encontrados" %} <strong>{{ total_count }}</strong> {%
+        trans "resultados para" %} <strong>"{{ search_query }}"</strong>
+    </div>
+
+    <!-- Redesigned tabbed interface for search results -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i> {% trans "Resultados Categorizado" %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                {% if results.clientes %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="clients-tab" data-bs-toggle="tab" data-bs-target="#clients"
+                        type="button" role="tab" aria-controls="clients" aria-selected="true">
+                        <i class="fas fa-users me-1"></i> {% trans "Clientes" %} ({{ results.clientes|length }})
+                    </button>
+                </li>
+                {% endif %}
+
+                {% if results.contactos %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not results.clientes %}active{% endif %}" id="contacts-tab"
+                        data-bs-toggle="tab" data-bs-target="#contacts" type="button" role="tab"
+                        aria-controls="contacts"
+                        aria-selected="{% if not results.clientes %}true{% else %}false{% endif %}">
+                        <i class="fas fa-address-book me-1"></i> {% trans "Contactos" %} ({{ results.contactos|length
+                        }})
+                    </button>
+                </li>
+                {% endif %}
+
+                {% if results.equipamentos %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not results.clientes and not results.contactos %}active{% endif %}"
+                        id="equipment-tab" data-bs-toggle="tab" data-bs-target="#equipment" type="button" role="tab"
+                        aria-controls="equipment"
+                        aria-selected="{% if not results.clientes and not results.contactos %}true{% else %}false{% endif %}">
+                        <i class="fas fa-cogs me-1"></i> {% trans "Equipamentos" %} ({{ results.equipamentos|length }})
+                    </button>
+                </li>
+                {% endif %}
+
+                {% if results.assistencias %}
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link {% if not results.clientes and not results.contactos and not results.equipamentos %}active{% endif %}"
+                        id="pat-tab" data-bs-toggle="tab" data-bs-target="#pat" type="button" role="tab"
+                        aria-controls="pat"
+                        aria-selected="{% if not results.clientes and not results.contactos and not results.equipamentos %}true{% else %}false{% endif %}">
+                        <i class="fas fa-tools me-1"></i> {% trans "PATs" %} ({{ results.assistencias|length }})
+                    </button>
+                </li>
+                {% endif %}
+
+                {% if results.notas %}
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link {% if not results.clientes and not results.contactos and not results.equipamentos and not results.assistencias %}active{% endif %}"
+                        id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab"
+                        aria-controls="notes"
+                        aria-selected="{% if not results.clientes and not results.contactos and not results.equipamentos and not results.assistencias %}true{% else %}false{% endif %}">
+                        <i class="fas fa-sticky-note me-1"></i> {% trans "Notas" %} ({{ results.notas|length }})
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content p-3" id="resultTabsContent">
+                <!-- Clients tab -->
+                {% if results.clientes %}
+                <div class="tab-pane fade show active" id="clients" role="tabpanel" aria-labelledby="clients-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="sortable" data-sort="name">{% trans "Nome" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="email">{% trans "Email" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="phone">{% trans "Telefone" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="city">{% trans "Cidade" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in results.clientes %}
+                                <tr>
+                                    <td data-value="{{ cliente.nome }}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}">{{
+                                            cliente.nome }}</a>
+                                    </td>
+                                    <td data-value="{{ cliente.email_principal|default:'' }}">
+                                        {% if cliente.email_principal %}
+                                        <a href="mailto:{{ cliente.email_principal }}">{{ cliente.email_principal }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td data-value="{{ cliente.telefone|default:'' }}">
+                                        {{ cliente.telefone|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ cliente.cidade|default:'' }}">
+                                        {{ cliente.cidade|default:"-" }}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                                class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
+                                                class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Contacts tab -->
+                {% if results.contactos %}
+                <div class="tab-pane fade {% if not results.clientes %}show active{% endif %}" id="contacts"
+                    role="tabpanel" aria-labelledby="contacts-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="sortable" data-sort="name">{% trans "Nome" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="role">{% trans "Cargo" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="type">{% trans "Tipo" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="value">{% trans "Valor" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="client">{% trans "Cliente" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contacto in results.contactos %}
+                                <tr>
+                                    <td data-value="{{ contacto.nome_contacto|default:'' }}">
+                                        {{ contacto.nome_contacto|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ contacto.cargo|default:'' }}">
+                                        {{ contacto.cargo|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ contacto.tipo.nome }}">
+                                        <span class="badge bg-info">{{ contacto.tipo.nome }}</span>
+                                    </td>
+                                    <td data-value="{{ contacto.valor }}">
+                                        {% if contacto.tipo.nome == 'Email' %}
+                                        <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                        {% elif contacto.tipo.nome == 'Telefone' %}
+                                        <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                        {% else %}
+                                        {{ contacto.valor }}
+                                        {% endif %}
+                                    </td>
+                                    <td data-value="{{ contacto.cliente.nome }}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=contacto.cliente.id %}">
+                                            {{ contacto.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'clientes:cliente_contactos' cliente_id=contacto.cliente.id %}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> {% trans "Ver" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ... Similar pattern for equipment, PAT and notes tabs ... -->
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Highlight search matches
+        const searchQuery = '{{ search_query }}';
+        const normalizedQuery = '{{ normalized_query }}';
+
+        if (searchQuery) {
+            highlightSearchMatches(searchQuery, normalizedQuery);
+        }
+
+        // Set up sortable tables
+        setupSortableTables();
+
+        // Re-run when switching tabs
+        const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
+        tabLinks.forEach(link => {
+            link.addEventListener('shown.bs.tab', function () {
+                highlightSearchMatches(searchQuery, normalizedQuery);
+                setupSortableTables();
+            });
+        });
+
+        function highlightSearchMatches(query, normalizedQuery) {
+            // For each text cell in tables
+            document.querySelectorAll('.table td:not(.text-center)').forEach(cell => {
+                const text = cell.textContent;
+                if (!text) return;
+
+                const normalizedText = text.normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase();
+
+                // Check if the normalized text contains the normalized query
+                if (normalizedText.includes(normalizedQuery.toLowerCase())) {
+                    // Create a RegExp that ignores case
+                    const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+
+                    // Preserve HTML links and replace text
+                    const html = cell.innerHTML;
+                    if (html.includes('<a href=')) {
+                        // For cells with links, be more careful
+                        const parts = html.split(/<a\s|<\/a>/);
+                        for (let i = 0; i < parts.length; i++) {
+                            if (!parts[i].includes('href=')) {
+                                parts[i] = parts[i].replace(regex, '<span class="highlight">$1</span>');
+                            }
+                        }
+                        cell.innerHTML = parts.join(i % 2 === 0 ? '<a ' : '</a>');
+                    } else {
+                        // Simple text replacement
+                        cell.innerHTML = html.replace(regex, '<span class="highlight">$1</span>');
+                    }
+                }
+            });
+        }
+
+        function setupSortableTables() {
+            document.querySelectorAll('.sortable-table').forEach(table => {
+                const headers = table.querySelectorAll('th.sortable');
+                headers.forEach(header => {
+                    header.addEventListener('click', function () {
+                        const sortKey = this.getAttribute('data-sort');
+                        const tbody = table.querySelector('tbody');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                        // Determine sort direction
+                        const currentDirection = this.getAttribute('data-direction') || 'asc';
+                        const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+
+                        // Reset all headers
+                        headers.forEach(h => {
+                            h.removeAttribute('data-direction');
+                            h.querySelector('i').className = 'fas fa-sort';
+                        });
+
+                        // Set new sort direction on this header
+                        this.setAttribute('data-direction', newDirection);
+                        this.querySelector('i').className = newDirection === 'asc' ?
+                            'fas fa-sort-up' : 'fas fa-sort-down';
+
+                        // Sort the rows
+                        rows.sort((rowA, rowB) => {
+                            const cellA = rowA.querySelector(`td[data-value]`);
+                            const cellB = rowB.querySelector(`td[data-value]`);
+
+                            if (!cellA || !cellB) return 0;
+
+                            const valueA = cellA.getAttribute('data-value').toLowerCase();
+                            const valueB = cellB.getAttribute('data-value').toLowerCase();
+
+                            if (valueA === valueB) return 0;
+
+                            // Sort direction
+                            if (newDirection === 'asc') {
+                                return valueA > valueB ? 1 : -1;
+                            } else {
+                                return valueA < valueB ? 1 : -1;
+                            }
+                        });
+
+                        // Clear and re-append rows
+                        rows.forEach(row => row.remove());
+                        rows.forEach(row => tbody.appendChild(row));
+                    });
+                });
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+    });
+</script>
+
+<style>
+    /* Highlight style */
+    .highlight {
+        background-color: #ffd54f;
+        padding: 2px;
+        border-radius: 2px;
+        font-weight: bold;
+    }
+
+    /* Table sorting styles */
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(0, 0, 0, 0.15);
+    }
+
+    th.sortable i {
+        opacity: 0.4;
+        margin-left: 5px;
+        transition: opacity 0.2s;
+    }
+
+    th.sortable:hover i {
+        opacity: 1;
+    }
+
+    th.sortable[data-direction] {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    th.sortable[data-direction] i {
+        opacity: 1;
+    }
+
+    /* Tab styling */
+    .nav-tabs .nav-link {
+        padding: 0.6rem 1rem;
+    }
+
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

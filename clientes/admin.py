@@ -1,91 +1,76 @@
 from django.contrib import admin
-from .models import (
-    Cliente, Empresa, Individual, Setor, 
-    Contacto, TipoContacto, EquipamentoCliente,
-    InteracaoCliente, TarefaCliente
-)
-
-@admin.register(Setor)
-class SetorAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'ativo', 'data_criacao']
-    list_filter = ['ativo']
-    search_fields = ['nome', 'descricao']
-    fieldsets = [
-        (None, {'fields': ['nome', 'descricao']}),
-        ('Estado', {'fields': ['ativo']}),
-    ]
+from simple_history.admin import SimpleHistoryAdmin
+from .models import Cliente, Contacto, TipoContacto, Setor, CategoriaCliente
 
 @admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'email', 'telefone', 'tipo', 'ativo', 'data_criacao']
-    list_filter = ['tipo', 'ativo', 'data_criacao']
-    search_fields = ['nome', 'email', 'telefone', 'nif']
+class ClienteAdmin(SimpleHistoryAdmin):
+    list_display = ['nome', 'email_principal', 'cidade', 'ativo']
+    list_filter = ['setor', 'cidade', 'pais', 'ativo']
+    search_fields = ['nome', 'email_principal', 'nif', 'morada', 'cidade']
+    readonly_fields = ['data_criacao', 'data_atualizacao']
     fieldsets = [
-        (None, {'fields': ['tipo', 'nome', 'email', 'telefone', 'endereco']}),
-        ('Informações Adicionais', {
-            'fields': ['website', 'nif', 'morada', 'codigo_postal', 'cidade', 'pais', 'observacoes'],
-            'classes': ['collapse']
+        ('Informações Básicas', {
+            'fields': ('nome', 'email_principal', 'website', 'setor', 'imagem')
         }),
-        ('Estado', {'fields': ['ativo']}),
+        ('Vinculação à Empresa', {
+            'fields': ('empresa_associada', 'cargo'),
+            'classes': ('collapse',),
+        }),
+        ('Informações Fiscais', {
+            'fields': ('nif', 'percentagem_iva', 'desconto'),
+            'classes': ('collapse',),
+        }),
+        ('Endereço', {
+            'fields': ('morada', 'codigo_postal', 'cidade', 'pais'),
+        }),
+        ('Endereço de Entrega', {
+            'fields': ('usar_mesma_morada', 'morada_entrega', 'codigo_postal_entrega', 'cidade_entrega', 'pais_entrega'),
+            'classes': ('collapse',),
+        }),
+        ('Observações', {
+            'fields': ('observacoes',),
+            'classes': ('collapse',),
+        }),
+        ('Metadados', {
+            'fields': ('ativo', 'data_criacao', 'data_atualizacao'),
+            'classes': ('collapse',),
+        }),
     ]
 
-@admin.register(Empresa)
-class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'email', 'telefone', 'setor', 'ativo']
-    list_filter = ['setor', 'ativo', 'data_criacao']
-    search_fields = ['nome', 'email', 'telefone', 'nif']
-    fieldsets = [
-        (None, {'fields': ['nome', 'email', 'telefone', 'endereco']}),
-        ('Informações Adicionais', {
-            'fields': ['website', 'nif', 'morada', 'codigo_postal', 'cidade', 'pais', 'setor', 'nome_comercial', 'observacoes'],
-            'classes': ['collapse']
-        }),
-        ('Estado', {'fields': ['ativo']}),
-    ]
-
-@admin.register(Individual)
-class IndividualAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'email', 'telefone', 'empresa_associada', 'cargo', 'ativo']
-    list_filter = ['ativo', 'data_criacao', 'empresa_associada']
-    search_fields = ['nome', 'email', 'telefone', 'nif']
-    fieldsets = [
-        (None, {'fields': ['nome', 'email', 'telefone', 'endereco']}),
-        ('Informações Adicionais', {
-            'fields': ['website', 'nif', 'morada', 'codigo_postal', 'cidade', 'pais', 'empresa_associada', 'cargo', 'observacoes'],
-            'classes': ['collapse']
-        }),
-        ('Estado', {'fields': ['ativo']}),
-    ]
-
-@admin.register(TipoContacto)
-class TipoContactoAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'icone', 'ativo']
-    list_filter = ['ativo']
-    search_fields = ['nome']
+    # Define actions
+    actions = ['deactivate_clients', 'activate_clients']
+    
+    # Action to deactivate selected clients
+    def deactivate_clients(self, request, queryset):
+        updated = queryset.update(ativo=False)
+        self.message_user(request, f"{updated} clientes desativados com sucesso.")
+    deactivate_clients.short_description = "Desativar clientes selecionados"
+    
+    # Action to activate selected clients
+    def activate_clients(self, request, queryset):
+        updated = queryset.update(ativo=True)
+        self.message_user(request, f"{updated} clientes ativados com sucesso.")
+    activate_clients.short_description = "Ativar clientes selecionados"
 
 @admin.register(Contacto)
 class ContactoAdmin(admin.ModelAdmin):
-    list_display = ['cliente', 'tipo', 'valor', 'nome_contacto', 'principal']
+    list_display = ['cliente', 'tipo', 'valor', 'principal']
     list_filter = ['tipo', 'principal']
-    search_fields = ['valor', 'nome_contacto', 'cargo']
+    search_fields = ['valor', 'nome_contacto', 'cliente__nome']
 
-@admin.register(EquipamentoCliente)
-class EquipamentoClienteAdmin(admin.ModelAdmin):
-    list_display = ['cliente', 'equipamento_fabricado', 'numero_serie', 'data_aquisicao', 'data_instalacao']
-    list_filter = ['data_aquisicao', 'data_instalacao']
-    search_fields = ['numero_serie', 'cliente__nome', 'equipamento_fabricado__modelo']
-    date_hierarchy = 'data_aquisicao'
+@admin.register(TipoContacto)
+class TipoContactoAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'ativo']
+    list_filter = ['ativo']
+    search_fields = ['nome']
 
-@admin.register(InteracaoCliente)
-class InteracaoClienteAdmin(admin.ModelAdmin):
-    list_display = ['cliente', 'tipo', 'assunto', 'data', 'responsavel']
-    list_filter = ['tipo', 'data', 'responsavel']
-    search_fields = ['cliente__nome', 'assunto', 'descricao']
-    date_hierarchy = 'data'
+@admin.register(Setor)
+class SetorAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'ativo']
+    list_filter = ['ativo']
+    search_fields = ['nome', 'descricao']
 
-@admin.register(TarefaCliente)
-class TarefaClienteAdmin(admin.ModelAdmin):
-    list_display = ['cliente', 'titulo', 'prioridade', 'data_limite', 'concluida', 'responsavel']
-    list_filter = ['prioridade', 'concluida', 'data_limite', 'responsavel']
-    search_fields = ['cliente__nome', 'titulo', 'descricao']
-    date_hierarchy = 'data_limite'
+@admin.register(CategoriaCliente)
+class CategoriaClienteAdmin(admin.ModelAdmin):
+    list_display = ('nome',)
+    search_fields = ('nome', 'descricao')

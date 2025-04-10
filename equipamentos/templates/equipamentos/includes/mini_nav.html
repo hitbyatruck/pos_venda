@@ -1,0 +1,28 @@
+{% load i18n %}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if nav_active == 'equipamentos' %}active{% endif %}"
+            href="{% url 'equipamentos:listar_equipamentos' %}">
+            <i class="fas fa-list me-1"></i> {% trans "Todos os Equipamentos" %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if nav_active == 'fabricados' %}active{% endif %}"
+            href="{% url 'equipamentos:listar_fabricados' %}">
+            <i class="fas fa-industry me-1"></i> {% trans "Equipamentos Fabricados" %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if nav_active == 'cliente' %}active{% endif %}"
+            href="{% url 'equipamentos:listar_cliente' %}">
+            <i class="fas fa-user-cog me-1"></i> {% trans "Equipamentos de Clientes" %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if nav_active == 'categorias' %}active{% endif %}"
+            href="{% url 'equipamentos:listar_categorias' %}">
+            <i class="fas fa-tags me-1"></i> {% trans "Categorias" %}
+        </a>
+    </li>
+</ul>

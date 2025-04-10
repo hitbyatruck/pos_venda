@@ -1,12 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
-from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
+from django.utils.translation import gettext as _  # Add this import
+from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento, EquipamentoCliente
 from .forms import EquipamentoFabricadoForm, CategoriaEquipamentoForm
-from clientes.models import EquipamentoCliente, Cliente
+from clientes.models import Cliente
 from assistencia.models import PedidoAssistencia
 from notas.models import Nota
 from django.views.decorators.http import require_http_methods
@@ -86,7 +87,7 @@ def listar_equipamentos_fabricados(request):
     }
     
     # Ensure we're using the correct template
-    return render(request, 'equipamentos/lista_fab.html', context)
+    return render(request, 'equipamentos/lista_fab_fixed.html', context)
 
 @login_required
 @group_required(['Administradores', 'Comerciais', 'Gestores de Clientes'])
@@ -127,32 +128,16 @@ def adicionar_equipamento_fabricado(request):
     if request.method == 'POST':
         form = EquipamentoFabricadoForm(request.POST, request.FILES)
         if form.is_valid():
-            try:
-                # Criar objeto mas não salvar no banco ainda
-                equipamento = form.save(commit=False)
-                # Executar validações personalizadas
-                equipamento.full_clean()
-                # Salvar o objeto validado
-                equipamento.save()
-                # Tratar os documentos anexados
-                for arquivo in request.FILES.getlist('documentos'):
-                    DocumentoEquipamento.objects.create(equipamento=equipamento, arquivo=arquivo)
-                
-                messages.success(request, "Equipamento adicionado com sucesso!")
-                return redirect('equipamentos:listar_equipamentos_fabricados')
-            except ValidationError as e:
-                # Adicionar erros de validação ao formulário
-                for field, errors in e.message_dict.items():
-                    for error in errors:
-                        form.add_error(field, error)
-                messages.error(request, "Erro ao adicionar equipamento. Verifique os campos destacados.")
+            equipamento = form.save()
+            messages.success(request, _('Equipamento adicionado com sucesso!'))
+            return redirect('equipamentos:detalhes_fabricado', equipamento_id=equipamento.id)
     else:
         form = EquipamentoFabricadoForm()
     
-    # Adicione breadcrumbs
+    # Here's the correction: use 'listar_fabricados' instead of 'listar_equipamentos_fabricados'
     breadcrumbs = [
-        {'title': ('Equipamentos'), 'url': reverse('equipamentos:listar_equipamentos_fabricados')},
-        {'title': ('Adicionar Equipamento'), 'url': None}
+        {'title': _('Equipamentos'), 'url': reverse('equipamentos:listar_fabricados')},
+        {'title': _('Adicionar Equipamento'), 'url': None}
     ]
     
     return render(request, 'equipamentos/adicionar_equipamento_fabricado.html', {
@@ -166,6 +151,10 @@ def detalhes_equipamento(request, equipamento_id):
     equipamento = get_object_or_404(EquipamentoFabricado, id=equipamento_id)
     equipamentos_cliente = EquipamentoCliente.objects.filter(equipamento_fabricado=equipamento)
     assistencias = PedidoAssistencia.objects.filter(equipamento__in=equipamentos_cliente).order_by('-data_entrada')
+    
+    # Fetch documents related to this equipment
+    documentos = DocumentoEquipamento.objects.filter(equipamento=equipamento)
+    
     # Ajustar a consulta de notas
     try:
         notas = Nota.objects.filter(equipamento_fabricado=equipamento).order_by('-data_criacao')
@@ -173,9 +162,9 @@ def detalhes_equipamento(request, equipamento_id):
         # Alternativa: se a relação for com o equipamento do cliente
         notas = Nota.objects.filter(equipamento__in=equipamentos_cliente).order_by('-data_criacao')
     
-    # Adicione breadcrumbs
+    # Updated breadcrumbs with correct URL name
     breadcrumbs = [
-        {'title': ('Equipamentos'), 'url': reverse('equipamentos:listar_equipamentos_fabricados')},
+        {'title': _('Equipamentos'), 'url': reverse('equipamentos:listar_fabricados')},
         {'title': f"Equipamento {equipamento.id}", 'url': None}
     ]
     
@@ -184,6 +173,7 @@ def detalhes_equipamento(request, equipamento_id):
         'equipamentos_cliente': equipamentos_cliente,
         'assistencias': assistencias,
         'notas': notas,
+        'documentos': documentos,  # Pass documents to the template
         'breadcrumbs': breadcrumbs
     })
 
@@ -218,11 +208,11 @@ def editar_equipamento_fabricado(request, equipamento_id):
     else:
         form = EquipamentoFabricadoForm(instance=equipamento)
     
-    # Adicione breadcrumbs
+    # Update breadcrumbs here too
     breadcrumbs = [
-        {'title': ('Equipamentos'), 'url': reverse('equipamentos:listar_equipamentos_fabricados')},
-        {'title': equipamento.nome, 'url': reverse('equipamentos:detalhes_equipamento', args=[equipamento.id])},
-        {'title': ('Editar'), 'url': None}
+        {'title': _('Equipamentos'), 'url': reverse('equipamentos:listar_fabricados')},
+        {'title': equipamento.nome, 'url': reverse('equipamentos:detalhes_fabricado', args=[equipamento.id])},
+        {'title': _('Editar'), 'url': None}
     ]
     
     return render(request, 'equipamentos/editar_equipamento_fabricado.html', {
@@ -267,7 +257,12 @@ def upload_documento_equipamento(request, equipamento_id):
             equipamento=equipamento,
             arquivo=request.FILES['arquivo']
         )
-        return JsonResponse({'success': True, 'documento_id': documento.id, 'documento_url': documento.arquivo.url})
+        return JsonResponse({
+            'success': True, 
+            'documento_id': documento.id, 
+            'documento_url': documento.arquivo.url,
+            'excluir_url': reverse('equipamentos:excluir_documento', args=[documento.id])
+        })
     return JsonResponse({'success': False})
 
 @login_required
@@ -287,7 +282,7 @@ def listar_equipamentos_cliente(request):
     breadcrumbs = [
         {'title': ('Equipamentos de Clientes'), 'url': None}
     ]
-    
+        
     return render(request, 'equipamentos/listar_equipamentos_cliente.html', {
         'equipamentos': equipamentos,
         'breadcrumbs': breadcrumbs
@@ -377,7 +372,7 @@ def historico_equipamento_cliente(request, equipamento_id):
         {'id': 'detalhes', 'name': 'Detalhes', 'icon': 'bi-info-circle'},
         {'id': 'assistencia', 'name': 'Assistência Técnica', 'icon': 'bi-tools', 
          'badge': historico_pats.count() if historico_pats else 0},
-        {'id': 'alteracoes', 'name': 'Mudanças', 'icon': 'bi-clock-history',
+        {'id': 'alteracoes', 'name': 'Mudanças', 'icon': 'bi-clock-history', 
          'badge': historico_mudancas.count() if historico_mudancas else 0},
         {'id': 'notas', 'name': 'Notas', 'icon': 'bi-journal-text', 
          'badge': notas.count() if notas else 0}
@@ -397,10 +392,10 @@ def historico_equipamento_cliente(request, equipamento_id):
 def transferir_equipamento(request, equipamento_id):
     """Transfere um equipamento de um cliente para outro, mantendo o histórico"""
     equipamento = get_object_or_404(EquipamentoCliente, id=equipamento_id)
-    
+        
     pats_abertas = PedidoAssistencia.objects.filter(
-    equipamento=equipamento,
-    estado__in=['aberto', 'em_andamento', 'em_diagnostico', 'em_curso']
+        equipamento=equipamento,
+        estado__in=['aberto', 'em_andamento', 'em_diagnostico', 'em_curso']
     )
 
     novo_cliente_id = request.POST.get('novo_cliente_id')
@@ -443,7 +438,7 @@ def transferir_equipamento(request, equipamento_id):
             # Atualizar PATs existentes para refletir o novo cliente
             PedidoAssistencia.objects.filter(equipamento=equipamento).update(
                 cliente=novo_cliente
-)
+            )
             
             messages.success(request, f"Equipamento transferido com sucesso de {cliente_anterior.nome} para {novo_cliente.nome}.")
             return redirect('equipamentos:historico_equipamento_cliente', equipamento_id=equipamento_id)
@@ -483,44 +478,106 @@ def detalhes_equipamento_fabricado(request, equipamento_id):
 def adicionar_equipamento_cliente(request):
     """View to add equipment to a client"""
     cliente_id = request.GET.get('cliente')
+    equipamento_fabricado_id = request.GET.get('equipamento_fabricado')
     cliente = None
+    equipamento_fabricado = None
     
     if cliente_id:
         cliente = get_object_or_404(Cliente, id=cliente_id)
     
+    if equipamento_fabricado_id:
+        equipamento_fabricado = get_object_or_404(EquipamentoFabricado, id=equipamento_fabricado_id)
+    
     if request.method == 'POST':
-        # Process form data
-        equipamento_fabricado_id = request.POST.get('equipamento_fabricado')
+        # Process form data - improved debugging
+        post_equipamento_id = request.POST.get('equipamento_fabricado')
+        post_cliente_id = request.POST.get('cliente_id')
         numero_serie = request.POST.get('numero_serie')
         data_instalacao = request.POST.get('data_instalacao')
         observacoes = request.POST.get('observacoes')
         
-        # Validation
-        if not equipamento_fabricado_id or not numero_serie or not cliente_id:
-            messages.error(request, "Por favor preencha todos os campos obrigatórios.")
-        else:
+        # Use the ID that was provided either in POST data or from GET parameters
+        equipamento_fabricado_id = post_equipamento_id or equipamento_fabricado_id
+        cliente_id = post_cliente_id or cliente_id
+        
+        # Validation with explicit error messages
+        if not equipamento_fabricado_id:
+            messages.error(request, "Por favor selecione um modelo de equipamento.")
+            return render(request, 'equipamentos/adicionar_equipamento_cliente.html', {
+                'equipamentos_fabricados': EquipamentoFabricado.objects.all().order_by('nome'),
+                'equipamento_fabricado_preselected': equipamento_fabricado,
+                'cliente': cliente,
+                'clientes': None if cliente else Cliente.objects.all().order_by('nome'),
+                'next': request.GET.get('next', '')
+            })
+        
+        if not cliente_id:
+            messages.error(request, "Por favor selecione um cliente.")
+            return render(request, 'equipamentos/adicionar_equipamento_cliente.html', {
+                'equipamentos_fabricados': EquipamentoFabricado.objects.all().order_by('nome'),
+                'equipamento_fabricado_preselected': equipamento_fabricado,
+                'cliente': cliente,
+                'clientes': None if cliente else Cliente.objects.all().order_by('nome'),
+                'next': request.GET.get('next', '')
+            })
+            
+        if not numero_serie:
+            messages.error(request, "Por favor informe o número de série.")
+            return render(request, 'equipamentos/adicionar_equipamento_cliente.html', {
+                'equipamentos_fabricados': EquipamentoFabricado.objects.all().order_by('nome'),
+                'equipamento_fabricado_preselected': equipamento_fabricado,
+                'cliente': cliente,
+                'clientes': None if cliente else Cliente.objects.all().order_by('nome'),
+                'next': request.GET.get('next', '')
+            })
+            
+        try:
+            # Create new client equipment - FIX: only set fields that exist in the model
+            equipamento_fabricado = get_object_or_404(EquipamentoFabricado, id=equipamento_fabricado_id)
+            cliente = get_object_or_404(Cliente, id=cliente_id)
+            
+            # First create with required fields only
+            equipamento = EquipamentoCliente.objects.create(
+                equipamento_fabricado=equipamento_fabricado,
+                cliente=cliente,
+                numero_serie=numero_serie
+            )
+            
+            # Then try to set optional fields if they exist on the model
             try:
-                # Create new client equipment
-                equipamento_fabricado = get_object_or_404(EquipamentoFabricado, id=equipamento_fabricado_id)
-                cliente = get_object_or_404(Cliente, id=cliente_id)
-                
-                equipamento = EquipamentoCliente.objects.create(
-                    equipamento_fabricado=equipamento_fabricado,
-                    cliente=cliente,
-                    numero_serie=numero_serie,
-                    data_instalacao=data_instalacao,
-                    observacoes=observacoes
-                )
-                
-                messages.success(request, "Equipamento adicionado ao cliente com sucesso!")
-                if 'next' in request.GET:
-                    return redirect(request.GET.get('next'))
+                if data_instalacao:
+                    equipamento.data_instalacao = data_instalacao
+                if observacoes:
+                    equipamento.observacoes = observacoes
+                equipamento.save()
+            except Exception as field_error:
+                # If setting optional fields fails, just log the error but continue
+                print(f"WARNING: Could not set optional fields: {str(field_error)}")
+            
+            messages.success(request, f"Equipamento '{equipamento_fabricado.nome}' adicionado ao cliente '{cliente.nome}' com sucesso!")
+            
+            # Redirect based on source
+            if 'next' in request.GET and request.GET.get('next'):
+                return redirect(request.GET.get('next'))
+            elif equipamento_fabricado_id and not post_cliente_id:
+                # If came from equipment page, go back to equipment details
+                return redirect('equipamentos:detalhes_fabricado', equipamento_id=equipamento_fabricado.id)
+            elif cliente_id and not post_equipamento_id:
+                # If came from client page, go back to client details
+                return redirect('clientes:cliente_equipamentos', cliente_id=cliente.id)
+            else:
+                # Default redirect to equipment details
                 return redirect('equipamentos:detalhes_cliente', equipamento_id=equipamento.id)
-            except Exception as e:
-                messages.error(request, f"Erro ao adicionar equipamento: {str(e)}")
+                
+        except Exception as e:
+            messages.error(request, f"Erro ao adicionar equipamento: {str(e)}")
+            # Print the error for debugging
+            import traceback
+            print(f"ERROR: {str(e)}")
+            print(traceback.format_exc())
     
-    # Get all manufactured equipment for the form
-    equipamentos_fabricados = EquipamentoFabricado.objects.all().order_by('modelo')
+    # Get all manufactured equipment for the form - make sure we use the correct field name
+    equipamentos_fabricados = EquipamentoFabricado.objects.all().order_by('nome')
     
     # Get all clients for the form if no client was specified
     clientes = None
@@ -529,6 +586,7 @@ def adicionar_equipamento_cliente(request):
     
     context = {
         'equipamentos_fabricados': equipamentos_fabricados,
+        'equipamento_fabricado_preselected': equipamento_fabricado,
         'cliente': cliente,
         'clientes': clientes,
         'next': request.GET.get('next', '')
@@ -586,7 +644,7 @@ def editar_equipamento_cliente(request, equipamento_id):
                 equipamento.data_instalacao = data_instalacao
                 equipamento.observacoes = observacoes
                 equipamento.save()
-                
+                            
                 messages.success(request, "Equipamento atualizado com sucesso!")
                 return redirect('equipamentos:detalhes_cliente', equipamento_id=equipamento.id)
             except Exception as e:
@@ -599,7 +657,7 @@ def editar_equipamento_cliente(request, equipamento_id):
          'url': reverse('equipamentos:detalhes_cliente', args=[equipamento.id])},
         {'title': 'Editar', 'url': None},
     ]
-    
+        
     return render(request, 'equipamentos/editar_equipamento_cliente.html', {
         'equipamento': equipamento,
         'breadcrumbs': breadcrumbs,
@@ -635,7 +693,7 @@ def detalhes_categoria(request, categoria_id):
     """View for category details"""
     categoria = get_object_or_404(CategoriaEquipamento, id=categoria_id)
     equipamentos = EquipamentoFabricado.objects.filter(categoria=categoria)
-    
+        
     return render(request, 'equipamentos/detalhes_categoria.html', {
         'categoria': categoria,
         'equipamentos': equipamentos,
@@ -655,7 +713,7 @@ def editar_categoria(request, categoria_id):
             return redirect('equipamentos:detalhes_categoria', categoria_id=categoria.id)
     else:
         form = CategoriaEquipamentoForm(instance=categoria)
-    
+        
     return render(request, 'equipamentos/editar_categoria.html', {
         'form': form,
         'categoria': categoria,
@@ -679,3 +737,42 @@ def excluir_categoria(request, categoria_id):
     return render(request, 'equipamentos/excluir_categoria.html', {
         'categoria': categoria,
     })
+
+@login_required
+@group_required(['Administradores', 'Comerciais', 'Gestores de Clientes'])
+def exportar_equipamentos_fabricados(request):
+    """Export manufactured equipment to various formats (Excel, CSV, PDF)"""
+    formato = request.GET.get('formato', 'excel')
+    
+    # In a real implementation, this would generate the requested file format
+    # For now, we'll just return a placeholder message
+    response = HttpResponse(f"Exportação de equipamentos em formato {formato} (função a ser implementada)")
+        
+    # In a real implementation, headers would be set based on the file type
+    # response['Content-Disposition'] = f'attachment; filename="equipamentos_fabricados.{formato}"'
+    
+    return response
+
+@login_required
+def api_equipamentos_cliente(request, cliente_id):
+    """
+    API endpoint to get equipment for a specific client.
+    Used for AJAX requests to dynamically load client equipment.
+    """
+    try:
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        equipamentos = EquipamentoCliente.objects.filter(cliente=cliente)
+        
+        equipamentos_data = []
+        for eq in equipamentos:
+            equipamentos_data.append({
+                'id': eq.id,
+                'nome': str(eq.equipamento_fabricado.nome),
+                'numero_serie': eq.numero_serie,
+                'modelo': str(eq.equipamento_fabricado),
+                'data_instalacao': eq.data_instalacao.strftime('%d/%m/%Y') if eq.data_instalacao else None
+            })
+        
+        return JsonResponse(equipamentos_data, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

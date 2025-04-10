@@ -2,7 +2,8 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from clientes.models import Cliente, EquipamentoCliente
+from clientes.models import Cliente
+from equipamentos.models import EquipamentoCliente
 from assistencia.models import PedidoAssistencia
 from simple_history.models import HistoricalRecords
 
@@ -81,7 +82,7 @@ class Nota(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="notas",
+        related_name="notas_equipamento",  # Changed from "notas" to "notas_equipamento"
         verbose_name="Equipamento"
     )
     conteudo = models.TextField(verbose_name="Conteúdo")

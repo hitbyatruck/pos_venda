@@ -9,30 +9,67 @@
                 <div class="collapse navbar-collapse" id="navbarClientes">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                            <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}"
                                 href="{% url 'clientes:dashboard' %}">
-                                <i class="fas fa-chart-bar me-1"></i> {% trans "Dashboard" %}
+                                <i class="fas fa-chart-line me-1"></i> {% trans "Dashboard" %}
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_individuais' %}active{% endif %}"
-                                href="{% url 'clientes:listar_individuais' %}">
-                                <i class="fas fa-user me-1"></i> {% trans "Individuais" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_empresas' %}active{% endif %}"
-                                href="{% url 'clientes:listar_empresas' %}">
-                                <i class="fas fa-building me-1"></i> {% trans "Empresas" %}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'listar_clientes' %}active{% endif %}"
+                            <a class="nav-link {% if active_tab == 'all' %}active{% endif %}"
                                 href="{% url 'clientes:listar_clientes' %}">
-                                <i class="fas fa-users me-1"></i> {% trans "Todos os Clientes" %}
+                                <i class="fas fa-users me-1"></i> {% trans "Clientes" %}
                             </a>
                         </li>
-                        <!-- Removed Setores link as it will be moved to settings page for Administrators only -->
+
+                        {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if active_tab == 'configuracoes' %}active{% endif %}"
+                                href="#" id="navConfig" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cog me-1"></i> {% trans "Configurações" %}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navConfig">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'clientes:listar_tipos_contacto' %}">
+                                        <i class="fas fa-address-book me-1"></i> {% trans "Tipos de Contacto" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'clientes:listar_setores' %}">
+                                        <i class="fas fa-industry me-1"></i> {% trans "Setores" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item"
+                                        href="{% url 'admin:clientes_categoriacliente_changelist' %}">
+                                        <i class="fas fa-tags me-1"></i> {% trans "Categorias" %}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- Add quick actions dropdown for frequently used actions -->
+                        <li class="nav-item dropdown ms-lg-auto">
+                            <a class="nav-link dropdown-toggle btn btn-sm btn-outline-primary" href="#" id="navActions"
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-plus-circle me-1"></i> {% trans "Ações Rápidas" %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navActions">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'clientes:adicionar_cliente' %}">
+                                        <i class="fas fa-user-plus me-1"></i> {% trans "Novo Cliente" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}">
+                                        <i class="fas fa-file-export me-1"></i> {% trans "Exportar Clientes" %}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>

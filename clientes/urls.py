@@ -7,7 +7,7 @@ urlpatterns = [
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
     
-    # Cliente (genérico)
+    # Unified client routes
     path('listar/', views.listar_clientes, name='listar_clientes'),
     path('adicionar/', views.adicionar_cliente, name='adicionar_cliente'),
     path('detalhes/<int:cliente_id>/', views.detalhes_cliente, name='detalhes_cliente'),
@@ -16,19 +16,10 @@ urlpatterns = [
     path('exportar/', views.exportar_clientes, name='exportar_clientes'),
     path('importar/', views.importar_clientes, name='importar_clientes'),
     
-    # Cliente específico (empresa/individual)
-    path('adicionar/empresa/', views.adicionar_empresa, name='adicionar_empresa'),
-    path('adicionar/individual/', views.adicionar_individual, name='adicionar_individual'),
-    
-    # Empresas
-    path('empresas/', views.listar_empresas, name='listar_empresas'),
-    path('empresas/<int:empresa_id>/', views.detalhes_empresa, name='detalhes_empresa'),
-    path('empresas/<int:empresa_id>/editar/', views.editar_empresa, name='editar_empresa'),
-    path('empresas/<int:empresa_id>/excluir/', views.excluir_empresa, name='excluir_empresa'),
-    path('empresas/listar/', views.listar_empresas, name='listar_empresas'),
-    
-    # Individuais
-    path('individuais/listar/', views.listar_individuais, name='listar_individuais'),
+    # Remove specific empresa/individual routes
+    # Instead, provide redirects for backward compatibility
+    path('empresas/', views.listar_clientes, name='listar_empresas'),  # Redirect to unified list
+    path('individuais/listar/', views.listar_clientes, name='listar_individuais'),  # Redirect to unified list
     
     # Setores
     path('configuracoes/setores/', views.listar_setores, name='listar_setores'),

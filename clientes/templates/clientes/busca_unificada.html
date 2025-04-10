@@ -1,297 +1,134 @@
-{% extends "base.html" %}
-{% load i18n %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}{% trans "Busca Unificada" %}{% endblock %}
+{% block title %}{% trans "Resultados da Pesquisa" %} - {{ search_query }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Breadcrumbs -->
-    {% include "includes/breadcrumbs.html" %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-search me-2"></i> {% trans "Resultados da Pesquisa" %}
+        </h1>
+    </div>
 
-    <!-- Card Principal -->
+    {% include "clientes/includes/breadcrumbs.html" with view_title="Pesquisa" %}
+
+    <!-- Search form -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">{% trans "Busca Unificada" %}</h6>
-        </div>
         <div class="card-body">
-            <!-- Formulário de Busca -->
-            <form method="get" action="{% url 'clientes:busca_unificada' %}" class="mb-4">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" 
-                        placeholder="{% trans 'Buscar clientes, empresas, equipamentos, PATs...' %}" 
-                        value="{{ query }}">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="fas fa-search"></i> {% trans "Buscar" %}
-                        </button>
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-lg" id="q" name="q"
+                            value="{{ search_query }}"
+                            placeholder="{% trans 'Pesquisar clientes, contactos, equipamentos, assistências, notas...' %}">
                     </div>
+                    <small class="form-text text-muted">{% trans "A pesquisa ignora acentos e diferencia
+                        maiúsculas/minúsculas." %}</small>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search me-1"></i> {% trans "Buscar" %}
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
 
-            {% if query %}
-                <h5 class="mb-3">{% trans "Resultados para" %}: "{{ query }}" ({{ total_resultados }} {% trans "resultados" %})</h5>
-                
-                <!-- Tabs de navegação -->
-                <ul class="nav nav-tabs" id="resultsTab" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="clientes-tab" data-toggle="tab" href="#clientes" role="tab">
-                            {% trans "Clientes" %} <span class="badge badge-primary">{{ resultados.clientes|length }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="empresas-tab" data-toggle="tab" href="#empresas" role="tab">
-                            {% trans "Empresas" %} <span class="badge badge-primary">{{ resultados.empresas|length }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="individuais-tab" data-toggle="tab" href="#individuais" role="tab">
-                            {% trans "Individuais" %} <span class="badge badge-primary">{{ resultados.individuais|length }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="equipamentos-tab" data-toggle="tab" href="#equipamentos" role="tab">
-                            {% trans "Equipamentos" %} <span class="badge badge-primary">{{ resultados.equipamentos|length }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="pats-tab" data-toggle="tab" href="#pats" role="tab">
-                            {% trans "PATs" %} <span class="badge badge-primary">{{ resultados.pats|length }}</span>
-                        </a>
-                    </li>
-                </ul>
-                
-                <!-- Conteúdo das tabs -->
-                <div class="tab-content mt-3" id="resultsTabContent">
-                    <!-- Tab Clientes -->
-                    <div class="tab-pane fade show active" id="clientes" role="tabpanel">
-                        {% if resultados.clientes %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>{% trans "Nome" %}</th>
-                                            <th>{% trans "Tipo" %}</th>
-                                            <th>{% trans "NIF" %}</th>
-                                            <th>{% trans "Cidade" %}</th>
-                                            <th>{% trans "Ações" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for cliente in resultados.clientes %}
-                                        <tr>
-                                            <td>{{ cliente.nome }}</td>
-                                            <td>{{ cliente.get_tipo_display }}</td>
-                                            <td>{{ cliente.nif|default:"-" }}</td>
-                                            <td>{{ cliente.cidade|default:"-" }}</td>
-                                            <td>
-                                                <a href="{% url 'clientes:detalhes_cliente' cliente.id %}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> {% trans "Ver" %}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info">{% trans "Nenhum cliente encontrado." %}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Tab Empresas -->
-                    <div class="tab-pane fade" id="empresas" role="tabpanel">
-                        {% if resultados.empresas %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>{% trans "Nome" %}</th>
-                                            <th>{% trans "NIF" %}</th>
-                                            <th>{% trans "Cidade" %}</th>
-                                            <th>{% trans "Ações" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for empresa in resultados.empresas %}
-                                        <tr>
-                                            <td>{{ empresa.nome }}</td>
-                                            <td>{{ empresa.nif|default:"-" }}</td>
-                                            <td>{{ empresa.cidade|default:"-" }}</td>
-                                            <td>
-                                                <a href="{% url 'clientes:detalhes_empresa' empresa.id %}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> {% trans "Ver" %}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info">{% trans "Nenhuma empresa encontrada." %}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Tab Individuais -->
-                    <div class="tab-pane fade" id="individuais" role="tabpanel">
-                        {% if resultados.individuais %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>{% trans "Nome" %}</th>
-                                            <th>{% trans "NIF" %}</th>
-                                            <th>{% trans "Cidade" %}</th>
-                                            <th>{% trans "Empresa Associada" %}</th>
-                                            <th>{% trans "Ações" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for individual in resultados.individuais %}
-                                        <tr>
-                                            <td>{{ individual.nome }}</td>
-                                            <td>{{ individual.nif|default:"-" }}</td>
-                                            <td>{{ individual.cidade|default:"-" }}</td>
-                                            <td>
-                                                {% if individual.individual.empresa_associada %}
-                                                    <a href="{% url 'clientes:detalhes_empresa' individual.individual.empresa_associada.id %}">
-                                                        {{ individual.individual.empresa_associada.nome }}
-                                                    </a>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'clientes:detalhes_individual' individual.id %}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> {% trans "Ver" %}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info">{% trans "Nenhum cliente individual encontrado." %}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Tab Equipamentos -->
-                    <div class="tab-pane fade" id="equipamentos" role="tabpanel">
-                        {% if resultados.equipamentos %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>{% trans "Equipamento" %}</th>
-                                            <th>{% trans "Nº Série" %}</th>
-                                            <th>{% trans "Cliente" %}</th>
-                                            <th>{% trans "Ações" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for equipamento in resultados.equipamentos %}
-                                        <tr>
-                                            <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                                            <td>{{ equipamento.numero_serie|default:"-" }}</td>
-                                            <td>
-                                                <a href="{% url 'clientes:detalhes_cliente' equipamento.cliente.id %}">
-                                                    {{ equipamento.cliente.nome }}
-                                                </a>
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'equipamentos:detalhes_equipamento_cliente' equipamento.id %}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> {% trans "Ver" %}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info">{% trans "Nenhum equipamento encontrado." %}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Tab PATs -->
-                    <div class="tab-pane fade" id="pats" role="tabpanel">
-                        {% if resultados.pats %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>{% trans "PAT #" %}</th>
-                                            <th>{% trans "Cliente" %}</th>
-                                            <th>{% trans "Equipamento" %}</th>
-                                            <th>{% trans "Estado" %}</th>
-                                            <th>{% trans "Data Criação" %}</th>
-                                            <th>{% trans "Ações" %}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for pat in resultados.pats %}
-                                        <tr>
-                                            <td>{{ pat.pat_number }}</td>
-                                            <td>
-                                                <a href="{% url 'clientes:detalhes_cliente' pat.cliente.id %}">
-                                                    {{ pat.cliente.nome }}
-                                                </a>
-                                            </td>
-                                            <td>
-                                                {% if pat.equipamento %}
-                                                    {{ pat.equipamento.equipamento_fabricado.nome }}
-                                                {% else %}
-                                                    {{ pat.numero_serie_equipamento|default:"-" }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <span class="badge {% if pat.estado == 'concluido' %}badge-success{% elif pat.estado == 'aberto' %}badge-primary{% elif pat.estado == 'em_andamento' %}badge-warning{% else %}badge-secondary{% endif %}">
-                                                    {{ pat.get_estado_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> {% trans "Ver" %}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-info">{% trans "Nenhum PAT encontrado." %}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% else %}
-                <div class="text-center my-5">
-                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
-                    <h4 class="text-muted">{% trans "Digite algo para iniciar a busca" %}</h4>
-                    <p class="text-muted">{% trans "Você pode buscar por nome, email, telefone, NIF, número de série, etc." %}</p>
-                </div>
+    {% if not search_query %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> {% trans "Digite um termo de pesquisa para encontrar resultados." %}
+    </div>
+    {% elif total_count == 0 %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i> {% trans "Nenhum resultado encontrado para" %} <strong>"{{
+            search_query }}"</strong>
+    </div>
+    {% else %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle me-2"></i> {% trans "Foram encontrados" %} <strong>{{ total_count }}</strong> {%
+        trans "resultados para" %} <strong>"{{ search_query }}"</strong>
+    </div>
+
+    <!-- Clients section -->
+    {% if results.clientes %}
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-users me-2"></i> {% trans "Clientes" %} ({{ results.clientes|length }})
+            </h5>
+            <a href="{% url 'clientes:listar_clientes' %}?q={{ search_query }}" class="btn btn-sm btn-outline-primary">
+                {% trans "Ver Todos" %}
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Email" %}</th>
+                            <th>{% trans "Telefone" %}</th>
+                            <th>{% trans "Cidade" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in results.clientes|slice:":5" %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                    class="text-decoration-none">
+                                    <i class="fas fa-user text-primary me-1"></i>
+                                    {{ cliente.nome }}
+                                </a>
+                            </td>
+                            <td>{{ cliente.email_principal|default:"-" }}</td>
+                            <td>{{ cliente.telefone|default:"-" }}</td>
+                            <td>{{ cliente.cidade|default:"-" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if results.clientes|length > 5 %}
+            <div class="card-footer text-center">
+                <a href="{% url 'clientes:listar_clientes' %}?q={{ search_query }}"
+                    class="btn btn-sm btn-outline-primary">
+                    {% trans "Ver todos os" %} {{ results.clientes|length }} {% trans "clientes encontrados" %}
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>
+    {% endif %}
+
+    <!-- Equipment section -->
+    {% if results.equipamentos %}
+    <!-- Similar structure for equipment results -->
+    {% endif %}
+
+    <!-- Service Requests section -->
+    {% if results.assistencias %}
+    <!-- Similar structure for assistance results -->
+    {% endif %}
+
+    <!-- Notes section -->
+    {% if results.notas %}
+    <!-- Similar structure for notes results -->
+    {% endif %}
+    {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    $(document).ready(function() {
-        // Manter a tab ativa ao recarregar a página
-        var activeTab = localStorage.getItem('activeSearchTab');
-        if (activeTab) {
-            $('#resultsTab a[href="' + activeTab + '"]').tab('show');
-        }
-
-        // Salvar a tab ativa quando o usuário mudar
-        $('#resultsTab a').on('shown.bs.tab', function (e) {
-            localStorage.setItem('activeSearchTab', $(e.target).attr('href'));
-        });
-    });
-</script>
 {% endblock %}

@@ -1,6 +1,5 @@
 from django import forms
-from .models import EquipamentoFabricado, DocumentoEquipamento, CategoriaEquipamento
-from clientes.models import EquipamentoCliente
+from .models import EquipamentoFabricado, EquipamentoCliente, CategoriaEquipamento, DocumentoEquipamento
 from .widgets import CustomClearableFileInput
 
 class EquipamentoFabricadoForm(forms.ModelForm):

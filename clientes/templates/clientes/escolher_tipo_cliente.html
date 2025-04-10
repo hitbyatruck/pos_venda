@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Adicionar Cliente" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-user-plus me-2"></i>{% trans "Adicionar Novo Cliente" %}
+        </h1>
+        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+        </a>
+    </div>
+
+    {% include 'clientes/includes/breadcrumbs.html' with view_title="Adicionar Cliente" %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="alert alert-info">
+                <p>{% trans "Redirecionando para o formulário unificado de cliente..." %}</p>
+                <p>{% trans "Se não for redirecionado automaticamente, " %} 
+                    <a href="{% url 'clientes:adicionar_cliente' %}" class="alert-link">{% trans "clique aqui" %}</a>.
+                </p>
+            </div>
+            
+            <script>
+                // Redirect to the unified client form
+                window.location.href = "{% url 'clientes:adicionar_cliente' %}";
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

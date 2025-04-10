@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load equipment_tags %}
 
 {% block title %}{% trans "Equipamentos Fabricados" %}{% endblock %}
 
@@ -64,8 +65,8 @@
                     <select class="form-select" id="categoria" name="categoria">
                         <option value="">{% trans "Todas" %}</option>
                         {% for categoria in categorias %}
-                        <option value="{{ categoria.id }}" {% if categoria_selecionada==categoria.id %}selected{% endif
-                            %}>
+                        <option value="{{ categoria.id }}" {% is_equal categoria_selecionada|stringformat:"i"
+                            categoria.id|stringformat:"i" as result %}{% if result %}selected{% endif %}>
                             {{ categoria.nome }}
                         </option>
                         {% endfor %}
@@ -74,16 +75,19 @@
                 <div class="col-md-3">
                     <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
                     <select class="form-select" id="orderby" name="orderby">
-                        <option value="nome" {% if orderby=='nome' %}selected{% endif %}>
+                        <option value="nome" {% is_equal orderby "nome" as result %}{% if result %}selected{% endif %}>
                             {% trans "Modelo (A-Z)" %}
                         </option>
-                        <option value="-nome" {% if orderby=='-nome' %}selected{% endif %}>
+                        <option value="-nome" {% is_equal orderby "-nome" as result %}{% if result %}selected{% endif
+                            %}>
                             {% trans "Modelo (Z-A)" %}
                         </option>
-                        <option value="-data_lancamento" {% if orderby=='-data_lancamento' %}selected{% endif %}>
+                        <option value="-data_lancamento" {% is_equal orderby "-data_lancamento" as result %}{% if result
+                            %}selected{% endif %}>
                             {% trans "Mais recentes" %}
                         </option>
-                        <option value="data_lancamento" {% if orderby=='data_lancamento' %}selected{% endif %}>
+                        <option value="data_lancamento" {% is_equal orderby "data_lancamento" as result %}{% if result
+                            %}selected{% endif %}>
                             {% trans "Mais antigos" %}
                         </option>
                     </select>
@@ -104,10 +108,18 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead class="bg-dark text-light">
                         <tr>
-                            <th>{% trans "Modelo" %}</th>
-                            <th>{% trans "Referência" %}</th>
-                            <th>{% trans "Categoria" %}</th>
-                            <th>{% trans "Data de Lançamento" %}</th>
+                            <th class="sortable" data-sort="nome">
+                                {% trans "Modelo" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="referencia">
+                                {% trans "Referência" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="categoria">
+                                {% trans "Categoria" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="data_lancamento">
+                                {% trans "Data de Lançamento" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
                             <th class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
@@ -187,4 +199,91 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Table sorting functionality
+        const table = document.querySelector('.table');
+        if (table) {
+            const headers = table.querySelectorAll('th.sortable');
+            let currentSort = { column: null, direction: 'asc' };
+
+            // Initialize sorting based on URL parameter or default to first column
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderby = urlParams.get('orderby') || 'nome';
+            let direction = 'asc';
+
+            // Determine direction from orderby parameter
+            if (orderby.startsWith('-')) {
+                direction = 'desc';
+            }
+
+            const sortColumn = orderby.replace('-', '');
+
+            // Find the header for the initial sort
+            headers.forEach(header => {
+                const column = header.getAttribute('data-sort');
+                if (column === sortColumn) {
+                    header.classList.add(direction);
+                    const icon = header.querySelector('.sort-icon');
+                    icon.className = direction === 'asc'
+                        ? 'fas fa-sort-up ms-1 sort-icon'
+                        : 'fas fa-sort-down ms-1 sort-icon';
+
+                    currentSort = { column, direction };
+                }
+            });
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.getAttribute('data-sort');
+
+                    // Toggle direction if clicking the same column
+                    let newDirection;
+                    if (currentSort.column === column) {
+                        newDirection = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        newDirection = 'asc'; // Default to ascending for a new column
+                    }
+
+                    // Update URL with new sort parameters
+                    const orderParam = newDirection === 'asc' ? column : `-${column}`;
+                    urlParams.set('orderby', orderParam);
+                    window.location.search = urlParams.toString();
+                });
+            });
+        }
+    });
+</script>
+
+<!-- Add CSS for sortable headers -->
+<style>
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    th.sortable .sort-icon {
+        opacity: 0.5;
+    }
+
+    th.sortable.asc .sort-icon,
+    th.sortable.desc .sort-icon {
+        opacity: 1;
+        color: #fff;
+    }
+
+    th.sortable.asc,
+    th.sortable.desc {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+</style>
 {% endblock %}

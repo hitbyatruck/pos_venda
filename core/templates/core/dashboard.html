@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid py-4">
     <h2 class="mb-4">Dashboard</h2>
-    
+
     <!-- Métricas Principais -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -42,14 +42,15 @@
                 <div class="card-body">
                     <h5 class="card-title">Tendência de PATs (30 dias)</h5>
                     <h2 class="display-4">
-                        {{ tendencia_percentual|floatformat:1 }}% 
-                        {% if tendencia_positiva %}<i class="fas fa-arrow-up"></i>{% else %}<i class="fas fa-arrow-down"></i>{% endif %}
+                        {{ tendencia_percentual|floatformat:1 }}%
+                        {% if tendencia_positiva %}<i class="fas fa-arrow-up"></i>{% else %}<i
+                            class="fas fa-arrow-down"></i>{% endif %}
                     </h2>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Gráficos Interativos -->
     <div class="row mb-4">
         <div class="col-md-8">
@@ -62,7 +63,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-header">
@@ -74,7 +75,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- PATs por Estado -->
     <div class="row mb-4">
         <div class="col-md-12">
@@ -137,7 +138,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Segunda linha com 3 colunas -->
     <div class="row mb-4">
         <!-- PATs Recentes -->
@@ -151,8 +152,10 @@
                         {% for pat in pats_recentes %}
                         <li class="list-group-item">
                             <div>
-                                <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="fw-bold">{{ pat.pat_number }}</a>
-                                <span class="badge {% if pat.estado == 'aberto' %}bg-danger{% elif pat.estado == 'em_curso' %}bg-warning text-dark{% elif pat.estado == 'em_diagnostico' %}bg-info{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-secondary{% endif %}">
+                                <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="fw-bold">{{ pat.pat_number
+                                    }}</a>
+                                <span
+                                    class="badge {% if pat.estado == 'aberto' %}bg-danger{% elif pat.estado == 'em_curso' %}bg-warning text-dark{% elif pat.estado == 'em_diagnostico' %}bg-info{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-secondary{% endif %}">
                                     {{ pat.get_estado_display }}
                                 </span>
                             </div>
@@ -170,7 +173,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Clientes Mais Ativos -->
         <div class="col-md-4">
             <div class="card h-100">
@@ -194,7 +197,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Equipamentos em Assistência -->
         <div class="col-md-4">
             <div class="card h-100">
@@ -214,7 +217,7 @@
                     </ul>
                 </div>
                 <div class="card-footer">
-                    <a href="{% url 'equipamentos:listar_equipamentos_fabricados' %}" class="btn btn-sm btn-primary">Ver todos</a>
+                    <a href="{% url 'equipamentos:listar_fabricados' %}" class="btn btn-sm btn-primary">Ver todos</a>
                 </div>
             </div>
         </div>
@@ -223,92 +226,106 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Ignore os erros de sintaxe do VS Code nas variáveis Django -->
 <script>
-// @ts-nocheck
-// Dados para os gráficos definidos diretamente no template
-const graficoData = {
-    meses: [
-        {% for item in dados_grafico %}
-        {
-            mes: "{{ item.mes }}",
-            count: {{ item.count }}
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ],
-    pizza: [
-        {% for item in dados_pizza %}
-        {
-            estado: "{{ item.estado }}",
-            count: {{ item.count }},
-            cor: "{{ item.cor }}"
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ]
-};
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            // Define default chart data in case the server data is missing
+            const defaultData = {
+                meses: [
+                    { mes: "Jan", count: 5 },
+                    { mes: "Feb", count: 8 },
+                    { mes: "Mar", count: 12 },
+                    { mes: "Apr", count: 7 },
+                    { mes: "May", count: 10 },
+                    { mes: "Jun", count: 14 }
+                ],
+                pizza: [
+                    { estado: "Aberto", count: 15, cor: "rgba(220, 53, 69, 0.8)" },
+                    { estado: "Em Curso", count: 25, cor: "rgba(255, 193, 7, 0.8)" },
+                    { estado: "Concluído", count: 45, cor: "rgba(40, 167, 69, 0.8)" },
+                    { estado: "Cancelado", count: 5, cor: "rgba(108, 117, 125, 0.8)" }
+                ]
+            };
 
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Gráfico de linha
-        const lineCtx = document.getElementById('patsChart').getContext('2d');
-        
-        if (lineCtx) {
-            new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: graficoData.meses.map(function(item) { return item.mes; }),
-                    datasets: [{
-                        label: 'PATs Criados',
-                        data: graficoData.meses.map(function(item) { return item.count; }),
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
+            // Use server data if available, otherwise use defaults
+            let dadosMeses = defaultData.meses;
+            let dadosPizza = defaultData.pizza;
+
+            // Server data injection
+            const dadosGrafico = JSON.parse('{% if dados_grafico %}{{ dados_grafico|escapejs }}{% else %}null{% endif %}');
+            const dadosPizzaData = JSON.parse('{% if dados_pizza %}{{ dados_pizza|escapejs }}{% else %}null{% endif %}');
+
+            if (dadosGrafico) {
+                dadosMeses = dadosGrafico;
+            }
+
+            if (dadosPizzaData) {
+                dadosPizza = dadosPizzaData;
+            }
+
+            const graficoData = {
+                meses: dadosMeses,
+                pizza: dadosPizza
+            };
+
+            // Line chart
+            const lineCtx = document.getElementById('patsChart');
+            if (lineCtx) {
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: graficoData.meses.map(item => item.mes),
+                        datasets: [{
+                            label: 'PATs Criados',
+                            data: graficoData.meses.map(item => item.count),
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
                             }
                         }
                     }
-                }
-            });
-        }
-        
-        // Gráfico de pizza
-        const pieCtx = document.getElementById('estadosChart').getContext('2d');
-        
-        if (pieCtx) {
-            new Chart(pieCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: graficoData.pizza.map(function(item) { return item.estado; }),
-                    datasets: [{
-                        data: graficoData.pizza.map(function(item) { return item.count; }),
-                        backgroundColor: graficoData.pizza.map(function(item) { return item.cor; }),
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right'
+                });
+            }
+
+            // Pie chart
+            const pieCtx = document.getElementById('estadosChart');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: graficoData.pizza.map(item => item.estado),
+                        datasets: [{
+                            data: graficoData.pizza.map(item => item.count),
+                            backgroundColor: graficoData.pizza.map(item => item.cor),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
+        } catch (e) {
+            console.error("Erro ao renderizar gráficos:", e);
         }
-    } catch (e) {
-        console.error("Erro ao renderizar gráficos:", e);
-    }
-});
+    });
 </script>
 {% endblock %}

@@ -52,7 +52,9 @@ def navigation(request):
                     ]
             else:
                 nav_items = [
-                    {'title': _('Listar Equipamentos'), 'url_name': 'listar_equipamentos_fabricados', 'url': reverse('equipamentos:listar_equipamentos_fabricados'), 'icon': 'list'},
+                    {'title': _('Listar Equipamentos'), 'url_name': 'listar_equipamentos', 'url': reverse('equipamentos:listar_equipamentos'), 'icon': 'list'},
+                    {'title': _('Equipamentos Fabricados'), 'url_name': 'listar_fabricados', 'url': reverse('equipamentos:listar_fabricados'), 'icon': 'cogs'},
+                    {'title': _('Equipamentos de Clientes'), 'url_name': 'listar_cliente', 'url': reverse('equipamentos:listar_cliente'), 'icon': 'users'},
                     {'title': _('Adicionar Equipamento'), 'url_name': 'adicionar_equipamento_fabricado', 'url': reverse('equipamentos:adicionar_equipamento_fabricado'), 'icon': 'plus-circle'},
                     {'title': _('Listar Categorias'), 'url_name': 'listar_categorias', 'url': reverse('equipamentos:listar_categorias'), 'icon': 'tags'},
                 ]

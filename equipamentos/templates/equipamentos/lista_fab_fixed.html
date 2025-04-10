@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Equipamentos Fabricados" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-industry me-2"></i>{% trans "Equipamentos Fabricados" %}
+        </h1>
+        <div>
+            <div class="btn-group">
+                <a href="{% url 'equipamentos:adicionar_fabricado' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "Novo Equipamento Fabricado" %}
+                </a>
+            </div>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=excel">
+                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=csv">
+                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=pdf">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Equipamentos Fabricados" %}
+    {% include 'equipamentos/includes/mini_nav.html' with nav_active='fabricados' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Modelo, referência, descrição...' %}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label">{% trans "Categoria" %}</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">{% trans "Todas" %}</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria_selecionada==categoria.id|stringformat:"i"
+                            %}selected{% endif %}>{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
+                    <select class="form-select" id="orderby" name="orderby">
+                        <option value="nome" {% if orderby=="nome" %}selected{% endif %}>{% trans "Modelo (A-Z)" %}
+                        </option>
+                        <option value="-nome" {% if orderby=="-nome" %}selected{% endif %}>{% trans "Modelo (Z-A)" %}
+                        </option>
+                        <option value="-data_lancamento" {% if orderby=="-data_lancamento" %}selected{% endif %}>{%
+                            trans "Mais recentes" %}</option>
+                        <option value="data_lancamento" {% if orderby=="data_lancamento" %}selected{% endif %}>{% trans
+                            "Mais antigos" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if equipamentos %}
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Modelo" %}</th>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Data de Lançamento" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos %}
+                        <tr id="row-{{ equipamento.id }}">
+                            <td>{{ equipamento.nome }}</td>
+                            <td>{{ equipamento.referencia_interna|default:"-" }}</td>
+                            <td>{{ equipamento.categoria.nome|default:"-" }}</td>
+                            <td>{{ equipamento.data_lancamento|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'equipamentos:editar_fabricado' equipamento_id=equipamento.id %}"
+                                    class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger confirm-delete" data-id="{{ equipamento.id }}"
+                                    data-url="{% url 'equipamentos:excluir_fabricado' pk=equipamento.id %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">{% trans "Nenhum equipamento encontrado." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if equipamentos.has_other_pages %}
+    <nav aria-label="{% trans 'Paginação' %}">
+        <ul class="pagination justify-content-center">
+            {% if equipamentos.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?pagina={{ equipamentos.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-angle-left"></i></span>
+            </li>
+            {% endif %}
+
+            {% for i in equipamentos.paginator.page_range %}
+            {% if equipamentos.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i > equipamentos.number|add:'-3' and i < equipamentos.number|add:'3' %} <li class="page-item">
+                <a class="page-link"
+                    href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">{{
+                    i }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if equipamentos.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?pagina={{ equipamentos.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?pagina={{ equipamentos.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info">
+        {% trans "Nenhum equipamento encontrado." %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir este equipamento?" %}</p>
+                <p class="fw-bold" id="equipamentoNome"></p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e todos os dados associados serão perdidos." %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmModalBtn">
+                    <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="warningModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Atenção" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="warningModalMessage"></p>
+                <p class="text-danger fw-bold">
+                    {% trans "Deseja prosseguir mesmo assim?" %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <button type="button" class="btn btn-danger" id="warningModalBtn">
+                    <i class="fas fa-exclamation-triangle me-1"></i> {% trans "Sim, excluir" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'equipamentos/js/equipamentos_scripts.js' %}"></script>
+{% endblock %}

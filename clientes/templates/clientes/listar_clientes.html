@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load client_tags %}
+{% load cliente_extras %}
 
 {% block title %}{% trans "Lista de Clientes" %}{% endblock %}
 
@@ -9,27 +11,9 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">{% trans "Lista de Clientes" %}</h1>
         <div>
-            <div class="btn-group">
-                <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> {% trans "Novo Cliente" %}
-                </a>
-                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="visually-hidden">{% trans "Opções" %}</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="{% url 'clientes:adicionar_empresa' %}">
-                            <i class="fas fa-building me-1"></i> {% trans "Nova Empresa" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="{% url 'clientes:adicionar_individual' %}">
-                            <i class="fas fa-user me-1"></i> {% trans "Novo Individual" %}
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <a href="{% url 'clientes:adicionar_cliente' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Novo Cliente" %}
+            </a>
             <div class="btn-group ms-2">
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -38,17 +22,17 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                         <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=excel">
-                            <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                            <i class="fas fa-file-excel me-1"></i> {% trans "Excel" %}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=csv">
-                            <i class="fas fa-file-csv me-1 text-primary"></i> CSV
+                            <i class="fas fa-file-csv me-1"></i> {% trans "CSV" %}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="{% url 'clientes:exportar_clientes' %}?formato=pdf">
-                            <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                            <i class="fas fa-file-pdf me-1"></i> {% trans "PDF" %}
                         </a>
                     </li>
                 </ul>
@@ -56,74 +40,401 @@
         </div>
     </div>
 
-    {% include "clientes/includes/breadcrumbs.html" %}
-    {% include 'clientes/includes/menu_clientes.html' with active_tab='all' %}
+    {% include "clientes/includes/breadcrumbs.html" with view_title="Clientes" %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab=active_tab %}
 
-    <!-- Filtros e busca avançada -->
+    <!-- Advanced Search Component -->
     <div class="card shadow mb-4">
-        <div class="card-header bg-dark bg-opacity-10">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
-                            placeholder="{% trans 'Nome, email, telefone...' %}">
-                        <button class="btn btn-outline-secondary" type="submit">
-                            <i class="fas fa-search"></i>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i> {% trans "Busca Avançada" %}
+            </h5>
+            <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse"
+                data-bs-target="#advancedSearchCollapse" aria-expanded="false">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div class="collapse show" id="advancedSearchCollapse">
+            <div class="card-body">
+                <form method="get" id="advanced-search-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="q" name="q"
+                                    value="{{ search_query|default:'' }}"
+                                    placeholder="{% trans 'Buscar em todos os campos (nome, email, telefone, NIF, morada, etc.)' %}">
+                            </div>
+                            <div class="form-text">{% trans "Busca em todos os campos importantes de clientes" %}</div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="">{% trans "Todas as Categorias" %}</option>
+                                {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <select class="form-select" id="setor" name="setor">
+                                <option value="">{% trans "Todos os Setores" %}</option>
+                                {% for s in setores %}
+                                <option value="{{ s.id }}">{{ s.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <select class="form-select" id="orderby" name="orderby">
+                                <option value="nome">{% trans "Nome (A-Z)" %}</option>
+                                <option value="-nome">{% trans "Nome (Z-A)" %}</option>
+                                <option value="-data_criacao">{% trans "Mais Recentes" %}</option>
+                                <option value="data_criacao">{% trans "Mais Antigos" %}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-end">
+                        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i> {% trans "Limpar Filtros" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary ms-2">
+                            <i class="fas fa-search me-1"></i> {% trans "Buscar" %}
                         </button>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <label for="tipo" class="form-label">{% trans "Tipo" %}</label>
-                    <select class="form-select" id="tipo" name="tipo">
-                        <option value="">{% trans "Todos" %}</option>
-                        <option value="empresa" {% if tipo_empresa_selected %}selected{% endif %}>
-                            {% trans "Empresa" %}
-                        </option>
-                        <option value="individual" {% if tipo_individual_selected %}selected{% endif %}>
-                            {% trans "Individual" %}
-                        </option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
-                    <select class="form-select" id="orderby" name="orderby">
-                        <option value="nome" {% if orderby_nome_selected %}selected{% endif %}>
-                            {% trans "Nome (A-Z)" %}
-                        </option>
-                        <option value="-nome" {% if orderby_nome_desc_selected %}selected{% endif %}>
-                            {% trans "Nome (Z-A)" %}
-                        </option>
-                        <option value="-data_criacao" {% if orderby_data_criacao_desc_selected %}selected{% endif %}>
-                            {% trans "Mais recentes" %}
-                        </option>
-                        <option value="data_criacao" {% if orderby_data_criacao_selected %}selected{% endif %}>
-                            {% trans "Mais antigos" %}
-                        </option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- Search Results Section -->
+    {% if is_search_result %}
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i>
+                {% trans "Resultados da Pesquisa" %}:
+                <span class="badge bg-light text-dark">{{ search_query }}</span>
+                <span class="badge bg-light text-dark">{{ total_count }} resultados</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="nav nav-tabs" id="searchTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="clients-tab" data-bs-toggle="tab" data-bs-target="#clients"
+                        type="button" role="tab" aria-controls="clients" aria-selected="true">
+                        <i class="fas fa-users me-1"></i> {% trans "Clientes" %} ({{ search_results.clientes|length }})
+                    </button>
+                </li>
+                {% if search_results.contactos|length > 0 %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts"
+                        type="button" role="tab" aria-controls="contacts" aria-selected="false">
+                        <i class="fas fa-address-book me-1"></i> {% trans "Contactos" %} ({{
+                        search_results.contactos|length }})
+                    </button>
+                </li>
+                {% endif %}
+                {% if search_results.equipamentos|length > 0 %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="equipment-tab" data-bs-toggle="tab" data-bs-target="#equipment"
+                        type="button" role="tab" aria-controls="equipment" aria-selected="false">
+                        <i class="fas fa-cogs me-1"></i> {% trans "Equipamentos" %} ({{
+                        search_results.equipamentos|length }})
+                    </button>
+                </li>
+                {% endif %}
+                {% if search_results.assistencias|length > 0 %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pat-tab" data-bs-toggle="tab" data-bs-target="#pat" type="button"
+                        role="tab" aria-controls="pat" aria-selected="false">
+                        <i class="fas fa-tools me-1"></i> {% trans "PATs" %} ({{ search_results.assistencias|length }})
+                    </button>
+                </li>
+                {% endif %}
+                {% if search_results.notas|length > 0 %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button"
+                        role="tab" aria-controls="notes" aria-selected="false">
+                        <i class="fas fa-sticky-note me-1"></i> {% trans "Notas" %} ({{ search_results.notas|length }})
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content p-3" id="searchTabsContent">
+                <!-- Clients Tab -->
+                <div class="tab-pane fade show active" id="clients" role="tabpanel" aria-labelledby="clients-tab">
+                    {% if search_results.clientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="sortable" data-sort="name">{% trans "Nome" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="email">{% trans "Email" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="phone">{% trans "Telefone" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="city">{% trans "Cidade" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in search_results.clientes|slice:":10" %}
+                                <tr>
+                                    <td data-value="{{ cliente.nome }}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}">
+                                            {{ cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td data-value="{{ cliente.email_principal|default:'' }}">
+                                        {% if cliente.email_principal %}
+                                        <a href="mailto:{{ cliente.email_principal }}">{{ cliente.email_principal }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td data-value="{{ cliente.telefone|default:'' }}">
+                                        {{ cliente.telefone|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ cliente.cidade|default:'' }}">
+                                        {{ cliente.cidade|default:"-" }}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                                class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
+                                                class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        {% trans "Nenhum cliente encontrado para esta pesquisa." %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Contacts Tab -->
+                {% if search_results.contactos|length > 0 %}
+                <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="sortable" data-sort="name">{% trans "Nome" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="role">{% trans "Cargo" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="type">{% trans "Tipo" %} <i class="fas fa-sort"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="value">{% trans "Valor" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort="client">{% trans "Cliente" %} <i
+                                            class="fas fa-sort"></i></th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contacto in search_results.contactos %}
+                                <tr>
+                                    <td data-value="{{ contacto.nome_contacto|default:'' }}">
+                                        {{ contacto.nome_contacto|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ contacto.cargo|default:'' }}">
+                                        {{ contacto.cargo|default:"-" }}
+                                    </td>
+                                    <td data-value="{{ contacto.tipo.nome }}">
+                                        <span class="badge bg-info">{{ contacto.tipo.nome }}</span>
+                                    </td>
+                                    <td data-value="{{ contacto.valor }}">
+                                        {% if contacto.tipo.nome == 'Email' %}
+                                        <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                        {% elif contacto.tipo.nome == 'Telefone' %}
+                                        <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                        {% else %}
+                                        {{ contacto.valor }}
+                                        {% endif %}
+                                    </td>
+                                    <td data-value="{{ contacto.cliente.nome }}">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=contacto.cliente.id %}">
+                                            {{ contacto.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'clientes:cliente_contactos' cliente_id=contacto.cliente.id %}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> {% trans "Ver" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Equipment Tab -->
+                {% if search_results.equipamentos|length > 0 %}
+                <div class="tab-pane fade" id="equipment" role="tabpanel" aria-labelledby="equipment-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>{% trans "Modelo" %}</th>
+                                    <th>{% trans "Nº Série" %}</th>
+                                    <th>{% trans "Cliente" %}</th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equip in search_results.equipamentos %}
+                                <tr>
+                                    <td>{{ equip.equipamento_fabricado.nome }}</td>
+                                    <td>{{ equip.numero_serie }}</td>
+                                    <td>
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=equip.cliente.id %}">
+                                            {{ equip.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equip.id %}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> {% trans "Ver" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- PATs Tab -->
+                {% if search_results.assistencias|length > 0 %}
+                <div class="tab-pane fade" id="pat" role="tabpanel" aria-labelledby="pat-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>{% trans "Ref." %}</th>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Cliente" %}</th>
+                                    <th>{% trans "Estado" %}</th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pat in search_results.assistencias %}
+                                <tr>
+                                    <td>{{ pat.pat_number }}</td>
+                                    <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=pat.cliente.id %}">
+                                            {{ pat.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge {% if pat.estado == 'concluido' %}bg-success{% elif pat.estado == 'aberto' %}bg-warning{% else %}bg-primary{% endif %}">
+                                            {{ pat.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'assistencia:detalhes_pat' pat.id %}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> {% trans "Ver" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Notes Tab -->
+                {% if search_results.notas|length > 0 %}
+                <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped sortable-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>{% trans "Título" %}</th>
+                                    <th>{% trans "Data" %}</th>
+                                    <th>{% trans "Cliente" %}</th>
+                                    <th class="text-center">{% trans "Ações" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nota in search_results.notas %}
+                                <tr>
+                                    <td>{{ nota.titulo }}</td>
+                                    <td>{{ nota.data_criacao|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=nota.cliente.id %}">
+                                            {{ nota.cliente.nome }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'notas:detalhes_nota' nota.id %}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> {% trans "Ver" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Client listing -->
     {% if clientes %}
     <div class="card shadow mb-4">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
-                    <thead class="bg-dark text-light">
+                    <thead class="bg-dark text-white">
                         <tr>
-                            <th>{% trans "Nome" %}</th>
-                            <th>{% trans "Tipo" %}</th>
-                            <th>{% trans "Email" %}</th>
-                            <th>{% trans "Telefone" %}</th>
-                            <th>{% trans "NIF" %}</th>
-                            <th>{% trans "Data de Registo" %}</th>
+                            <th class="sortable" data-sort="nome">
+                                {% trans "Nome" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="email">
+                                {% trans "Email" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="telefone">
+                                {% trans "Telefone" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="setor">
+                                {% trans "Setor" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="cidade">
+                                {% trans "Cidade" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
                             <th class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
@@ -131,64 +442,36 @@
                         {% for cliente in clientes %}
                         <tr>
                             <td>
-                                {% if cliente.tipo == 'empresa' %}
-                                <a href="{% url 'clientes:detalhes_empresa' empresa_id=cliente.id %}"
-                                    class="fw-semibold text-decoration-none">
-                                    {% else %}
-                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
-                                        class="fw-semibold text-decoration-none">
-                                        {% endif %}
-                                        {% if cliente.imagem %}
-                                        <img src="{{ cliente.imagem.url }}" alt="{{ cliente.nome }}"
-                                            class="img-thumbnail me-2"
-                                            style="width: 30px; height: 30px; object-fit: cover;">
-                                        {% else %}
-                                        {% if cliente.tipo == 'empresa' %}
-                                        <i class="fas fa-building text-secondary me-2"></i>
-                                        {% else %}
-                                        <i class="fas fa-user text-secondary me-2"></i>
-                                        {% endif %}
-                                        {% endif %}
-                                        {{ cliente.nome }}
-                                    </a>
-                            </td>
-                            <td>
-                                <span
-                                    class="badge {% if cliente.tipo == 'empresa' %}bg-info{% else %}bg-primary{% endif %}">
-                                    {{ cliente.get_tipo_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="mailto:{{ cliente.email }}" class="text-decoration-none">
-                                    {{ cliente.email }}
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                    class="text-decoration-none">
+                                    <i class="fas fa-user text-primary me-1"></i>
+                                    {{ cliente.nome }}
                                 </a>
                             </td>
                             <td>
-                                <a href="tel:{{ cliente.telefone }}" class="text-decoration-none">
-                                    {{ cliente.telefone }}
-                                </a>
+                                {% if cliente.email_principal %}
+                                <a href="mailto:{{ cliente.email_principal }}">{{ cliente.email_principal }}</a>
+                                {% endif %}
                             </td>
-                            <td>{{ cliente.nif|default:"-" }}</td>
-                            <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
+                            <td>{{ cliente.telefone|default:"-" }}</td>
+                            <td>
+                                {% if cliente.setor %}
+                                <span class="badge bg-info">{{ cliente.setor.nome }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ cliente.cidade|default:"-" }}</td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm">
-                                    {% if cliente.tipo == 'empresa' %}
-                                    <a href="{% url 'clientes:detalhes_empresa' empresa_id=cliente.id %}"
-                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
-                                        {% else %}
-                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
-                                            class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
-                                            {% endif %}
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
-                                            class="btn btn-outline-warning" title="{% trans 'Editar' %}">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{% url 'clientes:excluir_cliente' cliente_id=cliente.id %}"
-                                            class="btn btn-outline-danger" title="{% trans 'Excluir' %}">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                <div class="btn-group">
+                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                                        class="btn btn-sm btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
+                                        class="btn btn-sm btn-outline-warning" title="{% trans 'Editar cliente' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -198,54 +481,54 @@
             </div>
         </div>
 
-        <!-- Paginação -->
-        {% if clientes.has_other_pages %}
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
         <div class="card-footer d-flex justify-content-between align-items-center">
             <div>
-                {% trans "Mostrando" %} {{ clientes.start_index }} - {{ clientes.end_index }} {% trans "de" }} {{
-                total_clientes }}
+                {% trans "Mostrando" %} {{ page_obj.start_index }} - {{ page_obj.end_index }} {% trans "de" %} {{
+                paginator.count }}
             </div>
             <nav aria-label="Page navigation">
                 <ul class="pagination mb-0">
-                    {% if clientes.has_previous %}
+                    {% if page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link"
-                            href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if order_by %}&orderby={{ order_by }}{% endif %}"
                             aria-label="First">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                            href="?pagina={{ clientes.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                            href="?pagina={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if order_by %}&orderby={{ order_by }}{% endif %}"
                             aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
                     {% endif %}
 
-                    {% for i in clientes.paginator.page_range %}
-                    {% if clientes.number == i %}
+                    {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
                     <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                    {% elif i > clientes.number|add:'-3' and i < clientes.number|add:'3' %} <li class="page-item">
+                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %} <li class="page-item">
                         <a class="page-link"
-                            href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}">{{
+                            href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if order_by %}&orderby={{ order_by }}{% endif %}">{{
                             i }}</a>
                         </li>
                         {% endif %}
                         {% endfor %}
 
-                        {% if clientes.has_next %}
+                        {% if page_obj.has_next %}
                         <li class="page-item">
                             <a class="page-link"
-                                href="?pagina={{ clientes.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                href="?pagina={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if order_by %}&orderby={{ order_by }}{% endif %}"
                                 aria-label="Next">
                                 <span aria-hidden="true">&raquo;</span>
                             </a>
                         </li>
                         <li class="page-item">
                             <a class="page-link"
-                                href="?pagina={{ clientes.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.orderby %}&orderby={{ request.GET.orderby }}{% endif %}"
+                                href="?pagina={{ paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if order_by %}&orderby={{ order_by }}{% endif %}"
                                 aria-label="Last">
                                 <span aria-hidden="true">&raquo;&raquo;</span>
                             </a>
@@ -259,9 +542,9 @@
     {% else %}
     <div class="alert alert-info">
         <i class="fas fa-info-circle me-2"></i>
-        {% if search_query or request.GET.tipo %}
-        {% trans "Nenhum cliente encontrado com os filtros selecionados." %}
-        <a href="{% url 'clientes:listar_clientes' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+        {% if search_query %}
+        {% trans "Nenhum cliente encontrado com os critérios de busca selecionados." %}
+        <a href="{% url 'clientes:listar_clientes' %}" class="alert-link">{% trans "Limpar busca" %}</a>
         {% else %}
         {% trans "Nenhum cliente cadastrado no sistema." %}
         <a href="{% url 'clientes:adicionar_cliente' %}" class="alert-link">{% trans "Adicionar Cliente" %}</a>
@@ -269,4 +552,236 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set up the advanced search interactions
+        const searchForm = document.getElementById('advanced-search-form');
+        const searchInput = document.getElementById('q');
+
+        // Set selected values for dropdowns using JavaScript instead of template tags
+        // This avoids issues with VSCode formatting breaking Django template tags
+        function selectDropdownOption(selectId, value) {
+            if (!value) return;
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === value) {
+                    select.options[i].selected = true;
+                    break;
+                }
+            }
+        }
+
+        // Set initial values from URL parameters or context variables
+        selectDropdownOption('categoria', '{{ categoria_id|escapejs }}');
+        selectDropdownOption('setor', '{{ setor_id|escapejs }}');
+        selectDropdownOption('orderby', '{{ order_by|escapejs }}');
+
+        // Search on Enter key in search field
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+
+        // Auto-submit on category or orderby change
+        document.getElementById('categoria').addEventListener('change', function () {
+            searchForm.submit();
+        });
+
+        document.getElementById('setor').addEventListener('change', function () {
+            searchForm.submit();
+        });
+
+        document.getElementById('orderby').addEventListener('change', function () {
+            searchForm.submit();
+        });
+
+        // Table sorting functionality
+        const table = document.querySelector('.table');
+        if (table) {
+            const headers = table.querySelectorAll('th.sortable');
+            let currentSort = { column: null, direction: 'asc' };
+
+            // Initialize the first column as sorted ascending
+            headers[0].classList.add('asc');
+            currentSort = { column: headers[0].getAttribute('data-sort'), direction: 'asc' };
+
+            // Sort the table initially
+            sortTable(table, currentSort.column, currentSort.direction);
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.getAttribute('data-sort');
+
+                    // Toggle direction if clicking the same column
+                    let direction;
+                    if (currentSort.column === column) {
+                        direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        direction = 'asc'; // Default to ascending for a new column
+                    }
+
+                    // Update the sort indicators for all headers
+                    headers.forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                        const icon = h.querySelector('.sort-icon');
+                        icon.className = 'fas fa-sort ms-1 sort-icon';
+                    });
+
+                    // Update the clicked header
+                    header.classList.add(direction);
+                    const icon = header.querySelector('.sort-icon');
+                    icon.className = direction === 'asc'
+                        ? 'fas fa-sort-up ms-1 sort-icon'
+                        : 'fas fa-sort-down ms-1 sort-icon';
+
+                    // Sort the table
+                    sortTable(table, column, direction);
+
+                    // Update current sort state
+                    currentSort = { column, direction };
+                });
+            });
+        }
+
+        function sortTable(table, column, direction) {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            const sortedRows = rows.sort((a, b) => {
+                const cellA = a.querySelector(`td:nth-child(${getColumnIndex(column)})`);
+                const cellB = b.querySelector(`td:nth-child(${getColumnIndex(column)})`);
+
+                const valueA = getCellValue(cellA);
+                const valueB = getCellValue(cellB);
+
+                if (valueA === valueB) return 0;
+
+                if (direction === 'asc') {
+                    return valueA > valueB ? 1 : -1;
+                } else {
+                    return valueA < valueB ? 1 : -1;
+                }
+            });
+
+            // Remove existing rows
+            rows.forEach(row => row.remove());
+
+            // Append sorted rows
+            sortedRows.forEach(row => tbody.appendChild(row));
+        }
+
+        function getColumnIndex(column) {
+            const columnMap = {
+                'nome': 1,
+                'email': 2,
+                'telefone': 3,
+                'setor': 4,
+                'cidade': 5
+            };
+            return columnMap[column] || 1;
+        }
+
+        function getCellValue(cell) {
+            return cell ? cell.textContent.trim().toLowerCase() : '';
+        }
+    });
+</script>
+
+<!-- Add CSS for sortable headers -->
+<style>
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    th.sortable .sort-icon {
+        opacity: 0.5;
+    }
+
+    th.sortable.asc .sort-icon,
+    th.sortable.desc .sort-icon {
+        opacity: 1;
+        color: #fff;
+    }
+
+    th.sortable.asc,
+    th.sortable.desc {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+{{ block.super }}
+
+<!-- Add this script to handle search result highlighting -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchQuery = "{{ search_query }}";
+        const normalizedQuery = "{{ normalized_query }}";
+
+        if (searchQuery) {
+            // Function to highlight text that matches the search query
+            function highlightMatches(element, query, normalizedQuery) {
+                if (!element || !query) return;
+
+                // Get the text content of the element
+                const text = element.textContent;
+                const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+                // Only highlight if there's a match
+                if (text.toLowerCase().includes(query.toLowerCase()) ||
+                    normalizedText.includes(normalizedQuery.toLowerCase())) {
+
+                    // Create a regular expression to match the query (case insensitive)
+                    const regex = new RegExp(`(${query})`, 'gi');
+
+                    // Replace matches with highlighted version
+                    element.innerHTML = text.replace(regex, '<span class="search-highlight">$1</span>');
+                }
+            }
+
+            // Apply highlighting to client names and contacts
+            document.querySelectorAll('.table td').forEach(td => {
+                highlightMatches(td, searchQuery, normalizedQuery);
+            });
+        }
+    });
+</script>
+
+<style>
+    /* Style for highlighted search matches */
+    .search-highlight {
+        background-color: #ffd54f;
+        padding: 2px 0;
+        border-radius: 2px;
+        font-weight: bold;
+    }
+
+    /* Improve tabs styling */
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    .nav-tabs .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+</style>
+
+<!-- ...existing JavaScript for the page... -->
 {% endblock %}

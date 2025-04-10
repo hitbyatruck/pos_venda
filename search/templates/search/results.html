@@ -1,277 +1,597 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Resultados da Pesquisa: {{ query }}{% endblock %}
+{% block title %}{% trans "Resultados da Pesquisa" %} - {{ search_query }}{% endblock %}
 
 {% block content %}
-<div class="container">
-  <h2 class="mb-4">Resultados da Pesquisa</h2>
-  
-  <div class="alert alert-info">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-search me-2 fs-4"></i>
-      <div>
-        {% if query %}
-          Resultados para: <strong>{{ query }}</strong>
-          {% if total_results %}
-            <span class="ms-2 badge bg-primary">{{ total_results }} resultado{{ total_results|pluralize }}</span>
-          {% endif %}
-        {% else %}
-          Introduza um termo de pesquisa
-        {% endif %}
-      </div>
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">
+      <i class="fas fa-search me-2"></i> {% trans "Resultados da Pesquisa" %}
+    </h1>
+  </div>
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans "Pesquisa" %}</li>
+    </ol>
+  </nav>
+
+  <!-- Search form -->
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <form method="get" action="{% url 'search_global' %}" class="row g-3">
+        <div class="col-md-10">
+          <div class="input-group">
+            <span class="input-group-text bg-primary text-white">
+              <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control form-control-lg" id="q" name="q" value="{{ search_query }}"
+              placeholder="{% trans 'Pesquisar clientes, contactos, equipamentos, assistências, notas...' %}">
+          </div>
+          <small class="form-text text-muted">A pesquisa ignora acentos e maiúsculas/minúsculas.</small>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary btn-lg w-100">
+            <i class="fas fa-search me-1"></i> {% trans "Buscar" %}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
-  
-  {% if query and total_results == 0 %}
+
+  <!-- Search summary with interactive category filters -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <button type="button" class="btn btn-primary active" data-bs-toggle="button" data-filter="all" id="filter-all">
+      <i class="fas fa-layer-group me-1"></i> {% trans "Todos" %} <span class="badge bg-light text-dark ms-1">{{
+        total_count }}</span>
+    </button>
+
+    {% if results.clientes %}
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="button" data-filter="clientes">
+      <i class="fas fa-users me-1"></i> {% trans "Clientes" %} <span class="badge bg-primary ms-1">{{
+        results.clientes|length }}</span>
+    </button>
+    {% endif %}
+
+    {% if results.contactos %}
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="button" data-filter="contactos">
+      <i class="fas fa-address-book me-1"></i> {% trans "Contactos" %} <span class="badge bg-primary ms-1">{{
+        results.contactos|length }}</span>
+    </button>
+    {% endif %}
+
+    {% if results.equipamentos %}
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="button" data-filter="equipamentos">
+      <i class="fas fa-cogs me-1"></i> {% trans "Equipamentos" %} <span class="badge bg-primary ms-1">{{
+        results.equipamentos|length }}</span>
+    </button>
+    {% endif %}
+
+    {% if results.assistencias %}
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="button" data-filter="assistencias">
+      <i class="fas fa-tools me-1"></i> {% trans "PATs" %} <span class="badge bg-primary ms-1">{{
+        results.assistencias|length }}</span>
+    </button>
+    {% endif %}
+
+    {% if results.notas %}
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="button" data-filter="notas">
+      <i class="fas fa-sticky-note me-1"></i> {% trans "Notas" %} <span class="badge bg-primary ms-1">{{
+        results.notas|length }}</span>
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- Alert messages -->
+  {% if not search_query %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i> {% trans "Digite um termo de pesquisa para encontrar resultados." %}
+  </div>
+  {% elif total_count == 0 %}
   <div class="alert alert-warning">
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    Não foram encontrados resultados para a sua pesquisa.
+    <i class="fas fa-exclamation-triangle me-2"></i> Nenhum resultado encontrado para <strong>"{{ search_query
+      }}"</strong>
+  </div>
+  {% else %}
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle me-2"></i> Foram encontrados <strong>{{ total_count }}</strong> resultados para
+    <strong>"{{ search_query }}"</strong>
   </div>
   {% endif %}
-  
-  <!-- Resultados organizados por categoria -->
-  <div class="row">
-    {% if results.clientes %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-          <i class="bi bi-people me-2"></i> Clientes ({{ results.clientes|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.clientes %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon }} fs-4 text-primary"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  <!-- Mostrar relacionamentos desta entidade -->
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
+
+  {% if results.clientes %}
+  <div class="card shadow mb-4 result-section" data-section="clientes">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-users me-2"></i> {% trans "Clientes" %} ({{ results.clientes|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        {% for cliente in results.clientes %}
+        <div class="list-group-item py-3 search-item">
+          <div class="row align-items-center">
+            <div class="col-md-5">
+              <h6 class="mb-0">
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}" class="text-primary">
+                  <i class="fas fa-user-circle me-1"></i> {{ cliente.nome }}
+                </a>
+              </h6>
+              <small class="text-muted">
+                {% if cliente.email_principal %}
+                <i class="fas fa-envelope me-1"></i> {{ cliente.email_principal }}
+                {% endif %}
+                {% if cliente.telefone %}
+                <span class="ms-2"><i class="fas fa-phone me-1"></i> {{ cliente.telefone }}</span>
+                {% endif %}
+              </small>
+            </div>
+
+            <div class="col-md-5">
+              <div class="d-flex gap-1 flex-wrap">
+                {% if cliente.equipamentos.all %}
+                <span class="badge bg-secondary bg-opacity-10 text-dark">
+                  <i class="fas fa-cogs me-1"></i> {{ cliente.equipamentos.count }} equipamento(s)
+                </span>
+                {% endif %}
+
+                {% if cliente.pats.all %}
+                <span class="badge bg-secondary bg-opacity-10 text-dark">
+                  <i class="fas fa-tools me-1"></i> {{ cliente.pats.count }} PAT(s)
+                </span>
+                {% endif %}
+
+                {% if cliente.contactos.all %}
+                <span class="badge bg-secondary bg-opacity-10 text-dark">
+                  <i class="fas fa-address-book me-1"></i> {{ cliente.contactos.count }} contacto(s)
+                </span>
+                {% endif %}
               </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
+            </div>
+
+            <div class="col-md-2 text-end">
+              <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
+                class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
     </div>
-    {% endif %}
-    
-    {% if results.equipamentos_fabricados %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-          <i class="bi bi-cpu me-2"></i> Equipamentos ({{ results.equipamentos_fabricados|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.equipamentos_fabricados %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon }} fs-4 text-success"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-    
-    {% if results.equipamentos_cliente %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-          <i class="bi bi-cpu-fill me-2"></i> Equipamentos de Cliente ({{ results.equipamentos_cliente|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.equipamentos_cliente %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon }} fs-4 text-info"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-    
-    {% if results.pats %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-          <i class="bi bi-tools me-2"></i> PATs ({{ results.pats|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.pats %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon }} fs-4 text-warning"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-    
-    {% if results.tarefas %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-danger text-white">
-          <i class="bi bi-check2-square me-2"></i> Tarefas ({{ results.tarefas|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.tarefas %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon|default:'bi-check2-square' }} fs-4 text-danger"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-    
-    {% if results.pecas %}
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-          <i class="bi bi-gear me-2"></i> Peças ({{ results.pecas|length }})
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for item in results.pecas %}
-          <li class="list-group-item">
-            <a href="{{ item.url }}" class="text-decoration-none">
-              <div class="d-flex">
-                <div class="me-3">
-                  <i class="{{ item.icon|default:'bi-gear' }} fs-4 text-secondary"></i>
-                </div>
-                <div class="flex-grow-1">
-                  <div class="fw-bold text-body">{{ item.title }}</div>
-                  <div class="small text-body-secondary">{{ item.subtitle }}</div>
-                  
-                  {% if item.related_items %}
-                  <div class="mt-2 small">
-                    <div class="fw-semibold text-body-secondary mb-1">Relações:</div>
-                    <div class="d-flex flex-wrap gap-2">
-                      {% for related in item.related_items %}
-                      <a href="{{ related.url }}" class="badge bg-light-subtle text-body-secondary text-decoration-none border">
-                        <i class="{{ related.icon }} me-1 small"></i>{{ related.title }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
   </div>
+  {% endif %}
+
+  {% if results.contactos %}
+  <div class="card shadow mb-4 result-section" data-section="contactos">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-address-book me-2"></i> {% trans "Contactos" %} ({{ results.contactos|length }})
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{% trans "Nome" %}</th>
+              <th>{% trans "Contacto" %}</th>
+              <th>{% trans "Cliente" %}</th>
+              <th class="text-center" style="width: 80px">{% trans "Ações" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contacto in results.contactos %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="contact-icon me-2">
+                    <i
+                      class="{% if contacto.tipo.icone %}{{ contacto.tipo.icone }}{% else %}fas fa-user{% endif %}"></i>
+                  </div>
+                  <div>
+                    <div>{{ contacto.nome_contacto|default:"Sem nome" }}</div>
+                    {% if contacto.cargo %}<small class="text-muted">{{ contacto.cargo }}</small>{% endif %}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-info me-1">{{ contacto.tipo.nome }}</span>
+                {% if contacto.tipo.nome == 'Email' %}
+                <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                {% elif contacto.tipo.nome == 'Telefone' or contacto.tipo.nome == 'Móvel' %}
+                <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                {% else %}
+                {{ contacto.valor }}
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=contacto.cliente.id %}">
+                  {{ contacto.cliente.nome }}
+                </a>
+              </td>
+              <td class="text-center">
+                <a href="{% url 'clientes:cliente_contactos' cliente_id=contacto.cliente.id %}"
+                  class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if results.equipamentos %}
+  <div class="card shadow mb-4 result-section" data-section="equipamentos">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-cogs me-2"></i> {% trans "Equipamentos" %} ({{ results.equipamentos|length }})
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        {% for equip in results.equipamentos %}
+        <div class="list-group-item py-3 search-item">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h6 class="mb-0">
+                <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equip.id %}" class="text-primary">
+                  <i class="fas fa-cog me-1"></i> {{ equip.equipamento_fabricado.nome }} - {{ equip.numero_serie }}
+                </a>
+              </h6>
+              <small class="text-muted">
+                <i class="fas fa-user me-1"></i>
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=equip.cliente.id %}"
+                  class="text-decoration-none">
+                  {{ equip.cliente.nome }}
+                </a>
+              </small>
+            </div>
+
+            <div class="col-md-4">
+              {% if equip.pedidoassistencia_set.all %}
+              <span class="badge bg-secondary bg-opacity-10 text-dark">
+                <i class="fas fa-tools me-1"></i> {{ equip.pedidoassistencia_set.count }} PAT(s) associado(s)
+              </span>
+              {% endif %}
+            </div>
+
+            <div class="col-md-2 text-end">
+              <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equip.id %}"
+                class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if results.assistencias %}
+  <div class="card shadow mb-4 result-section" data-section="assistencias">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-tools me-2"></i> {% trans "PATs" %} ({{ results.assistencias|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        {% for pat in results.assistencias %}
+        <div class="list-group-item py-3 search-item">
+          <div class="row align-items-center">
+            <div class="col-md-3">
+              <h6 class="mb-0">
+                <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="text-primary">
+                  <i class="fas fa-clipboard-list me-1"></i> PAT #{{ pat.pat_number }}
+                </a>
+              </h6>
+              <small class="text-muted">
+                <i class="fas fa-calendar me-1"></i> {{ pat.data_criacao|date:"d/m/Y" }}
+              </small>
+            </div>
+
+            <div class="col-md-3">
+              <span
+                class="badge {% if pat.estado == 'concluido' %}bg-success{% elif pat.estado == 'aberto' %}bg-warning{% else %}bg-primary{% endif %}">
+                {{ pat.get_estado_display }}
+              </span>
+            </div>
+
+            <div class="col-md-4">
+              <div class="d-flex gap-1 flex-wrap">
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=pat.cliente.id %}"
+                  class="badge bg-secondary bg-opacity-10 text-dark text-decoration-none">
+                  <i class="fas fa-user me-1"></i> {{ pat.cliente.nome }}
+                </a>
+
+                {% if pat.equipamento %}
+                <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=pat.equipamento.id %}"
+                  class="badge bg-secondary bg-opacity-10 text-dark text-decoration-none">
+                  <i class="fas fa-cog me-1"></i> {{ pat.equipamento.equipamento_fabricado.nome }}
+                </a>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-2 text-end">
+              <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if results.notas %}
+  <div class="card shadow mb-4 result-section" data-section="notas">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i> {% trans "Notas" %} ({{ results.notas|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="list-group list-group-flush">
+        {% for nota in results.notas %}
+        <div class="list-group-item py-3 search-item">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <h6 class="mb-0">
+                <a href="{% url 'notas:detalhes_nota' nota.id %}" class="text-primary">
+                  <i class="fas fa-sticky-note me-1"></i> {{ nota.titulo }}
+                </a>
+              </h6>
+              <small class="text-muted">
+                <i class="fas fa-calendar me-1"></i> {{ nota.data_criacao|date:"d/m/Y" }}
+              </small>
+            </div>
+
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=nota.cliente.id %}"
+                  class="badge bg-secondary bg-opacity-10 text-dark text-decoration-none">
+                  <i class="fas fa-user me-1"></i> {{ nota.cliente.nome }}
+                </a>
+
+                {% if nota.conteudo %}
+                <div class="ms-2 text-truncate" style="max-width: 300px">
+                  <small class="text-muted">{{ nota.conteudo|truncatechars:60 }}</small>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-2 text-end">
+              <a href="{% url 'notas:detalhes_nota' nota.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Highlight search matches
+    const searchQuery = '{{ search_query }}';
+    const normalizedQuery = '{{ normalized_query }}';
+
+    if (searchQuery) {
+      highlightSearchMatches(searchQuery, normalizedQuery);
+    }
+
+    // Category filter functionality
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const resultSections = document.querySelectorAll('.result-section');
+    const filterAll = document.getElementById('filter-all');
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const filter = this.getAttribute('data-filter');
+
+        // Toggle "all" filter state
+        if (filter === 'all') {
+          if (this.classList.contains('active')) {
+            // If clicking the already active "all" button, do nothing
+            return;
+          } else {
+            // If activating "all", deactivate all other filters
+            filterButtons.forEach(btn => {
+              if (btn !== this) {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-pressed', 'false');
+              }
+            });
+
+            // Show all sections
+            resultSections.forEach(section => {
+              section.style.display = 'block';
+            });
+          }
+        } else {
+          // When clicking a specific filter
+
+          // Deactivate the "all" filter
+          filterAll.classList.remove('active');
+          filterAll.setAttribute('aria-pressed', 'false');
+
+          // Toggle the current filter
+          const isActive = this.classList.contains('active');
+
+          // If no filters would be active after toggling this one off, reactivate "all"
+          const activeFilters = document.querySelectorAll('[data-filter]:not([data-filter="all"]).active');
+          if (activeFilters.length === 1 && activeFilters[0] === this && isActive) {
+            filterAll.classList.add('active');
+            filterAll.setAttribute('aria-pressed', 'true');
+            resultSections.forEach(section => {
+              section.style.display = 'block';
+            });
+            return;
+          }
+
+          // Apply filtering
+          resultSections.forEach(section => {
+            const sectionType = section.getAttribute('data-section');
+            const activeFilters = document.querySelectorAll('[data-filter]:not([data-filter="all"]).active');
+
+            if (activeFilters.length === 0) {
+              // If no specific filters are active, show all sections
+              section.style.display = 'block';
+            } else {
+              // Show section only if there's a matching active filter
+              let showSection = false;
+              activeFilters.forEach(activeFilter => {
+                if (activeFilter.getAttribute('data-filter') === sectionType) {
+                  showSection = true;
+                }
+              });
+              section.style.display = showSection ? 'block' : 'none';
+            }
+          });
+        }
+      });
+    });
+
+    function highlightSearchMatches(query, normalizedQuery) {
+      // For each text node in the results
+      const walker = document.createTreeWalker(
+        document.querySelector('.container-fluid'),
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+
+      const nodesToReplace = [];
+      let textNode;
+
+      // First collect all nodes that need replacement
+      while (textNode = walker.nextNode()) {
+        const parent = textNode.parentNode;
+
+        // Skip if parent is a script, style, or already a highlight
+        if (parent.nodeName === 'SCRIPT' ||
+          parent.nodeName === 'STYLE' ||
+          parent.classList.contains('highlight') ||
+          parent.closest('a') ||
+          parent.closest('button')) {
+          continue;
+        }
+
+        const text = textNode.nodeValue;
+        const normalizedText = text.normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+
+        if (normalizedText.includes(normalizedQuery.toLowerCase())) {
+          nodesToReplace.push(textNode);
+        }
+      }
+
+      // Then replace them
+      for (const node of nodesToReplace) {
+        const text = node.nodeValue;
+        const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+
+        const fragment = document.createDocumentFragment();
+        const parts = text.split(regex);
+
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i].match(regex)) {
+            const highlight = document.createElement('span');
+            highlight.className = 'highlight';
+            highlight.textContent = parts[i];
+            fragment.appendChild(highlight);
+          } else if (parts[i]) {
+            fragment.appendChild(document.createTextNode(parts[i]));
+          }
+        }
+
+        node.parentNode.replaceChild(fragment, node);
+      }
+    }
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+  });
+</script>
+
+<style>
+  /* Highlight style */
+  .highlight {
+    background-color: #ffd54f;
+    padding: 2px;
+    border-radius: 2px;
+    font-weight: bold;
+  }
+
+  /* Contact icon styling */
+  .contact-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #495057;
+  }
+
+  /* Dark mode support */
+  [data-bs-theme="dark"] .contact-icon {
+    background-color: #343a40;
+    color: #f8f9fa;
+  }
+
+  /* Badge styling in dark mode */
+  [data-bs-theme="dark"] .bg-secondary.bg-opacity-10 {
+    background-color: rgba(173, 181, 189, 0.2) !important;
+  }
+
+  [data-bs-theme="dark"] .bg-secondary.bg-opacity-10.text-dark {
+    color: #f8f9fa !important;
+  }
+
+  /* Layout improvements */
+  .search-item {
+    transition: background-color 0.15s;
+  }
+
+  .search-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  [data-bs-theme="dark"] .search-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Make table more compact */
+  .table td,
+  .table th {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Make filter buttons more compact on small screens */
+  @media (max-width: 768px) {
+    .d-flex.flex-wrap.gap-2 button {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+</style>
 {% endblock %}

@@ -2,32 +2,55 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "Adicionar Equipamento ao Cliente" %}{% endblock %}
+{% block title %}{% trans "Associar Equipamento ao Cliente" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="mb-0">
-            <i class="fas fa-plus-circle me-2"></i>{% trans "Adicionar Equipamento ao Cliente" %}
+            <i class="fas fa-link me-2"></i>{% trans "Associar Equipamento ao Cliente" %}
         </h1>
     </div>
 
-    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Adicionar Equipamento ao Cliente" %}
-    {% include 'equipamentos/includes/menu_equipamentos.html' with active_tab='cliente' %}
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'equipamentos:listar_equipamentos' %}">{% trans "Equipamentos"
+                    %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Associar Equipamento" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Display any messages -->
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h5 class="mb-0 font-weight-bold">{% trans "Informações do Equipamento" %}</h5>
+        <div class="card-header">
+            <h5 class="mb-0">{% trans "Formulário de Associação" %}</h5>
         </div>
         <div class="card-body">
             <form method="post" class="needs-validation" novalidate>
                 {% csrf_token %}
 
-                {% if not cliente %}
+                <!-- Cliente selection -->
                 <div class="mb-3">
-                    <label for="cliente" class="form-label">{% trans "Cliente" %} <span
+                    <label for="cliente_id" class="form-label">{% trans "Cliente" %} <span
                             class="text-danger">*</span></label>
-                    <select class="form-select" id="cliente" name="cliente" required>
+                    {% if cliente %}
+                    <input type="hidden" name="cliente_id" value="{{ cliente.id }}">
+                    <input type="text" class="form-control" value="{{ cliente.nome }}" readonly>
+                    {% else %}
+                    <select name="cliente_id" id="cliente_id" class="form-select" required>
                         <option value="">{% trans "Selecione um cliente" %}</option>
                         {% for c in clientes %}
                         <option value="{{ c.id }}">{{ c.nome }}</option>
@@ -36,29 +59,32 @@
                     <div class="invalid-feedback">
                         {% trans "Por favor selecione um cliente." %}
                     </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <input type="hidden" name="cliente" value="{{ cliente.id }}">
-                <div class="mb-3">
-                    <label class="form-label">{% trans "Cliente" %}</label>
-                    <p class="form-control-plaintext">{{ cliente.nome }}</p>
-                </div>
-                {% endif %}
 
+                <!-- Equipamento selection - FIXED: Pre-select when provided -->
                 <div class="mb-3">
                     <label for="equipamento_fabricado" class="form-label">{% trans "Modelo de Equipamento" %} <span
                             class="text-danger">*</span></label>
-                    <select class="form-select" id="equipamento_fabricado" name="equipamento_fabricado" required>
+                    {% if equipamento_fabricado_preselected %}
+                    <input type="hidden" name="equipamento_fabricado"
+                        value="{{ equipamento_fabricado_preselected.id }}">
+                    <input type="text" class="form-control" value="{{ equipamento_fabricado_preselected.nome }}"
+                        readonly>
+                    {% else %}
+                    <select name="equipamento_fabricado" id="equipamento_fabricado" class="form-select" required>
                         <option value="">{% trans "Selecione um modelo" %}</option>
                         {% for eq in equipamentos_fabricados %}
-                        <option value="{{ eq.id }}">{{ eq.modelo }}</option>
+                        <option value="{{ eq.id }}">{{ eq.nome }}</option>
                         {% endfor %}
                     </select>
                     <div class="invalid-feedback">
                         {% trans "Por favor selecione um modelo de equipamento." %}
                     </div>
+                    {% endif %}
                 </div>
 
+                <!-- Número de Série -->
                 <div class="mb-3">
                     <label for="numero_serie" class="form-label">{% trans "Número de Série" %} <span
                             class="text-danger">*</span></label>
@@ -68,28 +94,25 @@
                     </div>
                 </div>
 
+                <!-- Data de Instalação -->
                 <div class="mb-3">
                     <label for="data_instalacao" class="form-label">{% trans "Data de Instalação" %}</label>
                     <input type="date" class="form-control" id="data_instalacao" name="data_instalacao">
                 </div>
 
+                <!-- Observações -->
                 <div class="mb-3">
                     <label for="observacoes" class="form-label">{% trans "Observações" %}</label>
                     <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
                 </div>
 
-                {% if next %}
-                <input type="hidden" name="next" value="{{ next }}">
-                {% endif %}
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="{% if next %}{{ next }}{% else %}{% url 'equipamentos:listar_cliente' %}{% endif %}"
-                        class="btn btn-secondary me-md-2">
-                        {% trans "Cancelar" %}
-                    </a>
+                <div class="mt-4">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i> {% trans "Salvar" %}
                     </button>
+                    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+                    </a>
                 </div>
             </form>
         </div>
@@ -99,21 +122,21 @@
 
 {% block extra_js %}
 <script>
-    // Form validation
-    (function () {
-        'use strict';
-        window.addEventListener('load', function () {
-            var forms = document.getElementsByClassName('needs-validation');
-            Array.prototype.filter.call(forms, function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
-    })();
+    // Form validation script
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fetch all forms we want to apply validation styles to
+        const forms = document.querySelectorAll('.needs-validation');
+
+        // Loop over them and prevent submission
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    });
 </script>
 {% endblock %}

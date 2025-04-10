@@ -2,26 +2,30 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "Setores" %} | {% trans "Configurações" %}{% endblock %}
+{% block title %}{% trans "Setores" %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-            <i class="fas fa-industry me-2"></i>
-            {% trans "Setores de Atuação" %}
-            <small class="text-muted">({{ total_setores }})</small>
-        </h2>
-        <div>
-            <a href="{% url 'clientes:adicionar_setor' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> {% trans "Novo Setor" %}
-            </a>
-        </div>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-industry me-2"></i> {% trans "Setores" %}
+        </h1>
+        <a href="{% url 'clientes:adicionar_setor' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> {% trans "Novo Setor" %}
+        </a>
     </div>
 
-    <!-- Filtros e busca -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
+    {% include 'clientes/includes/breadcrumbs.html' with view_title="Setores" %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='configuracoes' %}
+
+    <!-- Search section with dark mode compatible header -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i> {% trans "Buscar Setores" %}
+            </h5>
+        </div>
+        <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-6">
                     <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
@@ -46,8 +50,9 @@
         </div>
     </div>
 
-    {% if setores %}
-        <div class="card">
+    <!-- Listing section -->
+    <div class="card shadow">
+        {% if setores %}
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover table-striped mb-0">
@@ -139,19 +144,19 @@
                 </nav>
             </div>
             {% endif %}
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            {% if search_query %}
-                {% trans "Nenhum setor encontrado com os filtros selecionados." %}
-                <a href="{% url 'clientes:listar_setores' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
-            {% else %}
-                {% trans "Nenhum setor cadastrado no sistema." %}
-                <a href="{% url 'clientes:adicionar_setor' %}" class="alert-link">{% trans "Adicionar Setor" %}</a>
-            {% endif %}
-        </div>
-    {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                {% if search_query %}
+                    {% trans "Nenhum setor encontrado com os filtros selecionados." %}
+                    <a href="{% url 'clientes:listar_setores' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+                {% else %}
+                    {% trans "Nenhum setor cadastrado no sistema." %}
+                    <a href="{% url 'clientes:adicionar_setor' %}" class="alert-link">{% trans "Adicionar Setor" %}</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Delete Confirmation Modal -->

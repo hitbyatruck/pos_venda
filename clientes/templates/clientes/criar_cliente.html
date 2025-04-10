@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-user-plus me-2"></i>
+            {% if is_edit %}
+                {% trans "Editar Cliente" %}
+            {% else %}
+                {% trans "Adicionar Cliente" %}
+            {% endif %}
+        </h1>
+        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+        </a>
+    </div>
+
+    {% include 'clientes/includes/breadcrumbs.html' with view_title=title %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='all' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <ul class="nav nav-tabs card-header-tabs" id="clienteTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="info-basica-tab" data-bs-toggle="tab" data-bs-target="#info-basica" type="button" role="tab">
+                        <i class="fas fa-info-circle me-1"></i> {% trans "Informação Básica" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="info-fiscal-tab" data-bs-toggle="tab" data-bs-target="#info-fiscal" type="button" role="tab">
+                        <i class="fas fa-file-invoice me-1"></i> {% trans "Informação Fiscal" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="endereco-tab" data-bs-toggle="tab" data-bs-target="#endereco" type="button" role="tab">
+                        <i class="fas fa-map-marker-alt me-1"></i> {% trans "Endereço" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contactos-tab" data-bs-toggle="tab" data-bs-target="#contactos" type="button" role="tab">
+                        <i class="fas fa-address-book me-1"></i> {% trans "Contactos" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="observacoes-tab" data-bs-toggle="tab" data-bs-target="#observacoes" type="button" role="tab">
+                        <i class="fas fa-sticky-note me-1"></i> {% trans "Observações" %}
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="cliente-form" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="tab-content" id="clienteTabsContent">
+                    <!-- Basic Information Tab -->
+                    <div class="tab-pane fade show active" id="info-basica" role="tabpanel">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Informação Básica" %}</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label">{% trans "Nome" %}*</label>
+                                    {{ form.nome }}
+                                    {% if form.nome.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.email_principal.id_for_label }}" class="form-label">{% trans "Email Principal" %}</label>
+                                    {{ form.email_principal }}
+                                    {% if form.email_principal.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.email_principal.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.website.id_for_label }}" class="form-label">{% trans "Website" %}</label>
+                                    {{ form.website }}
+                                    {% if form.website.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.website.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.setor.id_for_label }}" class="form-label">{% trans "Setor de Atividade" %}</label>
+                                    {{ form.setor }}
+                                    {% if form.setor.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.setor.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.imagem.id_for_label }}" class="form-label">
+                                        {% trans "Imagem do Cliente" %}
+                                    </label>
+                                    {{ form.imagem }}
+                                    {% if form.imagem.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.imagem.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fiscal Information Tab -->
+                    <div class="tab-pane fade" id="info-fiscal" role="tabpanel">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Informação Fiscal" %}</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.nif.id_for_label }}" class="form-label">{% trans "NIF/VAT" %}</label>
+                                    {{ form.nif }}
+                                    {% if form.nif.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nif.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.percentagem_iva.id_for_label }}" class="form-label">{% trans "Percentagem IVA (%)" %}</label>
+                                    {{ form.percentagem_iva }}
+                                    {% if form.percentagem_iva.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.percentagem_iva.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.desconto.id_for_label }}" class="form-label">{% trans "Desconto Padrão (%)" %}</label>
+                                    {{ form.desconto }}
+                                    {% if form.desconto.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.desconto.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Address Tab -->
+                    <div class="tab-pane fade" id="endereco" role="tabpanel">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Endereço Fiscal" %}</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="{{ form.morada.id_for_label }}" class="form-label">{% trans "Morada" %}</label>
+                                    {{ form.morada }}
+                                    {% if form.morada.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.morada.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.codigo_postal.id_for_label }}" class="form-label">{% trans "Código Postal" %}</label>
+                                    {{ form.codigo_postal }}
+                                    {% if form.codigo_postal.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.codigo_postal.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cidade.id_for_label }}" class="form-label">{% trans "Cidade" %}</label>
+                                    {{ form.cidade }}
+                                    {% if form.cidade.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.cidade.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.pais.id_for_label }}" class="form-label">{% trans "País" %}</label>
+                                    {{ form.pais }}
+                                    {% if form.pais.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.pais.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="form-check mb-3">
+                            {{ form.usar_mesma_morada }}
+                            <label class="form-check-label" for="{{ form.usar_mesma_morada.id_for_label }}">
+                                {% trans "Usar o mesmo endereço para entrega" %}
+                            </label>
+                        </div>
+                        
+                        <div id="endereco-entrega-section" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-3">{% trans "Endereço de Entrega" %}</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="{{ form.morada_entrega.id_for_label }}" class="form-label">{% trans "Morada de Entrega" %}</label>
+                                        {{ form.morada_entrega }}
+                                        {% if form.morada_entrega.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.morada_entrega.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="{{ form.codigo_postal_entrega.id_for_label }}" class="form-label">{% trans "Código Postal" %}</label>
+                                        {{ form.codigo_postal_entrega }}
+                                        {% if form.codigo_postal_entrega.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.codigo_postal_entrega.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.cidade_entrega.id_for_label }}" class="form-label">{% trans "Cidade" %}</label>
+                                        {{ form.cidade_entrega }}
+                                        {% if form.cidade_entrega.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.cidade_entrega.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.pais_entrega.id_for_label }}" class="form-label">{% trans "País" %}</label>
+                                        {{ form.pais_entrega }}
+                                        {% if form.pais_entrega.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.pais_entrega.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contacts Tab -->
+                    <div class="tab-pane fade" id="contactos" role="tabpanel">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Contactos" %}</h5>
+                        
+                        {{ formset.management_form }}
+                        
+                        <div id="contactos-container">
+                            {% for contacto_form in formset %}
+                            <div class="contacto-form card mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{% trans "Contacto" %} #<span class="contacto-num">{{ forloop.counter }}</span></h6>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-contacto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {{ contacto_form.id }}
+                                        {% if contacto_form.DELETE %}
+                                        <div class="d-none">{{ contacto_form.DELETE }}</div>
+                                        {% endif %}
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{% trans "Tipo de Contacto" %}*</label>
+                                                {{ contacto_form.tipo }}
+                                                {% if contacto_form.tipo.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in contacto_form.tipo.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{% trans "Valor" %}*</label>
+                                                {{ contacto_form.valor }}
+                                                {% if contacto_form.valor.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in contacto_form.valor.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{% trans "Nome do Contacto" %}</label>
+                                                {{ contacto_form.nome_contacto }}
+                                                {% if contacto_form.nome_contacto.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in contacto_form.nome_contacto.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{% trans "Cargo" %}</label>
+                                                {{ contacto_form.cargo }}
+                                                {% if contacto_form.cargo.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in contacto_form.cargo.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-12">
+                                            <div class="form-check mb-3">
+                                                {{ contacto_form.principal }}
+                                                <label class="form-check-label" for="{{ contacto_form.principal.id_for_label }}">
+                                                    {% trans "Contacto Principal" %}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label class="form-label">{% trans "Observações" %}</label>
+                                                {{ contacto_form.observacoes }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="button" id="add-contacto" class="btn btn-success">
+                                <i class="fas fa-plus-circle me-1"></i> {% trans "Adicionar Contacto" %}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Tab -->
+                    <div class="tab-pane fade" id="observacoes" role="tabpanel">
+                        <h5 class="border-bottom pb-2 mb-3">{% trans "Observações Adicionais" %}</h5>
+                        
+                        <div class="mb-3">
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.observacoes.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-secondary" id="prev-tab-btn" disabled>
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Anterior" %}
+                    </button>
+                    
+                    <div>
+                        <a href="{% url 'clientes:listar_clientes' %}" class="btn btn-outline-secondary me-2">
+                            {% trans "Cancelar" %}
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> 
+                            {% if is_edit %}
+                                {% trans "Atualizar Cliente" %}
+                            {% else %}
+                                {% trans "Salvar Cliente" %}
+                            {% endif %}
+                        </button>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" id="next-tab-btn">
+                        {% trans "Próximo" %} <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Navigation between tabs
+        const tabList = document.querySelectorAll('#clienteTabs .nav-link');
+        const prevBtn = document.getElementById('prev-tab-btn');
+        const nextBtn = document.getElementById('next-tab-btn');
+        let currentTabIndex = 0;
+        
+        function updateNavButtons() {
+            prevBtn.disabled = currentTabIndex === 0;
+            nextBtn.disabled = currentTabIndex === tabList.length - 1;
+        }
+        
+        prevBtn.addEventListener('click', function() {
+            if (currentTabIndex > 0) {
+                currentTabIndex--;
+                const tab = tabList[currentTabIndex];
+                bootstrap.Tab.getOrCreateInstance(tab).show();
+                updateNavButtons();
+            }
+        });
+        
+        nextBtn.addEventListener('click', function() {
+            if (currentTabIndex < tabList.length - 1) {
+                currentTabIndex++;
+                const tab = tabList[currentTabIndex];
+                bootstrap.Tab.getOrCreateInstance(tab).show();
+                updateNavButtons();
+            }
+        });
+        
+        // Update buttons when tab changes
+        tabList.forEach((tab, index) => {
+            tab.addEventListener('shown.bs.tab', function() {
+                currentTabIndex = index;
+                updateNavButtons();
+            });
+        });
+        
+        // Toggle shipping address section
+        const usarMesmaMoradaCheck = document.getElementById('{{ form.usar_mesma_morada.id_for_label }}');
+        const enderecoEntregaSection = document.getElementById('endereco-entrega-section');
+        
+        function toggleShippingAddress() {
+            enderecoEntregaSection.style.display = usarMesmaMoradaCheck.checked ? 'none' : 'block';
+        }
+        
+        usarMesmaMoradaCheck.addEventListener('change', toggleShippingAddress);
+        toggleShippingAddress(); // Initialize on load
+        
+        // Contact formset handling
+        const addContactoBtn = document.getElementById('add-contacto');
+        const contactosContainer = document.getElementById('contactos-container');
+        const totalFormsInput = document.getElementById('id_contactos-TOTAL_FORMS');
+        const initialForms = document.getElementById('id_contactos-INITIAL_FORMS');
+        let formCount = parseInt(totalFormsInput.value);
+        
+        // Add new contact form
+        addContactoBtn.addEventListener('click', function() {
+            const newForm = contactosContainer.querySelector('.contacto-form').cloneNode(true);
+            
+            // Update form index
+            updateFormIndex(newForm, formCount);
+            
+            // Clear input values in the new form
+            newForm.querySelectorAll('input[type="text"], input[type="email"], textarea').forEach(input => {
+                input.value = '';
+            });
+            
+            // Uncheck checkboxes
+            newForm.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Update contact number display
+            newForm.querySelector('.contacto-num').textContent = formCount + 1;
+            
+            // Add the new form to the container
+            contactosContainer.appendChild(newForm);
+            
+            // Increment form count
+            formCount++;
+            totalFormsInput.value = formCount;
+            
+            // Add remove event listener
+            addRemoveEventListener(newForm.querySelector('.remove-contacto'));
+        });
+        
+        // Remove contact form
+        function addRemoveEventListener(button) {
+            button.addEventListener('click', function() {
+                const formCard = this.closest('.contacto-form');
+                
+                // If it's an existing form (has ID), mark it for deletion, otherwise remove it
+                const idInput = formCard.querySelector('input[id$="-id"]');
+                if (idInput && idInput.value) {
+                    // Mark for deletion
+                    const deleteInput = formCard.querySelector('input[id$="-DELETE"]');
+                    if (deleteInput) {
+                        deleteInput.checked = true;
+                        formCard.style.display = 'none';
+                    }
+                } else {
+                    // Remove from DOM
+                    formCard.remove();
+                    formCount--;
+                    totalFormsInput.value = formCount;
+                    
+                    // Update remaining form indices
+                    updateAllFormIndices();
+                }
+            });
+        }
+        
+        // Update form index for a single form
+        function updateFormIndex(form, index) {
+            form.querySelectorAll('input, select, textarea').forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    // Replace the index in the name attribute
+                    input.setAttribute('name', name.replace(/contactos-\d+/, `contactos-${index}`));
+                }
+                
+                const id = input.getAttribute('id');
+                if (id) {
+                    // Replace the index in the id attribute
+                    input.setAttribute('id', id.replace(/contactos-\d+/, `contactos-${index}`));
+                }
+            });
+            
+            // Update for labels too
+            form.querySelectorAll('label').forEach(label => {
+                const forAttr = label.getAttribute('for');
+                if (forAttr) {
+                    // Replace the index in the for attribute
+                    label.setAttribute('for', forAttr.replace(/contactos-\d+/, `contactos-${index}`));
+                }
+            });
+        }
+        
+        // Update indices for all forms
+        function updateAllFormIndices() {
+            const forms = contactosContainer.querySelectorAll('.contacto-form');
+            forms.forEach((form, index) => {
+                updateFormIndex(form, index);
+                form.querySelector('.contacto-num').textContent = index + 1;
+            });
+        }
+        
+        // Add remove event listeners to existing remove buttons
+        document.querySelectorAll('.remove-contacto').forEach(addRemoveEventListener);
+    });
+</script>
+{% endblock %}

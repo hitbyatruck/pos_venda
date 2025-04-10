@@ -1,24 +1,40 @@
 import logging
 import unicodedata
+from functools import wraps
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.conf import settings
+from django.utils.translation import gettext as _
+from django.http import HttpResponseForbidden
 
 logger = logging.getLogger(__name__)
 
 def normalize_text(text):
     """
-    Normaliza um texto removendo acentos e convertendo para minúsculas.
+    Normalize text for search purposes:
+    - Convert to string if not already
+    - Convert to lowercase
+    - Remove accents and diacritics
+    - Remove multiple spaces
     """
     if not text:
-        return ''
-    # Converter para string caso seja outro tipo
-    text = str(text)
-    # Normalizar para form NFD e remover acentos
-    normalized = unicodedata.normalize('NFD', text).encode('ascii', 'ignore').decode('ascii')
-    # Converter para minúsculas
-    normalized = normalized.lower()
+        return ""
+        
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+        
+    # Lowercase
+    text = text.lower()
+    
+    # Remove accents and diacritics
+    normalized = unicodedata.normalize('NFKD', text)
+    normalized = ''.join([c for c in normalized if not unicodedata.combining(c)])
+    
+    # Remove extra spaces
+    normalized = ' '.join(normalized.split())
+    
     return normalized
 
 

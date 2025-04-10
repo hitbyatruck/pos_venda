@@ -1,18 +1,43 @@
 {% load i18n %}
-
-<nav aria-label="breadcrumb" class="mb-3">
+<nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-        {% if breadcrumbs %}
-        {% for title, url in breadcrumbs %}
-        {% if not forloop.last %}
-        <li class="breadcrumb-item"><a href="{{ url }}">{{ title }}</a></li>
-        {% else %}
-        <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
-        {% endif %}
-        {% endfor %}
-        {% else %}
-        <li class="breadcrumb-item active" aria-current="page">{{ view_title|default:"Página Atual" }}</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'clientes:dashboard' %}">
+                <i class="fas fa-home me-1"></i> {% trans "Início" %}
+            </a>
+        </li>
+        
+        {% if cliente %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'clientes:listar_clientes' %}">
+                    <i class="fas fa-users me-1"></i> {% trans "Clientes" %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active">{{ cliente.nome }}</li>
+        {% elif view_title and view_title == 'Clientes' %}
+            <li class="breadcrumb-item active">
+                <i class="fas fa-users me-1"></i> {% trans "Clientes" %}
+            </li>
+        {% elif view_title and 'Setor' in view_title %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'clientes:listar_setores' %}">
+                    <i class="fas fa-industry me-1"></i> {% trans "Setores" %}
+                </a>
+            </li>
+            {% if not 'Setores' in view_title %}
+                <li class="breadcrumb-item active">{{ view_title }}</li>
+            {% endif %}
+        {% elif view_title and 'Tipo' in view_title %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'clientes:listar_tipos_contacto' %}">
+                    <i class="fas fa-address-book me-1"></i> {% trans "Tipos de Contacto" %}
+                </a>
+            </li>
+            {% if not 'Tipos de Contacto' in view_title %}
+                <li class="breadcrumb-item active">{{ view_title }}</li>
+            {% endif %}
+        {% elif view_title %}
+            <li class="breadcrumb-item active">{{ view_title }}</li>
         {% endif %}
     </ol>
 </nav>

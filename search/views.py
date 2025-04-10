@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from core.utils import normalize_text
 from django.urls import reverse
+from django.db.models import Q, Value as V
+from django.db.models.functions import Replace, Lower, Collate
 
 # Importar todos os modelos relevantes
 from clientes.models import Cliente
@@ -11,8 +13,12 @@ from assistencia.models import PedidoAssistencia
 from notas.models import Tarefa, Nota
 from stock.models import Peca
 
+# These functions are actually used by other apps through imports, so we'll keep and document them
 def get_attribute_safely(obj, attr_name, default=""):
-    """Obtém um atributo de forma segura, retornando um valor padrão se não existir."""
+    """
+    Obtém um atributo de forma segura, retornando um valor padrão se não existir.
+    Used by template rendering when accessing potentially missing attributes.
+    """
     try:
         value = getattr(obj, attr_name)
         if value is None:
@@ -27,7 +33,10 @@ def get_attribute_safely(obj, attr_name, default=""):
         return default
     
 def get_url_safely(view_name, *args, **kwargs):
-    """Gera um URL de forma segura, retornando uma string vazia se falhar."""
+    """
+    Gera um URL de forma segura, retornando uma string vazia se falhar.
+    Used in templates and ajax responses when constructing URLs.
+    """
     try:
         return reverse(view_name, args=args, kwargs=kwargs)
     except Exception:
@@ -44,404 +53,117 @@ def get_url_safely(view_name, *args, **kwargs):
             return f'/stock/pecas/{kwargs.get("peca_id", args[0] if args else "")}'
         return '#'
 
-@login_required
-def search_global(request):
-    query = request.GET.get('q', '').strip()
-    
+def perform_search(query):
+    """
+    Core search function that can be imported by other apps
+    This function is used by both the search view and imported by other apps
+    """
     if not query:
-        return render(request, 'search/results.html', {
-            'query': '',
-            'results': {},
-            'total_results': 0
-        })
+        return {}, 0
     
-    # Normalizar a busca
     normalized_query = normalize_text(query)
     
-    # Resultados por categoria
+    # Results by category
     results = {
         'clientes': [],
-        'equipamentos_fabricados': [],
-        'equipamentos_cliente': [],
-        'pats': [],
-        'tarefas': [],
-        'pecas': []
+        'contactos': [],
+        'equipamentos': [],
+        'assistencias': [],
+        'notas': []
     }
     
-    # IDs de entidades já incluídas para evitar duplicação
-    included_ids = {
-        'cliente': set(),
-        'equipamento_fabricado': set(),
-        'equipamento_cliente': set(),
-        'pat': set(),
-        'tarefa': set(),
-        'peca': set()
-    }
+    # Import models
+    from clientes.models import Cliente, Contacto
+    from equipamentos.models import EquipamentoCliente
+    from assistencia.models import PedidoAssistencia
+    from notas.models import Nota
     
-    # PASSO 1: Buscar clientes que correspondem diretamente ao termo
-    clientes_encontrados = []
-    clientes = Cliente.objects.all().prefetch_related('equipamentos', 'pats')
+    # New simplified approach for accent-insensitive search
+    # First search with direct database query
+    clientes_results = list(Cliente.objects.filter(nome__icontains=query))
     
-    for cliente in clientes:
-        # Verificar campos principais
-        match_found = False
-        for field in ['nome', 'nif', 'email', 'telefone', 'empresa']:
-            value = get_attribute_safely(cliente, field)
-            if value and normalized_query in normalize_text(str(value)):
-                match_found = True
-                break
-                
-        if match_found and cliente.id not in included_ids['cliente']:
-            included_ids['cliente'].add(cliente.id)
-            
-            # Construir lista de itens relacionados
-            related_items = []
-            
-            # Adicionar equipamentos do cliente
-            for equip in cliente.equipamentos.all():
-                related_items.append({
-                    'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} ({equip.numero_serie})",
-                    'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                    'icon': 'bi-cpu'
-                })
-                
-                # Incluir este equipamento nos resultados também
-                if equip.id not in included_ids['equipamento_cliente']:
-                    included_ids['equipamento_cliente'].add(equip.id)
-                    results['equipamentos_cliente'].append({
-                        'obj': equip,
-                        'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} - {equip.numero_serie}",
-                        'subtitle': f"Cliente: {cliente.nome}",
-                        'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                        'icon': 'bi-cpu',
-                        'related_items': [{
-                            'title': f"Cliente: {cliente.nome}",
-                            'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                            'icon': 'bi-person'
-                        }]
-                    })
-            
-            # Adicionar PATs do cliente
-            for pat in cliente.pats.all():
-                related_items.append({
-                    'title': f"PAT #{pat.pat_number}",
-                    'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                    'icon': 'bi-tools'
-                })
-                
-                # Incluir esta PAT nos resultados também
-                if pat.id not in included_ids['pat']:
-                    included_ids['pat'].add(pat.id)
-                    estado_display = getattr(pat, 'get_estado_display', lambda: 'N/A')
-                    results['pats'].append({
-                        'obj': pat,
-                        'title': f"PAT #{pat.pat_number}",
-                        'subtitle': f"Cliente: {cliente.nome} - {estado_display()}",
-                        'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                        'icon': 'bi-tools',
-                        'related_items': [{
-                            'title': f"Cliente: {cliente.nome}",
-                            'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                            'icon': 'bi-person'
-                        }]
-                    })
-            
-            # Adicionar cliente aos resultados
-            results['clientes'].append({
-                'obj': cliente,
-                'title': cliente.nome,
-                'subtitle': cliente.empresa or 'Cliente Individual',
-                'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                'icon': 'bi-person',
-                'related_items': related_items
-            })
-            
-            # Manter na lista para uso posterior
-            clientes_encontrados.append(cliente)
+    # Then try to apply a manual filter for accents if we didn't find anything
+    if not clientes_results:
+        # Get all clients and manually filter by normalized name
+        all_clientes = Cliente.objects.all()
+        
+        for cliente in all_clientes:
+            if normalized_query.lower() in normalize_text(cliente.nome).lower():
+                clientes_results.append(cliente)
     
-    # PASSO 2: Buscar equipamentos fabricados diretamente
-    equipamentos = EquipamentoFabricado.objects.all().select_related('categoria')    
+    # Handle contacts - always include client relationship
+    contact_results = list(Contacto.objects.select_related('cliente', 'tipo').filter(
+        Q(valor__icontains=query) | 
+        Q(nome_contacto__icontains=query)
+    ))
     
-    for equip in equipamentos:
-        # Verificar campos principais
-        match_found = False
-        for field in ['nome', 'referencia_interna', 'descricao', 'especificacoes']:
-            value = get_attribute_safely(equip, field)
-            if value and normalized_query in normalize_text(str(value)):
-                match_found = True
-                break
-                
-        if match_found and equip.id not in included_ids['equipamento_fabricado']:
-            included_ids['equipamento_fabricado'].add(equip.id)
+    # Manual accent-insensitive search for contacts
+    if not contact_results:
+        all_contactos = Contacto.objects.select_related('cliente', 'tipo').all()
+        for contacto in all_contactos:
+            norm_valor = normalize_text(contacto.valor).lower() 
+            norm_nome = normalize_text(contacto.nome_contacto or "").lower()
             
-            # Construir lista de itens relacionados
-            related_items = []
-            
-            # Adicionar instâncias deste equipamento (equipamentos de clientes)
-            for eq_cliente in equip.equipamentocliente_set.all().select_related('cliente'):
-                if eq_cliente.id not in included_ids['equipamento_cliente']:
-                    included_ids['equipamento_cliente'].add(eq_cliente.id)
-                    
-                    # Adicionar aos relacionamentos
-                    related_items.append({
-                        'title': f"Nº série: {eq_cliente.numero_serie} ({get_attribute_safely(eq_cliente.cliente, 'nome')})",
-                        'url': f'/equipamentos/cliente/detalhe/{eq_cliente.id}/',
-                        'icon': 'bi-cpu'
-                    })
-                    
-                    # Adicionar aos resultados
-                    results['equipamentos_cliente'].append({
-                        'obj': eq_cliente,
-                        'title': f"{equip.nome} - {eq_cliente.numero_serie}",
-                        'subtitle': f"Cliente: {get_attribute_safely(eq_cliente.cliente, 'nome')}",
-                        'url': f'/equipamentos/cliente/detalhe/{eq_cliente.id}/',
-                        'icon': 'bi-cpu',
-                        'related_items': [{
-                            'title': f"Modelo: {equip.nome}",
-                            'url': get_url_safely('equipamentos:detalhes_equipamento', equipamento_id=equip.id),
-                            'icon': 'bi-motherboard'
-                        }]
-                    })
-            
-            # Adicionar equipamento aos resultados
-            categoria_nome = get_attribute_safely(equip.categoria, 'nome', 'N/A')
-            results['equipamentos_fabricados'].append({
-                'obj': equip,
-                'title': equip.nome,
-                'subtitle': f"Categoria: {categoria_nome} | Ref: {equip.referencia_interna or 'N/A'}",
-                'url': get_url_safely('equipamentos:detalhes_equipamento', equipamento_id=equip.id),
-                'icon': 'bi-motherboard',
-                'related_items': related_items
-            })
+            if (normalized_query.lower() in norm_valor or 
+                normalized_query.lower() in norm_nome):
+                contact_results.append(contacto)
     
-    # PASSO 3: Buscar números de série de equipamentos
-    equip_clientes = EquipamentoCliente.objects.select_related(
-        'cliente', 'equipamento_fabricado'
-    ).all()
+    # If we found contacts, add their clients to the results
+    for contact in contact_results:
+        if contact.cliente not in clientes_results:
+            clientes_results.append(contact.cliente)
     
-    for equip in equip_clientes:
-        # Verificar número de série - campo observacoes removido pois não existe
-        if (equip.numero_serie and normalized_query in normalize_text(equip.numero_serie)) and \
-           equip.id not in included_ids['equipamento_cliente']:
-            
-            included_ids['equipamento_cliente'].add(equip.id)
-            
-            # Construir lista de itens relacionados
-            related_items = []
-            
-            # Adicionar cliente relacionado
-            cliente = equip.cliente
-            if cliente and cliente.id not in included_ids['cliente']:
-                included_ids['cliente'].add(cliente.id)
-                
-                # Adicionar aos relacionamentos
-                related_items.append({
-                    'title': f"Cliente: {cliente.nome}",
-                    'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                    'icon': 'bi-person'
-                })
-                
-                # Adicionar aos resultados
-                cliente_related_items = [{
-                    'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} ({equip.numero_serie})",
-                    'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                    'icon': 'bi-cpu'
-                }]
-                
-                results['clientes'].append({
-                    'obj': cliente,
-                    'title': cliente.nome,
-                    'subtitle': cliente.empresa or 'Cliente Individual',
-                    'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                    'icon': 'bi-person',
-                    'related_items': cliente_related_items
-                })
-            
-            # Adicionar modelo relacionado
-            modelo = equip.equipamento_fabricado
-            if modelo and modelo.id not in included_ids['equipamento_fabricado']:
-                included_ids['equipamento_fabricado'].add(modelo.id)
-                
-                # Adicionar aos relacionamentos
-                related_items.append({
-                    'title': f"Modelo: {modelo.nome}",
-                    'url': get_url_safely('equipamentos:detalhes_equipamento', equipamento_id=modelo.id),
-                    'icon': 'bi-motherboard'
-                })
-                
-                # Adicionar aos resultados
-                categoria_nome = get_attribute_safely(modelo.categoria, 'nome', 'N/A')
-                modelo_related_items = [{
-                    'title': f"Nº série: {equip.numero_serie} ({get_attribute_safely(equip.cliente, 'nome')})",
-                    'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                    'icon': 'bi-cpu'
-                }]
-                
-                results['equipamentos_fabricados'].append({
-                    'obj': modelo,
-                    'title': modelo.nome,
-                    'subtitle': f"Categoria: {categoria_nome} | Ref: {modelo.referencia_interna or 'N/A'}",
-                    'url': get_url_safely('equipamentos:detalhes_equipamento', equipamento_id=modelo.id),
-                    'icon': 'bi-motherboard',
-                    'related_items': modelo_related_items
-                })
-            
-            # Buscar PATs relacionadas a este equipamento
-            try:
-                pats_relacionadas = PedidoAssistencia.objects.filter(equipamento=equip)
-                for pat in pats_relacionadas:
-                    if pat.id not in included_ids['pat']:
-                        included_ids['pat'].add(pat.id)
-                        
-                        # Adicionar aos relacionamentos
-                        related_items.append({
-                            'title': f"PAT #{pat.pat_number}",
-                            'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                            'icon': 'bi-tools'
-                        })
-                        
-                        # Adicionar aos resultados
-                        estado_display = getattr(pat, 'get_estado_display', lambda: 'N/A')
-                        pat_related_items = [{
-                            'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} ({equip.numero_serie})",
-                            'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                            'icon': 'bi-cpu'
-                        }]
-                        
-                        results['pats'].append({
-                            'obj': pat,
-                            'title': f"PAT #{pat.pat_number}",
-                            'subtitle': f"Cliente: {get_attribute_safely(pat.cliente, 'nome')} - {estado_display()}",
-                            'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                            'icon': 'bi-tools',
-                            'related_items': pat_related_items
-                        })
-            except Exception as e:
-                # Melhor tratamento de exceção para debugging
-                print(f"Erro ao buscar PATs para equipamento {equip.id}: {str(e)}")
-                pass
-            
-            # Adicionar equipamento aos resultados
-            results['equipamentos_cliente'].append({
-                'obj': equip,
-                'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} - {equip.numero_serie}",
-                'subtitle': f"Cliente: {get_attribute_safely(equip.cliente, 'nome')}",
-                'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                'icon': 'bi-cpu',
-                'related_items': related_items
-            })
+    results['clientes'] = clientes_results
+    results['contactos'] = contact_results
     
-    # PASSO 4: Buscar PATs
-    pats = PedidoAssistencia.objects.select_related('cliente', 'equipamento').all()
+    # Handle other searches for equipamentos, assistencias, notas
+    results['equipamentos'] = list(EquipamentoCliente.objects.select_related('cliente', 'equipamento_fabricado').filter(
+        Q(numero_serie__icontains=query)
+    ))
     
-    for pat in pats:
-        # Verificar número PAT ou relatorio
-        if ((pat.pat_number and normalized_query in normalize_text(pat.pat_number)) or
-           (pat.relatorio and normalized_query in normalize_text(pat.relatorio))) and \
-           pat.id not in included_ids['pat']:
-            
-            included_ids['pat'].add(pat.id)
-            
-            # Construir lista de itens relacionados
-            related_items = []
-            
-            # Adicionar cliente relacionado
-            cliente = pat.cliente
-            if cliente and cliente.id not in included_ids['cliente']:
-                included_ids['cliente'].add(cliente.id)
-                
-                # Adicionar aos relacionamentos
-                related_items.append({
-                    'title': f"Cliente: {cliente.nome}",
-                    'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                    'icon': 'bi-person'
-                })
-                
-                # Adicionar aos resultados
-                cliente_related_items = [{
-                    'title': f"PAT #{pat.pat_number}",
-                    'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                    'icon': 'bi-tools'
-                }]
-                
-                results['clientes'].append({
-                    'obj': cliente,
-                    'title': cliente.nome,
-                    'subtitle': cliente.empresa or 'Cliente Individual',
-                    'url': get_url_safely('clientes:detalhes_cliente', cliente_id=cliente.id),
-                    'icon': 'bi-person',
-                    'related_items': cliente_related_items
-                })
-            
-            # Adicionar equipamento relacionado
-            equip = pat.equipamento
-            if equip and equip.id not in included_ids['equipamento_cliente']:
-                included_ids['equipamento_cliente'].add(equip.id)
-                
-                # Adicionar aos relacionamentos
-                related_items.append({
-                    'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} ({equip.numero_serie})",
-                    'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                    'icon': 'bi-cpu'
-                })
-                
-                # Adicionar aos resultados
-                equip_related_items = [{
-                    'title': f"PAT #{pat.pat_number}",
-                    'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                    'icon': 'bi-tools'
-                }]
-                
-                results['equipamentos_cliente'].append({
-                    'obj': equip,
-                    'title': f"{get_attribute_safely(equip.equipamento_fabricado, 'nome')} - {equip.numero_serie}",
-                    'subtitle': f"Cliente: {get_attribute_safely(equip.cliente, 'nome')}",
-                    'url': get_url_safely('equipamentos:historico_equipamento_cliente', equipamento_id=equip.id),
-                    'icon': 'bi-cpu',
-                    'related_items': equip_related_items
-                })
-            
-            # Adicionar PAT aos resultados
-            estado_display = getattr(pat, 'get_estado_display', lambda: 'N/A')
-            results['pats'].append({
-                'obj': pat,
-                'title': f"PAT #{pat.pat_number}",
-                'subtitle': f"Cliente: {get_attribute_safely(pat.cliente, 'nome')} - {estado_display()}",
-                'url': get_url_safely('assistencia:detalhes_pat', pat_id=pat.id),
-                'icon': 'bi-tools',
-                'related_items': related_items
-            })
+    results['assistencias'] = list(PedidoAssistencia.objects.select_related('cliente').filter(
+        Q(pat_number__icontains=query)
+    ))
     
-    # PASSO 5: Buscar peças
-    pecas = Peca.objects.all()
+    results['notas'] = list(Nota.objects.select_related('cliente').filter(
+        Q(titulo__icontains=query) | 
+        Q(conteudo__icontains=query)
+    ))
     
-    for peca in pecas:
-        # Verificar campos da peça
-        match_found = False
-        for field in ['nome', 'referencia', 'descricao']:
-            value = get_attribute_safely(peca, field)
-            if value and normalized_query in normalize_text(str(value)):
-                match_found = True
-                break
-                
-        if match_found and peca.id not in included_ids['peca']:
-            included_ids['peca'].add(peca.id)
-            
-            # Adicionar peça aos resultados
-            results['pecas'].append({
-                'obj': peca,
-                'title': peca.nome,
-                'subtitle': f"Ref: {get_attribute_safely(peca, 'referencia', 'N/A')}",
-                'url': get_url_safely('stock:detalhes_peca', peca_id=peca.id),
-                'icon': 'bi-gear'
-            })
+    # Calculate total after all our manual filters have been applied
+    total_count = sum(len(results[key]) for key in results.keys())
     
-    # Contar total de resultados
-    total_results = sum(len(items) for items in results.values())
+    return results, total_count
+
+@login_required
+def search_global(request):
+    """
+    Main search view that renders search results
+    This function is the main entry point for the search view
+    """
+    query = request.GET.get('q', '').strip()
     
-    return render(request, 'search/results.html', {
-        'query': query,
+    results = {}
+    total_count = 0
+    
+    if query:
+        results, total_count = perform_search(query)
+    
+    # Print debugging for template context
+    print(f"Search query: '{query}'")
+    print(f"Total count: {total_count}")
+    print(f"Clientes: {len(results.get('clientes', []))}")
+    print(f"Contactos: {len(results.get('contactos', []))}")
+    
+    context = {
+        'search_query': query,
         'results': results,
-        'total_results': total_results
-    })
+        'total_count': total_count,
+        'normalized_query': normalize_text(query) if query else '',
+    }
+    
+    # Try using the simpler template to troubleshoot the rendering issues
+    return render(request, 'search/simple_results.html', context)
+
+
 

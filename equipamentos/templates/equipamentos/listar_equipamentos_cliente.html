@@ -3,87 +3,90 @@
 {% block title %}Equipamentos dos Clientes{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2 class="mb-4">Lista de Equipamentos dos Clientes</h2>
-        {% if breadcrumbs %}
-          {% include 'includes/breadcrumbs.html' %}
-        {% endif %}
+<div class="container">
+  <h2 class="mb-4">Lista de Equipamentos dos Clientes</h2>
+  {% if breadcrumbs %}
+  {% include 'includes/breadcrumbs.html' with items=breadcrumbs %}
+  {% endif %}
 
-        {% include 'includes/mini_nav.html' %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Equipamento</th>
-                    <th>Número de Série</th>
-                    <th>Data de Aquisição</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-              {% for equipamento in equipamentos %}
-                <tr id="equipment-row-{{ equipamento.id }}">
-                    <td>{{ equipamento.cliente.nome }}</td>
-                    <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-                    <td>{{ equipamento.numero_serie }}</td>
-                    <td>{{ equipamento.data_aquisicao }}</td>
-                    <td>
-                        <a href="#" class="btn btn-info btn-sm">Detalhes</a>
-                        <a href="#" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}" class="btn btn-sm btn-info" title="Ver histórico completo">
-                          <i class="bi bi-clock-history"></i> Histórico
-                        </a>
-                        <button class="btn btn-danger btn-sm deassociate-equipment"
-                                data-id="{{ equipamento.id }}"
-                                data-url="{% url 'clientes:desassociar_equipamento' equipamento.id %}">
-                            Desassociar
-                        </button>
-                      </td>
-                    </tr>
-                {% empty %}
-                    <tr><td colspan="5">Nenhum equipamento registrado.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  {% include 'equipamentos/includes/mini_nav.html' with nav_active='cliente' %}
 
-    <!-- Modal de Confirmação Inicial -->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            Tem a certeza que deseja desassociar este equipamento do cliente?
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
-          </div>
-        </div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Equipamento</th>
+        <th>Número de Série</th>
+        <th>Data de Aquisição</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for equipamento in equipamentos %}
+      <tr id="equipment-row-{{ equipamento.id }}">
+        <td>{{ equipamento.cliente.nome }}</td>
+        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
+        <td>{{ equipamento.numero_serie }}</td>
+        <td>{{ equipamento.data_aquisicao }}</td>
+        <td>
+          <a href="#" class="btn btn-info btn-sm">Detalhes</a>
+          <a href="#" class="btn btn-warning btn-sm">Editar</a>
+          <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}"
+            class="btn btn-sm btn-info" title="Ver histórico completo">
+            <i class="bi bi-clock-history"></i> Histórico
+          </a>
+          <button class="btn btn-danger btn-sm deassociate-equipment" data-id="{{ equipamento.id }}"
+            data-url="{% url 'clientes:desassociar_equipamento' equipamento.id %}">
+            Desassociar
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Nenhum equipamento registrado.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal de Confirmação Inicial -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        Tem a certeza que deseja desassociar este equipamento do cliente?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Modal de Aviso Extra (para equipamentos associados a PATs) -->
-    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body" id="warningModalBody">
-            <!-- A mensagem será inserida aqui dinamicamente -->
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
-          </div>
-        </div>
+<!-- Modal de Aviso Extra (para equipamentos associados a PATs) -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="warningModalBody">
+        <!-- A mensagem será inserida aqui dinamicamente -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
       </div>
     </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

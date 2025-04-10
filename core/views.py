@@ -3,8 +3,8 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from assistencia.models import PedidoAssistencia
-from clientes.models import Cliente, EquipamentoCliente
-from equipamentos.models import EquipamentoFabricado
+from clientes.models import Cliente
+from equipamentos.models import EquipamentoFabricado, EquipamentoCliente
 from datetime import datetime, timedelta
 from django.utils import timezone
 
@@ -40,7 +40,7 @@ def dashboard(request):
     # Equipamentos mais frequentes em PATs
     try:
         top_equipamentos = EquipamentoFabricado.objects.annotate(
-            num_pats=Count('equipamentocliente__pats', distinct=True)
+            num_pats=Count('cliente_equipamentos__pedidoassistencia')
         ).filter(num_pats__gt=0).order_by('-num_pats')[:5]
     except Exception as e:
         print(f"Erro ao consultar equipamentos mais frequentes: {e}")
@@ -116,3 +116,4 @@ def dashboard(request):
     }
     
     return render(request, 'core/dashboard.html', context)
+

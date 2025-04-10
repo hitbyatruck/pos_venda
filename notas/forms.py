@@ -1,8 +1,10 @@
 # notas/forms.py
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
-from .models import Nota, Tarefa, PedidoAssistencia
-from clientes.models import Cliente, EquipamentoCliente  # Para filtrar o campo PAT
+from .models import Nota, Tarefa
+from assistencia.models import PedidoAssistencia
+from clientes.models import Cliente
+from equipamentos.models import EquipamentoCliente  # Para filtrar o campo PAT
 
 # --- Formulário para Nota de Conversa ---
 class NotaForm(forms.ModelForm):

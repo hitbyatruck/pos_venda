@@ -76,7 +76,7 @@ def criar_nota(request):
             tarefa_formset.save()
             
             messages.success(request, "Nota criada com sucesso.")
-            return HttpResponseRedirect(reverse('detalhes_cliente', 
+            return HttpResponseRedirect(reverse('clientes:detalhes_cliente', 
                                              args=[nota.cliente.id]) + '#notas')
         else:
             messages.error(request, "Erro na criação da nota. Verifique os campos.")

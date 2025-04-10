@@ -2,26 +2,30 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "Tipos de Contacto" %} | {% trans "Configurações" %}{% endblock %}
+{% block title %}{% trans "Tipos de Contacto" %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-            <i class="fas fa-address-card me-2"></i>
-            {% trans "Tipos de Contacto" %}
-            <small class="text-muted">({{ total_tipos_contacto }})</small>
-        </h2>
-        <div>
-            <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> {% trans "Novo Tipo de Contacto" %}
-            </a>
-        </div>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-address-book me-2"></i> {% trans "Tipos de Contacto" %}
+        </h1>
+        <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> {% trans "Novo Tipo" %}
+        </a>
     </div>
 
-    <!-- Filtros e busca -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
+    {% include 'clientes/includes/breadcrumbs.html' with view_title="Tipos de Contacto" %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='configuracoes' %}
+
+    <!-- Search section with dark mode compatible header -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i> {% trans "Buscar Tipos de Contacto" %}
+            </h5>
+        </div>
+        <div class="card-body">
             <form method="get" class="row g-3">
                 <div class="col-md-6">
                     <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
@@ -47,18 +51,23 @@
         </div>
     </div>
 
-    {% if tipos_contacto %}
-    <div class="card">
+    <!-- Listing section -->
+    <div class="card shadow">
+        {% if tipos_contacto %}
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
-                    <thead class="bg-dark text-light">
+                    <thead class="bg-dark text-white">
                         <tr>
-                            <th>{% trans "Nome" %}</th>
-                            <th>{% trans "Ícone" %}</th>
-                            <th>{% trans "Validador RegEx" %}</th>
-                            <th>{% trans "Estado" %}</th>
-                            <th>{% trans "Contactos Associados" %}</th>
+                            <th class="sortable" data-sort="nome">
+                                {% trans "Nome" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="icone">
+                                {% trans "Ícone" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="ativo">
+                                {% trans "Status" %} <i class="fas fa-sort ms-1 sort-icon"></i>
+                            </th>
                             <th class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
@@ -84,21 +93,11 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if tipo.validador_regex %}
-                                <code>{{ tipo.validador_regex|truncatechars:30 }}</code>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
                                 {% if tipo.ativo %}
                                 <span class="badge bg-success">{% trans "Ativo" %}</span>
                                 {% else %}
                                 <span class="badge bg-secondary">{% trans "Inativo" %}</span>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {{ tipo.contacto_set.count }}
                             </td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
@@ -180,20 +179,21 @@
             </nav>
         </div>
         {% endif %}
-    </div>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        {% if search_query %}
-        {% trans "Nenhum tipo de contacto encontrado com os filtros selecionados." %}
-        <a href="{% url 'clientes:listar_tipos_contacto' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
         {% else %}
-        {% trans "Nenhum tipo de contacto cadastrado no sistema." %}
-        <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="alert-link">{% trans "Adicionar Tipo de Contacto"
-            %}</a>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if search_query %}
+            {% trans "Nenhum tipo de contacto encontrado com os filtros selecionados." %}
+            <a href="{% url 'clientes:listar_tipos_contacto' %}" class="alert-link">{% trans "Limpar filtros" %}</a>
+            {% else %}
+            {% trans "Nenhum tipo de contacto cadastrado no sistema." %}
+            <a href="{% url 'clientes:adicionar_tipo_contacto' %}" class="alert-link">{% trans "Adicionar Tipo de
+                Contacto"
+                %}</a>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -238,6 +238,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ block.super }}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Delete Tipo Modal Setup
@@ -312,6 +313,94 @@
                     deleteModal.hide();
                 });
         });
+
+        // Table sorting functionality
+        const table = document.querySelector('.table');
+        if (table) {
+            const headers = table.querySelectorAll('th.sortable');
+            let currentSort = { column: null, direction: 'asc' };
+
+            // Initialize the first column as sorted ascending
+            headers[0].classList.add('asc');
+            currentSort = { column: headers[0].getAttribute('data-sort'), direction: 'asc' };
+
+            // Sort the table initially
+            sortTable(table, currentSort.column, currentSort.direction);
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.getAttribute('data-sort');
+
+                    // Toggle direction if clicking the same column
+                    let direction;
+                    if (currentSort.column === column) {
+                        direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        direction = 'asc'; // Default to ascending for a new column
+                    }
+
+                    // Update the sort indicators for all headers
+                    headers.forEach(h => {
+                        h.classList.remove('asc', 'desc');
+                        const icon = h.querySelector('.sort-icon');
+                        icon.className = 'fas fa-sort ms-1 sort-icon';
+                    });
+
+                    // Update the clicked header
+                    header.classList.add(direction);
+                    const icon = header.querySelector('.sort-icon');
+                    icon.className = direction === 'asc'
+                        ? 'fas fa-sort-up ms-1 sort-icon'
+                        : 'fas fa-sort-down ms-1 sort-icon';
+
+                    // Sort the table
+                    sortTable(table, column, direction);
+
+                    // Update current sort state
+                    currentSort = { column, direction };
+                });
+            });
+        }
+
+        function sortTable(table, column, direction) {
+            // Sorting implementation
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const compare = (a, b) => {
+                const aValue = a.querySelector(`[data-sort="${column}"]`).textContent.trim();
+                const bValue = b.querySelector(`[data-sort="${column}"]`).textContent.trim();
+                return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            };
+            rows.sort(compare);
+            rows.forEach(row => table.querySelector('tbody').appendChild(row));
+        }
     });
 </script>
+
+<!-- Add CSS for sortable headers -->
+<style>
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    th.sortable .sort-icon {
+        opacity: 0.5;
+    }
+
+    th.sortable.asc .sort-icon,
+    th.sortable.desc .sort-icon {
+        opacity: 1;
+        color: #fff;
+    }
+
+    th.sortable.asc,
+    th.sortable.desc {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+</style>
 {% endblock %}

@@ -3,10 +3,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-from clientes.models import Cliente, EquipamentoCliente
+from clientes.models import Cliente
 from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
-from equipamentos.models import EquipamentoFabricado
+from equipamentos.models import EquipamentoFabricado, EquipamentoCliente
 import datetime
 
 class PedidoAssistencia(models.Model):

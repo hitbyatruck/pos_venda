@@ -2,110 +2,128 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}
-    {% if is_new %}
-        {% trans "Adicionar Tipo de Contacto" %}
-    {% else %}
-        {% trans "Editar Tipo de Contacto" %} - {{ tipo_contacto.nome }}
-    {% endif %}
-    | {% trans "Configurações" %}
-{% endblock %}
+{% block title %}{% if is_new %}{% trans "Adicionar Tipo de Contacto" %}{% else %}{% trans "Editar Tipo de Contacto" %}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h3 class="card-title mb-0">
-                <i class="fas fa-address-card me-2"></i>
-                {% if is_new %}
-                    {% trans "Adicionar Novo Tipo de Contacto" %}
-                {% else %}
-                    {% trans "Editar Tipo de Contacto" %} - {{ tipo_contacto.nome }}
-                {% endif %}
-            </h3>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
-                        {{ form.nome }}
-                        {% if form.nome.help_text %}
-                            <div class="form-text">{{ form.nome.help_text }}</div>
-                        {% endif %}
-                        {% if form.nome.errors %}
-                            <div class="invalid-feedback d-block">{{ form.nome.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.icone.id_for_label }}" class="form-label">{{ form.icone.label }}</label>
-                        {{ form.icone }}
-                        {% if form.icone.help_text %}
-                            <div class="form-text">{{ form.icone.help_text }}</div>
-                        {% endif %}
-                        {% if form.icone.errors %}
-                            <div class="invalid-feedback d-block">{{ form.icone.errors }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.validador_regex.id_for_label }}" class="form-label">{{ form.validador_regex.label }}</label>
-                    {{ form.validador_regex }}
-                    {% if form.validador_regex.help_text %}
-                        <div class="form-text">{{ form.validador_regex.help_text }}</div>
-                    {% endif %}
-                    {% if form.validador_regex.errors %}
-                        <div class="invalid-feedback d-block">{{ form.validador_regex.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3 form-check">
-                    {{ form.ativo }}
-                    <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
-                    {% if form.ativo.errors %}
-                        <div class="invalid-feedback d-block">{{ form.ativo.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                    <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>
-                        {% trans "Cancelar" %}
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>
-                        {% trans "Guardar" %}
-                    </button>
-                </div>
-            </form>
-        </div>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-address-card me-2"></i>
+            {% if is_new %}{% trans "Adicionar Tipo de Contacto" %}{% else %}{% trans "Editar Tipo de Contacto" %}{% endif %}
+        </h1>
+        <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+        </a>
     </div>
-    
-    {% if not is_new %}
-    <div class="card mt-4">
-        <div class="card-header bg-light">
-            <h5 class="card-title mb-0">{% trans "Prévia do Ícone" %}</h5>
-        </div>
-        <div class="card-body text-center">
-            <div class="mb-3">
-                <h3>
-                    {% if tipo_contacto.icone %}
-                        <i class="fas {{ tipo_contacto.icone }}"></i>
-                    {% else %}
-                        <i class="fas fa-address-card"></i>
-                    {% endif %}
-                </h3>
+
+    {% include 'clientes/includes/breadcrumbs.html' with view_title=title %}
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='configuracoes' %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark bg-opacity-10">
+                    <h5 class="card-title mb-0">{% if is_new %}{% trans "Novo Tipo de Contacto" %}{% else %}{% trans "Editar Tipo de Contacto" %}{% endif %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label">{% trans "Nome" %}*</label>
+                                    {{ form.nome }}
+                                    {% if form.nome.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">{% trans "Ex: Email, Telefone, WhatsApp, etc." %}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.icon_choice.id_for_label }}" class="form-label">{% trans "Ícone" %}</label>
+                                    {{ form.icon_choice }}
+                                    <div class="mt-2">
+                                        <span class="d-flex align-items-center">
+                                            <i id="icon-preview" class="fas me-2 fa-2x"></i>
+                                            <small class="text-muted">{% trans "Pré-visualização do ícone" %}</small>
+                                        </span>
+                                    </div>
+                                    {% if form.icone.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.icone.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {{ form.icone }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.regex_pattern.id_for_label }}" class="form-label">{% trans "Validação" %}</label>
+                            {{ form.regex_pattern }}
+                            {% if form.validador_regex.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.validador_regex.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">{% trans "Selecione um padrão para validar os valores deste tipo de contacto" %}</div>
+                            {{ form.validador_regex }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                    {% trans "Ativo" %}
+                                </label>
+                            </div>
+                            <div class="form-text">{% trans "Desmarque para desativar temporariamente este tipo de contacto" %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-outline-secondary me-2">
+                                {% trans "Cancelar" %}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {% trans "Salvar" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <p class="text-muted">{% trans "Use o prefixo 'fa-' seguido do nome do ícone. Consulte a documentação do FontAwesome para ver todos os ícones disponíveis." %}</p>
-            <a href="https://fontawesome.com/icons" target="_blank" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-external-link-alt me-1"></i> {% trans "Ver Biblioteca de Ícones" %}
-            </a>
         </div>
     </div>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize icon preview
+        updateIconPreview(document.getElementById('{{ form.icon_choice.id_for_label }}').value);
+    });
+    
+    function updateIconPreview(iconClass) {
+        const preview = document.getElementById('icon-preview');
+        preview.className = 'fas me-2 fa-2x'; // Reset class
+        
+        if (iconClass) {
+            preview.classList.add(iconClass);
+        }
+    }
+</script>
 {% endblock %}

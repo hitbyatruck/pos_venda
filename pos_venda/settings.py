@@ -169,8 +169,9 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-MEDIA_URL = '/media/'  # URL para acessar os arquivos
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Diretório onde os arquivos serão armazenados
+# Media files (User-uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Authentication settings
 LOGIN_REDIRECT_URL = '/'  # Redireciona para a página inicial após login
