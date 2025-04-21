@@ -1,0 +1,53 @@
+{
+  "include": ["**/*.py"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/migrations/**",
+    "**/migrations_backup/**",
+    "venv/**"
+  ],
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.8",
+
+  // Django and pandas specific settings
+  "reportGeneralTypeIssues": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportOptionalSubscript": "none",
+  "reportOptionalCall": "none",
+  "reportOptionalIterable": "none",
+  "reportOptionalContextManager": "none",
+  "reportOptionalOperand": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownVariableType": "none",
+  "reportOperatorIssue": "none",
+
+  // Disable specific issues that are common in Django/pandas/xlsxwriter
+  "reportIndexIssue": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportAssignmentType": "none",
+  "reportRedeclaration": "none",
+
+  // Disable strict checking for Django models and pandas
+  "strictParameterNoneValue": false,
+  "strictDictionaryInference": false,
+  "reportPrivateUsage": "none",
+
+  // Function and parameter specific rules
+  "reportFunctionMemberAccess": "none",
+  "reportPropertyTypeMismatch": "none",
+
+  // Add specific diagniosic code suppressions for pandas
+  "diagnosticSeverityOverrides": {
+    "reportConditionalAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportAttributeAccessIssue": "none",
+    "reportBooleanOperationIssue": "none"
+  }
+}

@@ -5,6 +5,7 @@ from core.utils import normalize_text
 from django.urls import reverse
 from django.db.models import Q, Value as V
 from django.db.models.functions import Replace, Lower, Collate
+import unicodedata
 
 # Importar todos os modelos relevantes
 from clientes.models import Cliente
@@ -12,6 +13,19 @@ from equipamentos.models import EquipamentoFabricado, EquipamentoCliente
 from assistencia.models import PedidoAssistencia
 from notas.models import Tarefa, Nota
 from stock.models import Peca
+
+# Import normalize_text function for consistency
+def normalize_text(text):
+    """
+    Normalize text by removing accents and converting to lowercase.
+    """
+    if not text:
+        return ""
+    # Normalize unicode characters (remove accents)
+    normalized = unicodedata.normalize('NFKD', str(text))
+    normalized = ''.join([c for c in normalized if not unicodedata.combining(c)])
+    # Convert to lowercase and strip extra spaces
+    return normalized.lower().strip()
 
 # These functions are actually used by other apps through imports, so we'll keep and document them
 def get_attribute_safely(obj, attr_name, default=""):
@@ -31,7 +45,7 @@ def get_attribute_safely(obj, attr_name, default=""):
         return value
     except (AttributeError, TypeError):
         return default
-    
+
 def get_url_safely(view_name, *args, **kwargs):
     """
     Gera um URL de forma segura, retornando uma string vazia se falhar.
@@ -60,9 +74,9 @@ def perform_search(query):
     """
     if not query:
         return {}, 0
-    
+
     normalized_query = normalize_text(query)
-    
+
     # Results by category
     results = {
         'clientes': [],
@@ -71,68 +85,71 @@ def perform_search(query):
         'assistencias': [],
         'notas': []
     }
-    
-    # Import models
-    from clientes.models import Cliente, Contacto
-    from equipamentos.models import EquipamentoCliente
-    from assistencia.models import PedidoAssistencia
-    from notas.models import Nota
-    
-    # New simplified approach for accent-insensitive search
-    # First search with direct database query
-    clientes_results = list(Cliente.objects.filter(nome__icontains=query))
-    
-    # Then try to apply a manual filter for accents if we didn't find anything
-    if not clientes_results:
-        # Get all clients and manually filter by normalized name
-        all_clientes = Cliente.objects.all()
-        
-        for cliente in all_clientes:
-            if normalized_query.lower() in normalize_text(cliente.nome).lower():
-                clientes_results.append(cliente)
-    
-    # Handle contacts - always include client relationship
-    contact_results = list(Contacto.objects.select_related('cliente', 'tipo').filter(
-        Q(valor__icontains=query) | 
-        Q(nome_contacto__icontains=query)
-    ))
-    
-    # Manual accent-insensitive search for contacts
-    if not contact_results:
-        all_contactos = Contacto.objects.select_related('cliente', 'tipo').all()
-        for contacto in all_contactos:
-            norm_valor = normalize_text(contacto.valor).lower() 
-            norm_nome = normalize_text(contacto.nome_contacto or "").lower()
-            
-            if (normalized_query.lower() in norm_valor or 
-                normalized_query.lower() in norm_nome):
-                contact_results.append(contacto)
-    
-    # If we found contacts, add their clients to the results
-    for contact in contact_results:
-        if contact.cliente not in clientes_results:
-            clientes_results.append(contact.cliente)
-    
-    results['clientes'] = clientes_results
-    results['contactos'] = contact_results
-    
-    # Handle other searches for equipamentos, assistencias, notas
-    results['equipamentos'] = list(EquipamentoCliente.objects.select_related('cliente', 'equipamento_fabricado').filter(
-        Q(numero_serie__icontains=query)
-    ))
-    
-    results['assistencias'] = list(PedidoAssistencia.objects.select_related('cliente').filter(
-        Q(pat_number__icontains=query)
-    ))
-    
-    results['notas'] = list(Nota.objects.select_related('cliente').filter(
-        Q(titulo__icontains=query) | 
-        Q(conteudo__icontains=query)
-    ))
-    
-    # Calculate total after all our manual filters have been applied
+
+    try:
+        # Import models - move inside try block to handle possible import errors
+        from clientes.models import Cliente, Contacto
+        from equipamentos.models import EquipamentoCliente
+        from assistencia.models import PedidoAssistencia
+        from notas.models import Nota
+
+        # Search clients
+        clientes_results = list(Cliente.objects.filter(nome__icontains=query))
+
+        # Manual accent-insensitive search if needed
+        if not clientes_results and normalized_query:
+            for cliente in Cliente.objects.all():
+                if normalized_query in normalize_text(cliente.nome):
+                    clientes_results.append(cliente)
+
+        # Search contacts
+        contact_results = list(Contacto.objects.select_related('cliente', 'tipo').filter(
+            Q(valor__icontains=query) |
+            Q(nome_contacto__icontains=query)
+        ))
+
+        # Add clients from contacts
+        for contact in contact_results:
+            if contact.cliente and contact.cliente not in clientes_results:
+                clientes_results.append(contact.cliente)
+
+        results['clientes'] = clientes_results
+        results['contactos'] = contact_results
+
+        # Search equipment
+        try:
+            results['equipamentos'] = list(EquipamentoCliente.objects.select_related('cliente', 'equipamento_fabricado').filter(
+                Q(numero_serie__icontains=query)
+            ))
+        except Exception:
+            # Handle possible field errors
+            results['equipamentos'] = []
+
+        # Search PATs
+        try:
+            results['assistencias'] = list(PedidoAssistencia.objects.select_related('cliente').filter(
+                Q(pat_number__icontains=query)
+            ))
+        except Exception:
+            results['assistencias'] = []
+
+        # Search notes
+        try:
+            results['notas'] = list(Nota.objects.select_related('cliente').filter(
+                Q(titulo__icontains=query) |
+                Q(conteudo__icontains=query)
+            ))
+        except Exception:
+            results['notas'] = []
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Search error: {str(e)}")
+
+    # Calculate total count
     total_count = sum(len(results[key]) for key in results.keys())
-    
+
     return results, total_count
 
 @login_required
@@ -142,26 +159,26 @@ def search_global(request):
     This function is the main entry point for the search view
     """
     query = request.GET.get('q', '').strip()
-    
+
     results = {}
     total_count = 0
-    
+
     if query:
         results, total_count = perform_search(query)
-    
+
     # Print debugging for template context
     print(f"Search query: '{query}'")
     print(f"Total count: {total_count}")
     print(f"Clientes: {len(results.get('clientes', []))}")
     print(f"Contactos: {len(results.get('contactos', []))}")
-    
+
     context = {
         'search_query': query,
         'results': results,
         'total_count': total_count,
         'normalized_query': normalize_text(query) if query else '',
     }
-    
+
     # Try using the simpler template to troubleshoot the rendering issues
     return render(request, 'search/simple_results.html', context)
 

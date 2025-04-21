@@ -1,0 +1,92 @@
+{% load i18n %}
+
+<div id="item-rows">
+    {{ itemformset.management_form }}
+
+    {% for form in itemformset %}
+    <div class="row item-row mb-3 align-items-end{% if forloop.last and not form.instance.pk %} d-none{% endif %}">
+        {{ form.id }}
+        {% if form.instance.pk %}{{ form.DELETE.as_hidden }}{% endif %}
+
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Tipo" %}</label>
+            {{ form.tipo }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Referência" %}</label>
+            {{ form.referencia }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Designação" %}</label>
+            {{ form.designacao }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Quantidade" %}</label>
+            {{ form.quantidade }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Preço Unit." %}</label>
+            {{ form.preco_unitario }}
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">{% trans "Subtotal" %}</label>
+            <div class="line-total form-control-plaintext">
+                {% if form.instance.subtotal %}{{ form.instance.subtotal }}{% else %}0.00 €{% endif %}
+            </div>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger delete-item-btn">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Item template for new items -->
+    <div id="item-template" class="row item-row mb-3 align-items-end d-none">
+        {{ itemformset.empty_form.id }}
+
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Tipo" %}</label>
+            {{ itemformset.empty_form.tipo }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Referência" %}</label>
+            {{ itemformset.empty_form.referencia }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Designação" %}</label>
+            {{ itemformset.empty_form.designacao }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Quantidade" %}</label>
+            {{ itemformset.empty_form.quantidade }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{% trans "Preço Unit." %}</label>
+            {{ itemformset.empty_form.preco_unitario }}
+        </div>
+        <div class="col-md-1">
+            <label class="form-label">{% trans "Subtotal" %}</label>
+            <div class="line-total form-control-plaintext">0.00 €</div>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger delete-item-btn">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <button id="add-item-btn" type="button" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> {% trans "Adicionar Item" %}
+    </button>
+</div>
+
+<div class="d-flex justify-content-end mt-3">
+    <div class="me-3">
+        <strong>{% trans "Total:" %}</strong>
+    </div>
+    <div id="grand-total" class="fw-bold">0.00 €</div>
+</div>

@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Registrar Movimentação" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-exchange-alt mr-2"></i> {% trans "Registrar Movimentação" %}
+    </h1>
+
+    {% include 'stock/includes/menu_stock.html' with active='movimentacoes' %}
+
+    {% include 'includes/breadcrumbs.html' with
+        items=breadcrumbs|default:"stock,movimentacoes,adicionar"
+    %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Dados da Movimentação" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="peca" class="form-label">{% trans "Peça" %} <span class="text-danger">*</span></label>
+                                <select class="form-select" id="peca" name="peca" required>
+                                    <option value="">{% trans "Selecione uma peça" %}</option>
+                                    {% for peca in pecas %}
+                                        <option value="{{ peca.id }}" {% if form.peca.value == peca.id %}selected{% endif %}
+                                                data-estoque="{{ peca.quantidade_atual }}" data-codigo="{{ peca.codigo }}">
+                                            {{ peca.codigo }} - {{ peca.nome }} ({{ peca.quantidade_atual }} em estoque)
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.peca.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.peca.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="quantidade_atual" class="form-label">{% trans "Estoque Atual" %}</label>
+                                <input type="text" class="form-control" id="quantidade_atual" readonly value="">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo" class="form-label">{% trans "Tipo de Movimentação" %} <span class="text-danger">*</span></label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="entrada" {% if form.tipo.value == 'entrada' %}selected{% endif %}>{% trans "Entrada" %}</option>
+                                    <option value="saida" {% if form.tipo.value == 'saida' %}selected{% endif %}>{% trans "Saída" %}</option>
+                                </select>
+                                {% if form.tipo.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.tipo.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="quantidade" class="form-label">{% trans "Quantidade" %} <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="quantidade" name="quantidade" required min="1" value="{{ form.quantidade.value|default:'1' }}">
+                                {% if form.quantidade.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.quantidade.errors }}</div>
+                                {% endif %}
+                                <small id="qtdWarning" class="text-danger" style="display: none;">
+                                    {% trans "Atenção: Quantidade maior que o estoque disponível" %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="motivo" class="form-label">{% trans "Motivo" %} <span class="text-danger">*</span></label>
+                                <select class="form-select" id="motivo" name="motivo" required>
+                                    <option value="">{% trans "Selecione um motivo" %}</option>
+                                    <option value="compra" {% if form.motivo.value == 'compra' %}selected{% endif %}>{% trans "Compra" %}</option>
+                                    <option value="venda" {% if form.motivo.value == 'venda' %}selected{% endif %}>{% trans "Venda" %}</option>
+                                    <option value="assistencia" {% if form.motivo.value == 'assistencia' %}selected{% endif %}>{% trans "Assistência Técnica" %}</option>
+                                    <option value="ajuste" {% if form.motivo.value == 'ajuste' %}selected{% endif %}>{% trans "Ajuste de Inventário" %}</option>
+                                    <option value="defeito" {% if form.motivo.value == 'defeito' %}selected{% endif %}>{% trans "Defeito/Perda" %}</option>
+                                    <option value="devolucao" {% if form.motivo.value == 'devolucao' %}selected{% endif %}>{% trans "Devolução" %}</option>
+                                    <option value="outro" {% if form.motivo.value == 'outro' %}selected{% endif %}>{% trans "Outro" %}</option>
+                                </select>
+                                {% if form.motivo.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.motivo.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3 assistencia-field" style="display: none;">
+                                <label for="pat" class="form-label">{% trans "Pedido de Assistência" %}</label>
+                                <select class="form-select" id="pat" name="pat">
+                                    <option value="">{% trans "Selecione um PAT" %}</option>
+                                    {% for pat in pats %}
+                                        <option value="{{ pat.id }}" {% if form.pat.value == pat.id %}selected{% endif %}>
+                                            {{ pat.numero }} - {{ pat.cliente.nome }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.pat.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.pat.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">{% trans "Observações" %}</label>
+                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ form.observacoes.value|default:'' }}</textarea>
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback d-block">{{ form.observacoes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save mr-1"></i> {% trans "Registrar Movimentação" %}
+                        </button>
+                        <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i> {% trans "Cancelar" %}
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Previsão de Estoque" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="form-label">{% trans "Código" %}</label>
+                                <input type="text" class="form-control" id="preview_codigo" readonly>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="form-label">{% trans "Estoque Atual" %}</label>
+                                <input type="text" class="form-control" id="preview_estoque_atual" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="form-label">{% trans "Movimentação" %}</label>
+                                <input type="text" class="form-control" id="preview_movimentacao" readonly>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="form-label">{% trans "Quantidade" %}</label>
+                                <input type="text" class="form-control" id="preview_quantidade" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>{% trans "Estoque Final:" %}</strong> <span id="preview_estoque_final">0</span>
+                    </div>
+
+                    <div class="alert alert-warning" id="estoque_warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        {% trans "Atenção: Esta saída deixará o estoque negativo!" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pecaSelect = document.getElementById('peca');
+        const qtdAtualInput = document.getElementById('quantidade_atual');
+        const tipoSelect = document.getElementById('tipo');
+        const quantidadeInput = document.getElementById('quantidade');
+        const motivoSelect = document.getElementById('motivo');
+        const patField = document.querySelector('.assistencia-field');
+        const qtdWarning = document.getElementById('qtdWarning');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Preview elements
+        const previewCodigo = document.getElementById('preview_codigo');
+        const previewEstoqueAtual = document.getElementById('preview_estoque_atual');
+        const previewMovimentacao = document.getElementById('preview_movimentacao');
+        const previewQuantidade = document.getElementById('preview_quantidade');
+        const previewEstoqueFinal = document.getElementById('preview_estoque_final');
+        const estoqueWarning = document.getElementById('estoque_warning');
+
+        // Function to update the form based on selected piece
+        function updatePecaInfo() {
+            const selectedOption = pecaSelect.options[pecaSelect.selectedIndex];
+            if (selectedOption.value) {
+                const estoque = selectedOption.dataset.estoque;
+                const codigo = selectedOption.dataset.codigo;
+                qtdAtualInput.value = estoque;
+                previewCodigo.value = codigo;
+                previewEstoqueAtual.value = estoque;
+                updateEstoquePreview();
+            } else {
+                qtdAtualInput.value = '';
+                previewCodigo.value = '';
+                previewEstoqueAtual.value = '';
+                previewEstoqueFinal.textContent = '0';
+            }
+        }
+
+        // Function to update preview based on selected values
+        function updateEstoquePreview() {
+            const estoque = parseInt(qtdAtualInput.value) || 0;
+            const quantidade = parseInt(quantidadeInput.value) || 0;
+            const tipo = tipoSelect.value;
+
+            previewQuantidade.value = quantidade;
+            previewMovimentacao.value = tipo === 'entrada' ? 'Entrada (+)' : 'Saída (-)';
+
+            let estoqueFinal = 0;
+            if (tipo === 'entrada') {
+                estoqueFinal = estoque + quantidade;
+                estoqueWarning.style.display = 'none';
+                qtdWarning.style.display = 'none';
+                submitBtn.disabled = false;
+            } else {
+                estoqueFinal = estoque - quantidade;
+                if (estoqueFinal < 0) {
+                    estoqueWarning.style.display = 'block';
+                    qtdWarning.style.display = 'block';
+                    // Don't disable submit - allow negative stock if needed
+                    submitBtn.disabled = false;
+                } else {
+                    estoqueWarning.style.display = 'none';
+                    qtdWarning.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            previewEstoqueFinal.textContent = estoqueFinal;
+        }
+
+        // Function to show/hide PAT field based on motivo
+        function updateMotivoRelatedFields() {
+            if (motivoSelect.value === 'assistencia') {
+                patField.style.display = 'block';
+            } else {
+                patField.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        pecaSelect.addEventListener('change', updatePecaInfo);
+        tipoSelect.addEventListener('change', updateEstoquePreview);
+        quantidadeInput.addEventListener('input', updateEstoquePreview);
+        motivoSelect.addEventListener('change', updateMotivoRelatedFields);
+
+        // Initial update
+        updatePecaInfo();
+        updateMotivoRelatedFields();
+    });
+</script>
+{% endblock %}

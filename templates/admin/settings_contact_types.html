@@ -1,0 +1,258 @@
+{% extends 'admin/settings_layout.html' %}
+{% load i18n %}
+
+{% block settings_title %}{% trans "Tipos de Contacto" %}{% endblock %}
+
+{% block settings_breadcrumbs %}
+<li class="breadcrumb-item active">{% trans "Tipos de Contacto" %}</li>
+{% endblock %}
+
+{% block settings_content %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-address-card me-2"></i>{% trans "Tipos de Contacto" %}</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addContactTypeModal">
+            <i class="fas fa-plus-circle me-1"></i>{% trans "Novo Tipo" %}
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "Nome" %}</th>
+                        <th>{% trans "Ícone" %}</th>
+                        <th>{% trans "Estado" %}</th>
+                        <th>{% trans "Contactos" %}</th>
+                        <th class="text-center">{% trans "Ações" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for type in contact_types %}
+                    <tr>
+                        <td>{{ type.nome }}</td>
+                        <td>
+                            {% if type.icone %}
+                            <i class="{{ type.icone }} fa-lg"></i>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if type.ativo %}
+                            <span class="badge bg-success">{% trans "Ativo" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "Inativo" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ type.contacto_set.count }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary edit-type-btn"
+                                        data-type-id="{{ type.id }}"
+                                        data-type-name="{{ type.nome }}"
+                                        data-type-icon="{{ type.icone|default:'' }}"
+                                        data-type-active="{{ type.ativo|yesno:'true,false' }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editContactTypeModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-type-btn"
+                                        data-type-id="{{ type.id }}"
+                                        data-type-name="{{ type.nome }}"
+                                        data-type-contacts="{{ type.contacto_set.count }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteContactTypeModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-3">{% trans "Nenhum tipo de contacto encontrado." %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Contact Type Modal -->
+<div class="modal fade" id="addContactTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:adicionar_tipo_contacto' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-address-card me-2"></i>{% trans "Adicionar Tipo de Contacto" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-type-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="add-type-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-type-icon" class="form-label">{% trans "Ícone" %}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-icons"></i></span>
+                            <input type="text" class="form-control" id="add-type-icon" name="icone" placeholder="fas fa-envelope">
+                        </div>
+                        <small class="form-text text-muted">{% trans "Insira uma classe Font Awesome, por exemplo: fas fa-envelope" %}</small>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="add-type-active" name="ativo" checked>
+                        <label class="form-check-label" for="add-type-active">{% trans "Ativo" %}</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Contact Type Modal -->
+<div class="modal fade" id="editContactTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:editar_tipo_contacto' tipo_id=0 %}" id="edit-type-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-address-card me-2"></i>{% trans "Editar Tipo de Contacto" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-type-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="edit-type-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-type-icon" class="form-label">{% trans "Ícone" %}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i id="icon-preview" class="fas fa-icons"></i></span>
+                            <input type="text" class="form-control" id="edit-type-icon" name="icone">
+                        </div>
+                        <small class="form-text text-muted">{% trans "Insira uma classe Font Awesome, por exemplo: fas fa-envelope" %}</small>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit-type-active" name="ativo">
+                        <label class="form-check-label" for="edit-type-active">{% trans "Ativo" %}</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Contact Type Modal -->
+<div class="modal fade" id="deleteContactTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:excluir_tipo_contacto' tipo_id=0 %}" id="delete-type-form">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o tipo de contacto" %} <strong id="delete-type-name"></strong>?</p>
+                    <p id="contacts-warning" class="d-none text-warning">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        <span id="contacts-count"></span> {% trans "contactos usam este tipo." %}
+                    </p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        {% trans "Esta ação não pode ser desfeita." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit contact type modal setup
+        const editTypeBtns = document.querySelectorAll('.edit-type-btn');
+        const editTypeForm = document.getElementById('edit-type-form');
+        const iconPreview = document.getElementById('icon-preview');
+        const editTypeIcon = document.getElementById('edit-type-icon');
+
+        editTypeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const typeId = this.getAttribute('data-type-id');
+                const typeName = this.getAttribute('data-type-name');
+                const typeIcon = this.getAttribute('data-type-icon');
+                const typeActive = this.getAttribute('data-type-active') === 'true';
+
+                document.getElementById('edit-type-name').value = typeName;
+                editTypeIcon.value = typeIcon;
+                document.getElementById('edit-type-active').checked = typeActive;
+
+                // Update icon preview
+                updateIconPreview(typeIcon);
+
+                // Update form action URL with the correct type ID
+                const formAction = "{% url 'clientes:editar_tipo_contacto' tipo_id=999999 %}".replace('999999', typeId);
+                editTypeForm.setAttribute('action', formAction);
+            });
+        });
+
+        // Live icon preview
+        editTypeIcon.addEventListener('input', function() {
+            updateIconPreview(this.value);
+        });
+
+        function updateIconPreview(iconClass) {
+            if (iconClass) {
+                iconPreview.className = iconClass;
+            } else {
+                iconPreview.className = 'fas fa-icons';
+            }
+        }
+
+        // Delete contact type modal setup
+        const deleteTypeBtns = document.querySelectorAll('.delete-type-btn');
+        const deleteTypeForm = document.getElementById('delete-type-form');
+        const contactsWarning = document.getElementById('contacts-warning');
+        const contactsCount = document.getElementById('contacts-count');
+
+        deleteTypeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const typeId = this.getAttribute('data-type-id');
+                const typeName = this.getAttribute('data-type-name');
+                const typeContacts = parseInt(this.getAttribute('data-type-contacts') || '0');
+
+                document.getElementById('delete-type-name').textContent = typeName;
+
+                // Show warning if there are contacts using this type
+                if (typeContacts > 0) {
+                    contactsWarning.classList.remove('d-none');
+                    contactsCount.textContent = typeContacts;
+                } else {
+                    contactsWarning.classList.add('d-none');
+                }
+
+                // Update form action URL with the correct type ID
+                const formAction = "{% url 'clientes:excluir_tipo_contacto' tipo_id=999999 %}".replace('999999', typeId);
+                deleteTypeForm.setAttribute('action', formAction);
+            });
+        });
+    });
+</script>
+{% endblock %}

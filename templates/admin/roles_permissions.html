@@ -1,0 +1,782 @@
+{% extends 'admin/settings_layout.html' %}
+{% load i18n %}
+
+{% block settings_title %}{% trans "Perfis e Permissões" %}{% endblock %}
+
+{% block settings_breadcrumbs %}
+    <li class="breadcrumb-item active">{% trans "Perfis e Permissões" %}</li>
+{% endblock %}
+
+{% block settings_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-tag me-2"></i>{% trans "Perfis de Utilizador" %}</h5>
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+                    <i class="fas fa-plus-circle me-1"></i>{% trans "Novo Perfil" %}
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% trans "Perfis definem conjuntos de permissões que podem ser atribuídas aos utilizadores. Crie perfis que correspondam às funções na sua empresa (ex: Administradores, Técnicos, Comerciais)." %}
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Nome do Perfil" %}</th>
+                                <th>{% trans "Utilizadores" %}</th>
+                                <th>{% trans "Descrição" %}</th>
+                                <th class="text-center">{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in groups %}
+                            <tr>
+                                <td>{{ group.name }}</td>
+                                <td>{{ group.user_set.count }}</td>
+                                <td>
+                                    {% if group.name == 'Administradores' %}
+                                    {% trans "Acesso total ao sistema" %}
+                                    {% elif group.name == 'Técnicos' %}
+                                    {% trans "Gerem assistências técnicas e equipamentos" %}
+                                    {% elif group.name == 'Comerciais' %}
+                                    {% trans "Gerem clientes e vendas" %}
+                                    {% else %}
+                                    <em class="text-muted">{% trans "Sem descrição" %}</em>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary edit-role-btn"
+                                                data-group-id="{{ group.id }}"
+                                                data-group-name="{{ group.name }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editRoleModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success manage-permissions-btn"
+                                                data-group-id="{{ group.id }}"
+                                                data-group-name="{{ group.name }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#managePermissionsModal">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger delete-role-btn"
+                                                data-group-id="{{ group.id }}"
+                                                data-group-name="{{ group.name }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteRoleModal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">{% trans "Nenhum perfil encontrado." %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_add' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-tag me-2"></i>{% trans "Adicionar Perfil" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-group-name" class="form-label">{% trans "Nome do Perfil" %}*</label>
+                        <input type="text" class="form-control" id="add-group-name" name="name" required>
+                        <div class="form-text text-muted">
+                            {% trans "Escolha um nome descritivo como 'Administradores', 'Técnicos', ou 'Comerciais'" %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_edit' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="edit-group-id">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-tag me-2"></i>{% trans "Editar Perfil" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-group-name" class="form-label">{% trans "Nome do Perfil" %}*</label>
+                        <input type="text" class="form-control" id="edit-group-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Permissions Modal -->
+<div class="modal fade" id="managePermissionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_permissions' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="permissions-group-id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>{% trans "Permissões para o Perfil" %}: <span id="permissions-group-name" class="fw-bold"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "Selecione as funcionalidades que este perfil poderá acessar. Utilizadores com este perfil terão acesso apenas às funcionalidades selecionadas." %}
+                    </div>
+
+                    <!-- Permission search -->
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="permissionSearch"
+                                   placeholder="{% trans 'Filtrar permissões...' %}">
+                            <button type="button" class="btn btn-outline-primary" id="clearSearch">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabs for different permission areas -->
+                    <ul class="nav nav-tabs mb-3" id="permissionsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="clientes-tab" data-bs-toggle="tab"
+                                    data-bs-target="#clientesTab" type="button" role="tab">
+                                <i class="fas fa-users me-1"></i> {% trans "Clientes" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="equipamentos-tab" data-bs-toggle="tab"
+                                    data-bs-target="#equipamentosTab" type="button" role="tab">
+                                <i class="fas fa-cogs me-1"></i> {% trans "Equipamentos" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="assistencia-tab" data-bs-toggle="tab"
+                                    data-bs-target="#assistenciaTab" type="button" role="tab">
+                                <i class="fas fa-tools me-1"></i> {% trans "Assistência" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="stock-tab" data-bs-toggle="tab"
+                                    data-bs-target="#stockTab" type="button" role="tab">
+                                <i class="fas fa-boxes me-1"></i> {% trans "Stock" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="notas-tab" data-bs-toggle="tab"
+                                    data-bs-target="#notasTab" type="button" role="tab">
+                                <i class="fas fa-sticky-note me-1"></i> {% trans "Notas" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="admin-tab" data-bs-toggle="tab"
+                                    data-bs-target="#adminTab" type="button" role="tab">
+                                <i class="fas fa-shield-alt me-1"></i> {% trans "Administração" %}
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab content -->
+                    <div class="tab-content" id="permissionsTabContent">
+                        <!-- Clientes Tab -->
+                        <div class="tab-pane fade show active" id="clientesTab" role="tabpanel">
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input permission-group-toggle" type="checkbox"
+                                               data-group="clientes" id="toggle-clientes">
+                                        <label class="form-check-label fw-bold" for="toggle-clientes">
+                                            {% trans "Selecionar Todas as Permissões de Clientes" %}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="42" id="perm-42"
+                                                               data-group="clientes">
+                                                        <label class="form-check-label fw-bold" for="perm-42">
+                                                            {% trans "Ver Clientes" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite visualizar a lista de clientes e detalhes de cada cliente" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="43" id="perm-43"
+                                                               data-group="clientes">
+                                                        <label class="form-check-label fw-bold" for="perm-43">
+                                                            {% trans "Adicionar Clientes" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite adicionar novos clientes ao sistema" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="44" id="perm-44"
+                                                               data-group="clientes">
+                                                        <label class="form-check-label fw-bold" for="perm-44">
+                                                            {% trans "Editar Clientes" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite modificar informações de clientes existentes" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="45" id="perm-45"
+                                                               data-group="clientes">
+                                                        <label class="form-check-label fw-bold" for="perm-45">
+                                                            {% trans "Eliminar Clientes" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite remover clientes do sistema" %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Equipamentos Tab -->
+                        <div class="tab-pane fade" id="equipamentosTab" role="tabpanel">
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input permission-group-toggle" type="checkbox"
+                                               data-group="equipamentos" id="toggle-equipamentos">
+                                        <label class="form-check-label fw-bold" for="toggle-equipamentos">
+                                            {% trans "Selecionar Todas as Permissões de Equipamentos" %}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="46" id="perm-46"
+                                                               data-group="equipamentos">
+                                                        <label class="form-check-label fw-bold" for="perm-46">
+                                                            {% trans "Ver Equipamentos" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite visualizar a lista de equipamentos e suas informações" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="47" id="perm-47"
+                                                               data-group="equipamentos">
+                                                        <label class="form-check-label fw-bold" for="perm-47">
+                                                            {% trans "Adicionar Equipamentos" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite registar novos modelos de equipamentos no sistema" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Show more similar permission cards for Equipamentos -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assistencia Tab -->
+                        <div class="tab-pane fade" id="assistenciaTab" role="tabpanel">
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input permission-group-toggle" type="checkbox"
+                                               data-group="assistencia" id="toggle-assistencia">
+                                        <label class="form-check-label fw-bold" for="toggle-assistencia">
+                                            {% trans "Selecionar Todas as Permissões de Assistência" %}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="50" id="perm-50"
+                                                               data-group="assistencia">
+                                                        <label class="form-check-label fw-bold" for="perm-50">
+                                                            {% trans "Ver PATs" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite visualizar pedidos de assistência técnica" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="51" id="perm-51"
+                                                               data-group="assistencia">
+                                                        <label class="form-check-label fw-bold" for="perm-51">
+                                                            {% trans "Criar PATs" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite criar novos pedidos de assistência técnica" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Show more similar permission cards for Assistencia -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock Tab -->
+                        <div class="tab-pane fade" id="stockTab" role="tabpanel">
+                            <!-- Similar structure as above for stock permissions -->
+                        </div>
+
+                        <!-- Notas Tab -->
+                        <div class="tab-pane fade" id="notasTab" role="tabpanel">
+                            <!-- Similar structure as above for notas permissions -->
+                        </div>
+
+                        <!-- Admin Tab -->
+                        <div class="tab-pane fade" id="adminTab" role="tabpanel">
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <div class="form-check">
+                                        <input class="form-check-input permission-group-toggle" type="checkbox"
+                                               data-group="admin" id="toggle-admin">
+                                        <label class="form-check-label fw-bold" for="toggle-admin">
+                                            {% trans "Selecionar Todas as Permissões de Administração" %}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="60" id="perm-60"
+                                                               data-group="admin">
+                                                        <label class="form-check-label fw-bold" for="perm-60">
+                                                            {% trans "Gerir Utilizadores" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite adicionar, editar e remover utilizadores do sistema" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="permission-card mb-3">
+                                                <div class="permission-header">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input permission-checkbox" type="checkbox"
+                                                               name="permissions" value="61" id="perm-61"
+                                                               data-group="admin">
+                                                        <label class="form-check-label fw-bold" for="perm-61">
+                                                            {% trans "Gerir Perfis" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="permission-body">
+                                                    {% trans "Permite criar e editar perfis de utilizador e suas permissões" %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Show more similar permission cards for Admin -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Select by Role Templates -->
+                    <div class="mt-4">
+                        <h5><i class="fas fa-clipboard-list me-2"></i>{% trans "Modelos de Perfis Predefinidos" %}</h5>
+                        <p class="text-muted">{% trans "Aplique um conjunto predefinido de permissões baseado num perfil comum." %}</p>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="card hover-card role-template" data-role="admin">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-user-shield me-2"></i>{% trans "Administrador" %}
+                                        </h6>
+                                        <p class="card-text small">{% trans "Acesso total a todas as funcionalidades do sistema" %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card hover-card role-template" data-role="tech">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-tools me-2"></i>{% trans "Técnico" %}
+                                        </h6>
+                                        <p class="card-text small">{% trans "Acesso para gerir assistências técnicas e equipamentos" %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card hover-card role-template" data-role="sales">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-handshake me-2"></i>{% trans "Comercial" %}
+                                        </h6>
+                                        <p class="card-text small">{% trans "Acesso para gerir clientes e obter informações de vendas" %}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Guardar Permissões" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Role Modal -->
+<div class="modal fade" id="deleteRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_delete' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="delete-group-id">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o perfil" %} <strong id="delete-group-name"></strong>?</p>
+                    <p class="text-danger">{% trans "Essa ação não pode ser desfeita e todos os utilizadores serão removidos deste perfil." %}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit role modal setup
+        const editRoleBtns = document.querySelectorAll('.edit-role-btn');
+        editRoleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                const groupName = this.getAttribute('data-group-name');
+
+                document.getElementById('edit-group-id').value = groupId;
+                document.getElementById('edit-group-name').value = groupName;
+            });
+        });
+
+        // Delete role modal setup
+        const deleteRoleBtns = document.querySelectorAll('.delete-role-btn');
+        deleteRoleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                const groupName = this.getAttribute('data-group-name');
+
+                document.getElementById('delete-group-id').value = groupId;
+                document.getElementById('delete-group-name').textContent = groupName;
+            });
+        });
+
+        // Manage permissions modal setup
+        const managePermissionsBtns = document.querySelectorAll('.manage-permissions-btn');
+        managePermissionsBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                const groupName = this.getAttribute('data-group-name');
+
+                document.getElementById('permissions-group-id').value = groupId;
+                document.getElementById('permissions-group-name').textContent = groupName;
+
+                // Fetch current permissions for this group
+                fetch(`/settings/groups/${groupId}/permissions/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Reset all checkboxes
+                        document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+
+                        // Check the ones that are assigned to this group
+                        if (data.permissions) {
+                            data.permissions.forEach(permId => {
+                                const checkbox = document.getElementById(`perm-${permId}`);
+                                if (checkbox) checkbox.checked = true;
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching permissions:', error));
+            });
+        });
+
+        // Permission search functionality
+        const permissionSearch = document.getElementById('permissionSearch');
+        if (permissionSearch) {
+            permissionSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+
+                document.querySelectorAll('.permission-card').forEach(card => {
+                    const label = card.querySelector('.form-check-label').textContent.toLowerCase();
+                    const description = card.querySelector('.permission-body').textContent.toLowerCase();
+
+                    if (label.includes(searchTerm) || description.includes(searchTerm)) {
+                        card.style.display = 'block';
+
+                        // Make sure the parent tab is active if there's a match
+                        const tabPane = card.closest('.tab-pane');
+                        const tabId = tabPane.id;
+
+                        document.querySelector(`[data-bs-target="#${tabId}"]`).classList.add('search-highlight');
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+
+            // Clear search
+            document.getElementById('clearSearch').addEventListener('click', function() {
+                permissionSearch.value = '';
+                document.querySelectorAll('.permission-card').forEach(card => {
+                    card.style.display = 'block';
+                });
+                document.querySelectorAll('.nav-link').forEach(tab => {
+                    tab.classList.remove('search-highlight');
+                });
+            });
+        }
+
+        // Group permission toggle
+        document.querySelectorAll('.permission-group-toggle').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const group = this.getAttribute('data-group');
+                const isChecked = this.checked;
+
+                document.querySelectorAll(`.permission-checkbox[data-group="${group}"]`).forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+            });
+        });
+
+        // Role templates
+        document.querySelectorAll('.role-template').forEach(template => {
+            template.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+
+                // Reset all checkboxes first
+                document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+
+                // Set permissions based on role template
+                if (role === 'admin') {
+                    // Check all permissions for admin
+                    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                        checkbox.checked = true;
+                    });
+                    document.querySelectorAll('.permission-group-toggle').forEach(toggle => {
+                        toggle.checked = true;
+                    });
+                }
+                else if (role === 'tech') {
+                    // Check just technical permissions
+                    document.querySelectorAll('.permission-checkbox[data-group="equipamentos"], .permission-checkbox[data-group="assistencia"]').forEach(checkbox => {
+                        checkbox.checked = true;
+                    });
+                    document.querySelectorAll('.permission-checkbox[data-group="clientes"]').forEach(checkbox => {
+                        // Allow viewing but not editing clients
+                        if (checkbox.id === 'perm-42') { // View Clients permission
+                            checkbox.checked = true;
+                        }
+                    });
+                    // Update toggle states
+                    updateToggleStates();
+                }
+                else if (role === 'sales') {
+                    // Check just sales-related permissions
+                    document.querySelectorAll('.permission-checkbox[data-group="clientes"]').forEach(checkbox => {
+                        checkbox.checked = true;
+                    });
+                    document.querySelectorAll('.permission-checkbox[data-group="equipamentos"]').forEach(checkbox => {
+                        // Allow viewing but not editing equipment
+                        if (checkbox.id === 'perm-46') { // View Equipment permission
+                            checkbox.checked = true;
+                        }
+                    });
+                    // Update toggle states
+                    updateToggleStates();
+                }
+            });
+        });
+
+        function updateToggleStates() {
+            // Update group toggle state based on individual checkboxes
+            document.querySelectorAll('.permission-group-toggle').forEach(toggle => {
+                const group = toggle.getAttribute('data-group');
+                const checkboxes = document.querySelectorAll(`.permission-checkbox[data-group="${group}"]`);
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+                toggle.checked = allChecked;
+            });
+        }
+    });
+</script>
+
+<style>
+    /* Permission card styling */
+    .permission-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .permission-header {
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+    }
+
+    .permission-body {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    /* Role template cards */
+    .hover-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-3px);
+        border-color: #0d6efd;
+        box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    }
+
+    /* Search highlight for tabs */
+    .nav-link.search-highlight {
+        background-color: rgba(13, 110, 253, 0.1);
+        font-weight: bold;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .permission-card {
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .permission-header {
+        background-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .hover-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 0.25rem 0.75rem rgba(255, 255, 255, 0.05);
+    }
+</style>
+{% endblock %}

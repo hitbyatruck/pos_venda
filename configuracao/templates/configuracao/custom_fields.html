@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Campos Personalizados" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{% trans "Campos Personalizados" %}</h1>
+
+    {% include 'configuracao/includes/config_nav.html' with active_tab='custom_fields' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Campos Personalizados" %}</h6>
+            <a href="{% url 'configuracao:add_custom_field' %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus-circle mr-1"></i> {% trans "Adicionar Campo" %}
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <form method="get" class="d-flex">
+                        <select class="form-select" name="model" onchange="this.form.submit()">
+                            <option value="">{% trans "Todos os Modelos" %}</option>
+                            {% for key, value in models.items %}
+                                <option value="{{ key }}" {% if key == model_filter %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            {% if custom_fields %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Nome" %}</th>
+                                <th>{% trans "Label" %}</th>
+                                <th>{% trans "Modelo" %}</th>
+                                <th>{% trans "Tipo" %}</th>
+                                <th>{% trans "Obrigatório" %}</th>
+                                <th>{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in custom_fields %}
+                            <tr>
+                                <td>{{ field.name }}</td>
+                                <td>{{ field.label }}</td>
+                                <td>{{ field.get_model_display }}</td>
+                                <td>{{ field.get_field_type_display }}</td>
+                                <td>
+                                    {% if field.required %}
+                                        <span class="badge bg-success">{% trans "Sim" %}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{% trans "Não" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'configuracao:edit_custom_field' field.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'configuracao:delete_custom_field' field.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{% trans "Tem certeza que deseja excluir este campo?" %}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    {% if model_filter %}
+                        {% trans "Nenhum campo personalizado encontrado para este modelo." %}
+                    {% else %}
+                        {% trans "Nenhum campo personalizado cadastrado." %}
+                    {% endif %}
+                    <a href="{% url 'configuracao:add_custom_field' %}" class="alert-link">
+                        {% trans "Clique aqui para adicionar um novo campo." %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

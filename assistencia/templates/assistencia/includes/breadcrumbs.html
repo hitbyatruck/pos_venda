@@ -1,0 +1,11 @@
+{% load i18n %}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'assistencia:listar_pats' %}">{% trans "Assistência Técnica" %}</a></li>
+        {% if view_title %}
+        <li class="breadcrumb-item active" aria-current="page">{{ view_title }}</li>
+        {% endif %}
+    </ol>
+</nav>

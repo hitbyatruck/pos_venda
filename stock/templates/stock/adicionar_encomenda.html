@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Nova Encomenda" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-shopping-cart mr-2"></i> {% trans "Nova Encomenda" %}
+    </h1>
+
+    {% include 'stock/includes/menu_stock.html' with active='encomendas' %}
+
+    {% include 'includes/breadcrumbs.html' with
+        items=breadcrumbs|default:"stock,encomendas,adicionar"
+    %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Informações da Encomenda" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="encomendaForm">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fornecedor" class="form-label">{% trans "Fornecedor" %} <span class="text-danger">*</span></label>
+                                <select class="form-select" id="fornecedor" name="fornecedor" required>
+                                    <option value="">{% trans "Selecione um fornecedor" %}</option>
+                                    {% for fornecedor in fornecedores %}
+                                        <option value="{{ fornecedor.id }}" {% if form.fornecedor.value == fornecedor.id %}selected{% endif %}>
+                                            {{ fornecedor.nome }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.fornecedor.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.fornecedor.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="data_encomenda" class="form-label">{% trans "Data da Encomenda" %}</label>
+                                <input type="date" class="form-control" id="data_encomenda" name="data_encomenda" value="{{ form.data_encomenda.value|date:'Y-m-d'|default:today }}">
+                                {% if form.data_encomenda.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.data_encomenda.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="previsao_entrega" class="form-label">{% trans "Previsão de Entrega" %}</label>
+                                <input type="date" class="form-control" id="previsao_entrega" name="previsao_entrega" value="{{ form.previsao_entrega.value|date:'Y-m-d'|default:'' }}">
+                                {% if form.previsao_entrega.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.previsao_entrega.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="numero_encomenda" class="form-label">{% trans "Número da Encomenda" %}</label>
+                                <input type="text" class="form-control" id="numero_encomenda" name="numero_encomenda" value="{{ form.numero_encomenda.value|default:'' }}">
+                                {% if form.numero_encomenda.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.numero_encomenda.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">{% trans "Status" %}</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="pendente" {% if form.status.value == 'pendente' %}selected{% endif %}>{% trans "Pendente" %}</option>
+                                    <option value="enviada" {% if form.status.value == 'enviada' %}selected{% endif %}>{% trans "Enviada" %}</option>
+                                    <option value="parcial" {% if form.status.value == 'parcial' %}selected{% endif %}>{% trans "Parcialmente Recebida" %}</option>
+                                    <option value="recebida" {% if form.status.value == 'recebida' %}selected{% endif %}>{% trans "Recebida" %}</option>
+                                    <option value="cancelada" {% if form.status.value == 'cancelada' %}selected{% endif %}>{% trans "Cancelada" %}</option>
+                                </select>
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notas" class="form-label">{% trans "Notas" %}</label>
+                            <textarea class="form-control" id="notas" name="notas" rows="3">{{ form.notas.value|default:'' }}</textarea>
+                            {% if form.notas.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notas.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Itens da Encomenda" %}</h6>
+                    <button type="button" class="btn btn-sm btn-primary" id="addItemBtn">
+                        <i class="fas fa-plus-circle mr-1"></i> {% trans "Adicionar Item" %}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Peça" %}</th>
+                                <th style="width: 130px;">{% trans "Quantidade" %}</th>
+                                <th style="width: 180px;">{% trans "Preço Unitário" %}</th>
+                                <th style="width: 180px;">{% trans "Total" %}</th>
+                                <th style="width: 80px;">{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Items will be added dynamically -->
+                            {% if not items %}
+                            <tr id="noItemsRow">
+                                <td colspan="5" class="text-center">
+                                    {% trans "Nenhum item adicionado" %}
+                                </td>
+                            </tr>
+                            {% else %}
+                                {% for item in items %}
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-select peca-select" name="items[{{ forloop.counter0 }}][peca]" required>
+                                            <option value="">{% trans "Selecione uma peça" %}</option>
+                                            {% for peca in pecas %}
+                                                <option value="{{ peca.id }}" {% if item.peca.id == peca.id %}selected{% endif %}>
+                                                    {{ peca.codigo }} - {{ peca.nome }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control quantidade-input" name="items[{{ forloop.counter0 }}][quantidade]" value="{{ item.quantidade }}" min="1" required>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text">€</span>
+                                            <input type="number" class="form-control preco-input" name="items[{{ forloop.counter0 }}][preco_unitario]" value="{{ item.preco_unitario }}" min="0" step="0.01" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <span class="input-group-text">€</span>
+                                            <input type="text" class="form-control total-input" readonly value="{{ item.total }}">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger delete-row">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3" class="text-end">{% trans "Total da Encomenda:" %}</th>
+                                <th>
+                                    <div class="input-group">
+                                        <span class="input-group-text">€</span>
+                                        <input type="text" id="totalEncomenda" class="form-control" readonly value="{{ total_encomenda|default:'0.00' }}">
+                                    </div>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save mr-1"></i> {% trans "Salvar Encomenda" %}
+                    </button>
+                    <a href="{% url 'stock:listar_encomendas' %}" class="btn btn-secondary">
+                        <i class="fas fa-times mr-1"></i> {% trans "Cancelar" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template for new row -->
+<template id="itemRowTemplate">
+    <tr class="item-row">
+        <td>
+            <select class="form-select peca-select" name="items[INDEX][peca]" required>
+                <option value="">{% trans "Selecione uma peça" %}</option>
+                {% for peca in pecas %}
+                    <option value="{{ peca.id }}">{{ peca.codigo }} - {{ peca.nome }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="number" class="form-control quantidade-input" name="items[INDEX][quantidade]" value="1" min="1" required>
+        </td>
+        <td>
+            <div class="input-group">
+                <span class="input-group-text">€</span>
+                <input type="number" class="form-control preco-input" name="items[INDEX][preco_unitario]" value="0.00" min="0" step="0.01" required>
+            </div>
+        </td>
+        <td>
+            <div class="input-group">
+                <span class="input-group-text">€</span>
+                <input type="text" class="form-control total-input" readonly value="0.00">
+            </div>
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger delete-row">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let itemCounter = {{ items|length|default:0 }};
+        const itemsTable = document.getElementById('itemsTable');
+        const tbody = itemsTable.querySelector('tbody');
+        const noItemsRow = document.getElementById('noItemsRow');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const encomendaForm = document.getElementById('encomendaForm');
+        const itemRowTemplate = document.getElementById('itemRowTemplate');
+
+        // Calculate row total
+        function calculateRowTotal(row) {
+            const quantidade = parseFloat(row.querySelector('.quantidade-input').value) || 0;
+            const precoUnitario = parseFloat(row.querySelector('.preco-input').value) || 0;
+            const total = quantidade * precoUnitario;
+            row.querySelector('.total-input').value = total.toFixed(2);
+            return total;
+        }
+
+        // Calculate order total
+        function calculateOrderTotal() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                total += calculateRowTotal(row);
+            });
+            document.getElementById('totalEncomenda').value = total.toFixed(2);
+        }
+
+        // Add new item row
+        addItemBtn.addEventListener('click', function() {
+            if (noItemsRow) {
+                noItemsRow.remove();
+            }
+
+            const newRow = document.importNode(itemRowTemplate.content, true).querySelector('tr');
+            newRow.innerHTML = newRow.innerHTML.replace(/INDEX/g, itemCounter++);
+            tbody.appendChild(newRow);
+
+            // Setup event listeners for the new row
+            setupRowListeners(newRow);
+            calculateOrderTotal();
+        });
+
+        // Setup row event listeners
+        function setupRowListeners(row) {
+            // Delete row
+            row.querySelector('.delete-row').addEventListener('click', function() {
+                row.remove();
+                calculateOrderTotal();
+
+                // Show "no items" row if no items left
+                if (document.querySelectorAll('.item-row').length === 0) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.id = 'noItemsRow';
+                    emptyRow.innerHTML = `<td colspan="5" class="text-center">{% trans "Nenhum item adicionado" %}</td>`;
+                    tbody.appendChild(emptyRow);
+                }
+            });
+
+            // Calculate totals when quantity or price changes
+            row.querySelector('.quantidade-input').addEventListener('input', calculateOrderTotal);
+            row.querySelector('.preco-input').addEventListener('input', calculateOrderTotal);
+        }
+
+        // Setup existing rows
+        document.querySelectorAll('.item-row').forEach(setupRowListeners);
+
+        // Calculate initial totals
+        calculateOrderTotal();
+
+        // Save button submits the form
+        saveBtn.addEventListener('click', function() {
+            // Make sure there are items
+            if (document.querySelectorAll('.item-row').length === 0) {
+                alert("{% trans 'Adicione pelo menos um item à encomenda' %}");
+                return;
+            }
+
+            // Submit the form with all data
+            encomendaForm.submit();
+        });
+    });
+</script>
+{% endblock %}

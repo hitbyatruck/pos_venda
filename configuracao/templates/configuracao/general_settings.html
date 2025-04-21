@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Configurações Gerais" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-cog me-2"></i>{% trans "Configurações Gerais" %}
+        </h1>
+    </div>
+
+    <!-- Include admin navigation menu -->
+    {% include 'configuracao/includes/config_nav.html' with active_tab='general' %}
+
+    <!-- Display any messages -->
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Settings Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "Configurações Gerais do Sistema" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <div class="row mb-4">
+                    <!-- System Name -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="site_name" class="form-label">{% trans "Nome do Sistema" %}</label>
+                            <input type="text" class="form-control" id="site_name" name="site_name"
+                                   value="{{ settings.site_name }}" required>
+                            <div class="form-text">{% trans "Nome exibido no título e cabeçalho" %}</div>
+                        </div>
+                    </div>
+
+                    <!-- System Logo -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="site_logo" class="form-label">{% trans "Logo do Sistema" %}</label>
+                            <input type="file" class="form-control" id="site_logo" name="site_logo">
+                            <div class="form-text">{% trans "Formato recomendado: PNG, tamanho máximo 2MB" %}</div>
+
+                            {% if settings.site_logo %}
+                            <div class="mt-2">
+                                <img src="{{ settings.site_logo.url }}" alt="Logo" style="max-height: 50px;" class="img-thumbnail">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <!-- Default Language -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="default_language" class="form-label">{% trans "Idioma Padrão" %}</label>
+                            <select class="form-select" id="default_language" name="default_language">
+                                {% for code, name in form.fields.default_language.choices %}
+                                <option value="{{ code }}" {% if settings.default_language == code %}selected{% endif %}>
+                                    {{ name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Timezone -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="timezone" class="form-label">{% trans "Fuso Horário" %}</label>
+                            <select class="form-select" id="timezone" name="timezone">
+                                {% for tz in form.fields.timezone.choices %}
+                                <option value="{{ tz.0 }}" {% if settings.timezone == tz.0 %}selected{% endif %}>
+                                    {{ tz.1 }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <!-- Date Format -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="date_format" class="form-label">{% trans "Formato de Data" %}</label>
+                            <input type="text" class="form-control" id="date_format" name="date_format"
+                                   value="{{ settings.date_format }}" required>
+                            <div class="form-text">{% trans "Exemplo: d/m/Y para 31/12/2023" %}</div>
+                        </div>
+                    </div>
+
+                    <!-- Time Format -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="time_format" class="form-label">{% trans "Formato de Hora" %}</label>
+                            <input type="text" class="form-control" id="time_format" name="time_format"
+                                   value="{{ settings.time_format }}" required>
+                            <div class="form-text">{% trans "Exemplo: H:i para 15:45" %}</div>
+                        </div>
+                    </div>
+
+                    <!-- Cache Timeout -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="cache_timeout" class="form-label">{% trans "Duração do Cache (segundos)" %}</label>
+                            <input type="number" class="form-control" id="cache_timeout" name="cache_timeout"
+                                   value="{{ settings.cache_timeout }}" min="0" required>
+                            <div class="form-text">{% trans "0 para desativar cache" %}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="reset" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo me-1"></i> {% trans "Resetar" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "Salvar Configurações" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize form validation
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+
+        // Enhance timezone selector with search
+        const timezoneSelect = document.getElementById('timezone');
+        if (timezoneSelect) {
+            // You could add a select2 or similar library here if desired
+        }
+    });
+</script>
+{% endblock %}

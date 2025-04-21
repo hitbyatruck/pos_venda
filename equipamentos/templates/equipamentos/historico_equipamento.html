@@ -1,321 +1,313 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Histórico: {{ equipamento.numero_serie }}{% endblock %}
+{% block title %}{% trans "Histórico de Equipamento" %} - {{ equipamento.numero_serie }}{% endblock %}
 
 {% block content %}
-<div class="container">
-  <!-- Breadcrumbs -->
-  {% include "includes/breadcrumbs.html" with items=breadcrumbs %}
-  
-  <!-- Cabeçalho com botões de ação -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-      <i class="bi bi-cpu-fill me-2 text-primary"></i>
-      {{ equipamento.equipamento_fabricado.nome }} - S/N: {{ equipamento.numero_serie }}
-    </h2>
-    <div>
-      <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}" class="btn btn-outline-primary">
-        <i class="bi bi-person me-2"></i>Ver Cliente
-      </a>
-      {% if user.is_staff %}
-      <a href="{% url 'equipamentos:transferir_equipamento' equipamento_id=equipamento.id %}" class="btn btn-outline-warning ms-2">
-        <i class="bi bi-arrow-left-right me-2"></i>Transferir
-      </a>
-      <a href="/admin/equipamentos/equipamentocliente/{{ equipamento.id }}/change/" class="btn btn-outline-secondary ms-2">
-        <i class="bi bi-pencil-square me-2"></i>Editar
-      </a>
-      {% endif %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-history me-2"></i>{% trans "Histórico de Equipamento" %}
+        </h1>
+        <div>
+            <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equipamento.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar para Detalhes" %}
+            </a>
+        </div>
     </div>
-  </div>
-  
-  <!-- Mini Nav para a página de histórico -->
-  <ul class="nav nav-tabs mb-4">
-    {% for tab in nav_tabs %}
-    <li class="nav-item">
-      <a class="nav-link {% if active_tab == tab.id %}active{% endif %}" 
-         href="?tab={{ tab.id }}">
-        <i class="{{ tab.icon }} me-1"></i> {{ tab.name }}
-        {% if tab.badge and tab.badge > 0 %}
-        <span class="badge bg-secondary ms-1">{{ tab.badge }}</span>
-        {% endif %}
-      </a>
-    </li>
-    {% endfor %}
-  </ul>
-  
-  <!-- Conteúdo das abas -->
-  <div class="tab-content mt-4">
-    <!-- Tab: Detalhes -->
-    <div class="{% if active_tab == 'detalhes' %}d-block{% else %}d-none{% endif %}" id="detalhes">
-      <!-- Detalhes do Equipamento -->
-      <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalhes do Equipamento</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <dl class="row">
-                <dt class="col-sm-4">Modelo:</dt>
-                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.nome }}</dd>
-                
-                <dt class="col-sm-4">Nº Série:</dt>
-                <dd class="col-sm-8">{{ equipamento.numero_serie }}</dd>
-                
-                <dt class="col-sm-4">Cliente Atual:</dt>
-                <dd class="col-sm-8">
-                  <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}">
-                    {{ equipamento.cliente.nome }}
-                  </a>
-                </dd>
-              </dl>
-            </div>
-            <div class="col-md-6">
-              <dl class="row">
-                <dt class="col-sm-4">Data Aquisição:</dt>
-                <dd class="col-sm-8">{{ equipamento.data_aquisicao|date:"d/m/Y" }}</dd>
-                
-                <dt class="col-sm-4">Categoria:</dt>
-                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.categoria.nome }}</dd>
-                
-                <dt class="col-sm-4">Referência:</dt>
-                <dd class="col-sm-8">{{ equipamento.equipamento_fabricado.referencia_interna }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Tab: Assistência -->
-    <div class="{% if active_tab == 'assistencia' %}d-block{% else %}d-none{% endif %}" id="assistencia">
-      <!-- Histórico de Assistência -->
-      <div class="card mb-4 border-warning">
-        <div class="card-header bg-warning text-dark">
-          <h5 class="mb-0"><i class="bi bi-tools me-2"></i>Histórico de Assistência Técnica</h5>
-        </div>
-        <div class="card-body">
-          {% if historico_pats %}
-            <div class="table-responsive">
-              <table class="table table-striped table-hover">
-                <thead>
-                  <tr>
-                    <th>Nº PAT</th>
-                    <th>Data</th>
-                    <th>Estado</th>
-                    <th>Descrição</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for pat in historico_pats %}
-                  <tr>
-                    <td>{{ pat.pat_number }}</td>
-                    <td>{{ pat.data_criacao|date:"d/m/Y" }}</td>
-                    <td>
-                      <span class="badge 
-                        {% if pat.estado == 'aberto' %}bg-danger{% endif %}
-                        {% if pat.estado == 'em_andamento' %}bg-warning{% endif %}
-                        {% if pat.estado == 'concluido' %}bg-success{% endif %}
-                        {% if pat.estado == 'cancelado' %}bg-secondary{% endif %}
-                      ">
-                        {{ pat.get_estado_display }}
-                      </span>
-                    </td>
-                    <td>{{ pat.problema|truncatechars:50 }}</td>
-                    <td>
-                      <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              Este equipamento não possui registros de assistência técnica.
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    
-    <!-- Tab: Alterações -->
-    <div class="{% if active_tab == 'alteracoes' %}d-block{% else %}d-none{% endif %}" id="alteracoes">
-      <!-- Histórico de Alterações -->
-      <div class="card mb-4 border-info">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico de Alterações</h5>
-        </div>
-        <div class="card-body">
-          {% if historico_mudancas %}
-            <div class="timeline">
-              {% for mudanca in historico_mudancas %}
-                <div class="timeline-item">
-                  <div class="timeline-date">
-                    {{ mudanca.history_date|date:"d/m/Y H:i" }}
-                  </div>
-                  <div class="timeline-badge {% if mudanca.history_type == '+' %}bg-success{% elif mudanca.history_type == '-' %}bg-danger{% else %}bg-info{% endif %}">
-                    {% if mudanca.history_type == '+' %}<i class="bi bi-plus-lg"></i>{% elif mudanca.history_type == '-' %}<i class="bi bi-dash-lg"></i>{% else %}<i class="bi bi-pencil"></i>{% endif %}
-                  </div>
-                  <div class="timeline-content">
-                    <div class="mb-2">
-                      {% if mudanca.history_type == '+' %}
-                        <strong>Equipamento registrado</strong>
-                      {% elif mudanca.history_type == '-' %}
-                        <strong>Equipamento removido</strong>
-                      {% else %}
-                        <strong>Equipamento atualizado</strong>
-                      {% endif %}
-                      por {{ mudanca.history_user.username|default:"Sistema" }}
-                      {% if mudanca.history_change_reason %}
-                        <div class="mt-1 p-2 alert alert-secondary">
-                            <i class="bi bi-quote me-1"></i>{{ mudanca.history_change_reason }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    {% with old=mudanca.prev_record new=mudanca %}
-                        {% if old.cliente != new.cliente %}
-                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
-                                <strong>Cliente:</strong> 
-                                <span class="badge bg-danger">{{ old.cliente.nome }}</span> → 
-                                <span class="badge bg-success">{{ new.cliente.nome }}</span>
-                            </div>
-                        {% endif %}
-                        
-                        {% if old.numero_serie != new.numero_serie %}
-                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
-                                <strong>Nº Série:</strong> 
-                                <span class="badge bg-danger">{{ old.numero_serie }}</span> → 
-                                <span class="badge bg-success">{{ new.numero_serie }}</span>
-                            </div>
-                        {% endif %}
-                        
-                        {% if old.data_aquisicao != new.data_aquisicao %}
-                            <div class="mb-1 alert alert-light border-0 py-1 px-2">
-                                <strong>Data Aquisição:</strong> 
-                                <span class="badge bg-danger">{{ old.data_aquisicao|date:"d/m/Y" }}</span> → 
-                                <span class="badge bg-success">{{ new.data_aquisicao|date:"d/m/Y" }}</span>
-                            </div>
-                        {% endif %}
-                    {% endwith %}
-                    </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              Não há registros de alterações para este equipamento.
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    
-    <!-- Tab: Notas -->
-    <div class="{% if active_tab == 'notas' %}d-block{% else %}d-none{% endif %}" id="notas">
-      <!-- Notas e Observações -->
-      <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-          <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Notas e Observações</h5>
-        </div>
-        <div class="card-body">
-          {% if notas %}
-            {% for nota in notas %}
-              <div class="card mb-3">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                  <div>
-                    <i class="bi bi-journal-text me-2"></i>
-                    <strong>{{ nota.titulo }}</strong>
-                  </div>
-                  <small class="text-muted">{{ nota.data_criacao|date:"d/m/Y H:i" }}</small>
-                </div>
-                <div class="card-body">
-                  {{ nota.conteudo|linebreaks }}
-                </div>
-              </div>
-            {% endfor %}
-          {% else %}
-            <div class="alert alert-info mb-4">
-              <i class="bi bi-info-circle me-2"></i>
-              Não há notas registradas para este equipamento.
-            </div>
-          {% endif %}
-          
-          <!-- Formulário para adicionar nova nota -->
-          <form method="post" action="">
-            {% csrf_token %}
-            <div class="form-group">
-              <label for="titulo">Título:</label>
-              <input type="text" class="form-control" id="titulo" name="titulo" required>
-            </div>
-            
-            <div class="form-group mt-2">
-              <label for="conteudo">Descrição:</label>
-              <textarea class="form-control" id="conteudo" name="conteudo" rows="3" required></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-primary mt-2">
-              <i class="bi bi-plus-circle me-2"></i>Adicionar Nota
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- CSS para timeline -->
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'equipamentos:listar_cliente' %}">{% trans "Equipamentos de Cliente" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equipamento.id %}">{{ equipamento.equipamento_fabricado.nome }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Histórico" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Equipment info summary card -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">{% trans "Informações do Equipamento" %}</h5>
+                    <p><strong>{% trans "Modelo:" %}</strong> {{ equipamento.equipamento_fabricado.nome }}</p>
+                    <p><strong>{% trans "Número de Série:" %}</strong> {{ equipamento.numero_serie }}</p>
+                    <p><strong>{% trans "Cliente Atual:" %}</strong> {{ equipamento.cliente.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title">{% trans "Dados de Instalação" %}</h5>
+                    <p><strong>{% trans "Data de Instalação:" %}</strong> {{ equipamento.data_instalacao|date:"d/m/Y"|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs for different types of history -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'transferencias' %}active{% endif %}" id="ownership-tab" data-bs-toggle="tab"
+                            data-bs-target="#ownership" type="button" role="tab">
+                        <i class="fas fa-exchange-alt me-1"></i> {% trans "Transferências" %}
+                        {% if historico_transferencias %}
+                        <span class="badge bg-primary ms-1">{{ historico_transferencias.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'assistencia' %}active{% endif %}" id="support-tab" data-bs-toggle="tab"
+                            data-bs-target="#support" type="button" role="tab">
+                        <i class="fas fa-tools me-1"></i> {% trans "Assistência Técnica" %}
+                        {% if historico_pats %}
+                        <span class="badge bg-primary ms-1">{{ historico_pats.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'alteracoes' or not active_tab %}active{% endif %}" id="changes-tab" data-bs-toggle="tab"
+                            data-bs-target="#changes" type="button" role="tab">
+                        <i class="fas fa-edit me-1"></i> {% trans "Alterações" %}
+                        {% if historico_mudancas %}
+                        <span class="badge bg-primary ms-1">{{ historico_mudancas.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'notas' %}active{% endif %}" id="notes-tab" data-bs-toggle="tab"
+                            data-bs-target="#notes" type="button" role="tab">
+                        <i class="fas fa-sticky-note me-1"></i> {% trans "Notas" %}
+                        {% if notas %}
+                        <span class="badge bg-primary ms-1">{{ notas.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Ownership Transfer History Tab -->
+                <div class="tab-pane fade {% if active_tab == 'transferencias' %}show active{% endif %}" id="ownership" role="tabpanel">
+                    <h5 class="card-title mb-3">{% trans "Histórico de Propriedade" %}</h5>
+
+                    {% if historico_transferencias %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "Data" %}</th>
+                                        <th>{% trans "Cliente Anterior" %}</th>
+                                        <th>{% trans "Novo Cliente" %}</th>
+                                        <th>{% trans "Motivo" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transfer in historico_transferencias %}
+                                    <tr>
+                                        <td>{{ transfer.transfer_date|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <a href="{% url 'clientes:detalhes_cliente' cliente_id=transfer.previous_client.id %}">
+                                                {{ transfer.previous_client.nome }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'clientes:detalhes_cliente' cliente_id=transfer.new_client.id %}">
+                                                {{ transfer.new_client.nome }}
+                                            </a>
+                                        </td>
+                                        <td>{{ transfer.reason|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Este equipamento não tem histórico de transferências entre clientes." %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Technical Support History Tab -->
+                <div class="tab-pane fade {% if active_tab == 'assistencia' %}show active{% endif %}" id="support" role="tabpanel">
+                    <h5 class="card-title mb-3">{% trans "Histórico de Assistência Técnica" %}</h5>
+
+                    {% if historico_pats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "PAT" %}</th>
+                                        <th>{% trans "Data de Entrada" %}</th>
+                                        <th>{% trans "Data de Conclusão" %}</th>
+                                        <th>{% trans "Estado" %}</th>
+                                        <th>{% trans "Problema" %}</th>
+                                        <th>{% trans "Ações" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pat in historico_pats %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}">
+                                                {{ pat.pat_number }}
+                                            </a>
+                                        </td>
+                                        <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
+                                        <td>{{ pat.data_conclusao|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            <span class="badge {% if pat.estado == 'aberto' %}bg-warning{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-primary{% endif %}">
+                                                {{ pat.get_estado_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ pat.descricao_problema|truncatechars:50 }}</td>
+                                        <td>
+                                            <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Este equipamento não tem histórico de assistência técnica." %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- General Changes History Tab -->
+                <div class="tab-pane fade {% if active_tab == 'alteracoes' or not active_tab %}show active{% endif %}" id="changes" role="tabpanel">
+                    <h5 class="card-title mb-3">{% trans "Histórico de Alterações" %}</h5>
+
+                    {% if historico_mudancas %}
+                        <div class="timeline mb-4">
+                            {% for history_item in historico_mudancas %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker {% if history_item.history_type == '+' %}bg-success{% elif history_item.history_type == '~' %}bg-primary{% else %}bg-danger{% endif %}"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-0">{{ history_item.history_date|date:"d/m/Y H:i" }}</h6>
+                                        <p class="text-muted mb-1">
+                                            {% if history_item.history_type == '+' %}
+                                                <span class="badge bg-success">{% trans "Criação" %}</span>
+                                            {% elif history_item.history_type == '~' %}
+                                                <span class="badge bg-primary">{% trans "Atualização" %}</span>
+                                            {% elif history_item.history_type == '-' %}
+                                                <span class="badge bg-danger">{% trans "Exclusão" %}</span>
+                                            {% endif %}
+
+                                            {% if history_item.history_change_reason %}
+                                                <span class="ms-2">{{ history_item.history_change_reason }}</span>
+                                            {% endif %}
+                                        </p>
+
+                                        {% if history_item.history_type == '~' %}
+                                            <div class="changes-list small">
+                                                <!-- Display changed fields - requires delta detection logic -->
+                                                <!-- This is a simplified version, ideally you'd compare with previous version -->
+                                                <ul class="mb-0 ps-3">
+                                                    {% for field, value in history_item.get_changes %}
+                                                        <li>{{ field }}: {{ value }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Não há registros de alterações para este equipamento." %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Notes Tab -->
+                <div class="tab-pane fade {% if active_tab == 'notas' %}show active{% endif %}" id="notes" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{% trans "Notas" %}</h5>
+                        <a href="{% url 'notas:criar_nota' %}?equipamento={{ equipamento.id }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus-circle me-1"></i> {% trans "Nova Nota" %}
+                        </a>
+                    </div>
+
+                    {% if notas %}
+                        <div class="list-group">
+                            {% for nota in notas %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ nota.titulo }}</h6>
+                                        <small>{{ nota.data_criacao|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ nota.conteudo|linebreaks }}</p>
+                                    <small>
+                                        <a href="{% url 'notas:detalhes_nota' nota.id %}" class="text-primary">
+                                            {% trans "Ver detalhes" %}
+                                        </a>
+                                    </small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Não há notas associadas a este equipamento." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
 <style>
+    /* Timeline styling for history */
     .timeline {
-      position: relative;
-      padding: 20px 0;
+        position: relative;
+        padding-left: 24px;
+        margin-left: 16px;
     }
-    
+
     .timeline:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 15px;
-      height: 100%;
-      width: 2px;
-      background: var(--bs-border-color);
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #dee2e6;
     }
-    
+
     .timeline-item {
-      position: relative;
-      margin-bottom: 30px;
-      padding-left: 40px;
+        position: relative;
+        padding-bottom: 24px;
     }
-    
-    .timeline-badge {
-      position: absolute;
-      left: 0;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      text-align: center;
-      color: white;
-      line-height: 30px;
+
+    .timeline-marker {
+        position: absolute;
+        left: -25px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        margin-top: 5px;
     }
-    
-    .timeline-date {
-      color: var(--bs-secondary-color);
-      font-size: 0.875rem;
-      margin-bottom: 5px;
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .timeline:before {
+        background-color: #495057;
     }
-    
-    .timeline-content {
-      padding: 15px;
-      background: var(--bs-light-bg-subtle);
-      border-radius: 4px;
-      border-left: 3px solid var(--bs-primary);
+
+    [data-bs-theme="dark"] .timeline-marker {
+        border-color: #343a40;
     }
-  </style>
+</style>
 {% endblock %}

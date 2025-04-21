@@ -1,0 +1,39 @@
+{% load i18n %}
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="nav nav-pills nav-fill flex-column flex-md-row">
+            <a class="nav-link {% if active_tab == 'dashboard' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:dashboard' %}">
+                <i class="fas fa-tachometer-alt me-1"></i> {% trans "Painel" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'general' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:general_settings' %}">
+                <i class="fas fa-cog me-1"></i> {% trans "Geral" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'email' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:email_settings' %}">
+                <i class="fas fa-envelope me-1"></i> {% trans "Email" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'notifications' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:notification_settings' %}">
+                <i class="fas fa-bell me-1"></i> {% trans "Notificações" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'appearance' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:appearance_settings' %}">
+                <i class="fas fa-palette me-1"></i> {% trans "Aparência" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'backup' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:backup_settings' %}">
+                <i class="fas fa-save me-1"></i> {% trans "Backup" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'custom_fields' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:custom_fields' %}">
+                <i class="fas fa-list-alt me-1"></i> {% trans "Campos" %}
+            </a>
+            <a class="nav-link {% if active_tab == 'maintenance' %}active bg-primary{% endif %}"
+               href="{% url 'configuracao:system_maintenance' %}">
+                <i class="fas fa-wrench me-1"></i> {% trans "Manutenção" %}
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Adicionar Fornecedor" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-truck mr-2"></i> {% trans "Adicionar Fornecedor" %}
+    </h1>
+
+    {% include 'stock/includes/menu_stock.html' with active='fornecedores' %}
+
+    {% include 'includes/breadcrumbs.html' with
+        items=breadcrumbs|default:"stock,fornecedores,adicionar"
+    %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Informações do Fornecedor" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="form-group mb-3">
+                            <label for="nome" class="form-label">{% trans "Nome" %} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nome" name="nome" required value="{{ form.nome.value|default:'' }}">
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback d-block">{{ form.nome.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="telefone" class="form-label">{% trans "Telefone" %}</label>
+                            <input type="text" class="form-control" id="telefone" name="telefone" value="{{ form.telefone.value|default:'' }}">
+                            {% if form.telefone.errors %}
+                                <div class="invalid-feedback d-block">{{ form.telefone.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="email" class="form-label">{% trans "E-mail" %}</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ form.email.value|default:'' }}">
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="morada" class="form-label">{% trans "Morada" %}</label>
+                            <textarea class="form-control" id="morada" name="morada" rows="3">{{ form.morada.value|default:'' }}</textarea>
+                            {% if form.morada.errors %}
+                                <div class="invalid-feedback d-block">{{ form.morada.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="nif" class="form-label">{% trans "NIF" %}</label>
+                            <input type="text" class="form-control" id="nif" name="nif" value="{{ form.nif.value|default:'' }}">
+                            {% if form.nif.errors %}
+                                <div class="invalid-feedback d-block">{{ form.nif.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="notas" class="form-label">{% trans "Notas" %}</label>
+                            <textarea class="form-control" id="notas" name="notas" rows="3">{{ form.notas.value|default:'' }}</textarea>
+                            {% if form.notas.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notas.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-1"></i> {% trans "Salvar" %}
+                        </button>
+                        <a href="{% url 'stock:listar_fornecedores' %}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1"></i> {% trans "Cancelar" %}
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Informações Adicionais" %}</h6>
+                </div>
+                <div class="card-body">
+                    <p>{% trans "Os fornecedores podem ser associados a peças. Ao adicionar um fornecedor, você poderá posteriormente associá-lo a peças específicas, incluindo informações como preço, prazo de entrega e condições específicas." %}</p>
+
+                    <hr>
+
+                    <h6 class="font-weight-bold">{% trans "Ações Relacionadas" %}</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <a href="{% url 'stock:listar_fornecedores' %}">
+                                <i class="fas fa-list mr-1"></i> {% trans "Listar todos os fornecedores" %}
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="{% url 'stock:adicionar_peca' %}">
+                                <i class="fas fa-plus-circle mr-1"></i> {% trans "Adicionar nova peça" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

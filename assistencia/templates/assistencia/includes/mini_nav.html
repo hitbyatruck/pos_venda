@@ -1,0 +1,35 @@
+{% load i18n %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a href="{% url 'assistencia:listar_pats' %}" class="nav-link {% if active_tab == 'all' %}active{% endif %}">
+                    <i class="fas fa-list me-1"></i> {% trans "Todas as PATs" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'assistencia:listar_pats' %}?estado=aberto" class="nav-link {% if active_tab == 'aberto' %}active{% endif %}">
+                    <i class="fas fa-clock me-1"></i> {% trans "Em Aberto" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'assistencia:listar_pats' %}?estado=concluido" class="nav-link {% if active_tab == 'concluido' %}active{% endif %}">
+                    <i class="fas fa-check-circle me-1"></i> {% trans "Concluídas" %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'assistencia:criar_pat' %}" class="nav-link {% if active_tab == 'new' %}active{% endif %}">
+                    <i class="fas fa-plus-circle me-1"></i> {% trans "Nova PAT" %}
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="nav nav-tabs mb-4" id="assistencia-tabs" role="tablist">
+    <a class="nav-link {% if nav_active == 'pats' %}active{% endif %}" href="{% url 'assistencia:listar_pats' %}">
+        <i class="fas fa-clipboard-list me-1"></i> {% trans "PATs" %}
+    </a>
+    <!-- Removed the Estatísticas and Configuração tabs -->
+</div>

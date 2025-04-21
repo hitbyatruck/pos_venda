@@ -72,13 +72,13 @@
                 <div class="col-md-3">
                     <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
                     <select class="form-select" id="orderby" name="orderby">
-                        <option value="nome" {% if orderby=="nome" %}selected{% endif %}>{% trans "Modelo (A-Z)" %}
+                        <option value="nome" {% if orderby == "nome" %}selected{% endif %}>{% trans "Modelo (A-Z)" %}
                         </option>
-                        <option value="-nome" {% if orderby=="-nome" %}selected{% endif %}>{% trans "Modelo (Z-A)" %}
+                        <option value="-nome" {% if orderby == "-nome" %}selected{% endif %}>{% trans "Modelo (Z-A)" %}
                         </option>
-                        <option value="-data_lancamento" {% if orderby=="-data_lancamento" %}selected{% endif %}>{%
+                        <option value="-data_lancamento" {% if orderby == "-data_lancamento" %}selected{% endif %}>{%
                             trans "Mais recentes" %}</option>
-                        <option value="data_lancamento" {% if orderby=="data_lancamento" %}selected{% endif %}>{% trans
+                        <option value="data_lancamento" {% if orderby == "data_lancamento" %}selected{% endif %}>{% trans
                             "Mais antigos" %}</option>
                     </select>
                 </div>
@@ -145,55 +145,43 @@
             {% if equipamentos.has_previous %}
             <li class="page-item">
                 <a class="page-link"
-                    href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
-                    <i class="fas fa-angle-double-left"></i>
-                </a>
+                    href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}"><i
+                        class="fas fa-angle-double-left"></i></a>
             </li>
             <li class="page-item">
                 <a class="page-link"
-                    href="?pagina={{ equipamentos.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
-                    <i class="fas fa-angle-left"></i>
-                </a>
+                    href="?pagina={{ equipamentos.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}"><i
+                        class="fas fa-angle-left"></i></a>
             </li>
             {% else %}
-            <li class="page-item disabled">
-                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link"><i class="fas fa-angle-left"></i></span>
-            </li>
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i></span></li>
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-left"></i></span></li>
             {% endif %}
 
             {% for i in equipamentos.paginator.page_range %}
             {% if equipamentos.number == i %}
             <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-            {% elif i > equipamentos.number|add:'-3' and i < equipamentos.number|add:'3' %} <li class="page-item">
-                <a class="page-link"
+            {% elif i > equipamentos.number|add:'-3' and i < equipamentos.number|add:'3' %} <li class="page-item"><a
+                    class="page-link"
                     href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">{{
-                    i }}</a>
-                </li>
+                    i }}</a></li>
                 {% endif %}
                 {% endfor %}
 
                 {% if equipamentos.has_next %}
                 <li class="page-item">
                     <a class="page-link"
-                        href="?pagina={{ equipamentos.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
-                        <i class="fas fa-angle-right"></i>
-                    </a>
+                        href="?pagina={{ equipamentos.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}"><i
+                            class="fas fa-angle-right"></i></a>
                 </li>
                 <li class="page-item">
                     <a class="page-link"
-                        href="?pagina={{ equipamentos.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
-                        <i class="fas fa-angle-double-right"></i>
-                    </a>
+                        href="?pagina={{ equipamentos.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}"><i
+                            class="fas fa-angle-double-right"></i></a>
                 </li>
                 {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-angle-right"></i></span>
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-right"></i></span></li>
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-right"></i></span>
                 </li>
                 {% endif %}
         </ul>

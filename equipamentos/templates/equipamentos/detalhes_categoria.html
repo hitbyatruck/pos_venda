@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ categoria.nome }} | {% trans "Detalhes da Categoria" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-tag me-2"></i>{{ categoria.nome }}
+        </h1>
+        <div class="btn-group">
+            <a href="{% url 'equipamentos:editar_categoria' categoria_id=categoria.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+            </a>
+            <form method="post" action="{% url 'equipamentos:excluir_categoria' categoria_id=categoria.id %}"
+                class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title=categoria.nome %}
+
+    <!-- Mini Navigation -->
+    {% include 'equipamentos/includes/mini_nav.html' with nav_active='categorias' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h5 class="mb-0">{% trans "Detalhes da Categoria" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold">{% trans "Nome" %}</h6>
+                    <p>{{ categoria.nome }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold">{% trans "Total de Equipamentos" %}</h6>
+                    <p>{{ equipamentos.count }}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="fw-bold">{% trans "Descrição" %}</h6>
+                    <p>{{ categoria.descricao|default:"Sem descrição"|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List of Equipment in this Category -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h5 class="mb-0">{% trans "Equipamentos nesta Categoria" %}</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if equipamentos %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "Nome" %}</th>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Data de Lançamento" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos %}
+                        <tr>
+                            <td>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="fw-semibold">
+                                    {{ equipamento.nome }}
+                                </a>
+                            </td>
+                            <td>{{ equipamento.referencia_interna|default:"-" }}</td>
+                            <td>{{ equipamento.data_lancamento|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-center">
+                <p class="text-muted mb-0">{% trans "Nenhum equipamento nesta categoria." %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir esta categoria?" %}</p>
+                <p class="fw-bold">{{ categoria.nome }}</p>
+
+                {% if equipamentos %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    {% blocktrans count counter=equipamentos.count %}
+                    Esta categoria possui <strong>{{ counter }}</strong> equipamento associado. Excluir a categoria
+                    deixará este equipamento sem categoria.
+                    {% plural %}
+                    Esta categoria possui <strong>{{ counter }}</strong> equipamentos associados. Excluir a categoria
+                    deixará estes equipamentos sem categoria.
+                    {% endblocktrans %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <form method="post" action="{% url 'equipamentos:excluir_categoria' categoria_id=categoria.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

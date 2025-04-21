@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Tarefas" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-tasks mr-2"></i> {% trans "Tarefas" %}
+    </h1>
+
+    {% include 'notas/includes/menu_notas.html' with active='tarefas' %}
+
+    {% include 'includes/breadcrumbs.html' with items=breadcrumbs|default:"notas,tarefas" %}
+
+    <!-- Search and Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtros" %}</h6>
+            <a class="btn btn-sm btn-primary" href="{% url 'notas:criar_tarefa' %}">
+                <i class="fas fa-plus-circle mr-1"></i> {% trans "Nova Tarefa" %}
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="status" class="form-label">{% trans "Status" %}</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">{% trans "Todos" %}</option>
+                            <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>{% trans "Pendente" %}</option>
+                            <option value="em_andamento" {% if request.GET.status == 'em_andamento' %}selected{% endif %}>{% trans "Em Andamento" %}</option>
+                            <option value="concluida" {% if request.GET.status == 'concluida' %}selected{% endif %}>{% trans "Concluída" %}</option>
+                            <option value="cancelada" {% if request.GET.status == 'cancelada' %}selected{% endif %}>{% trans "Cancelada" %}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="prioridade" class="form-label">{% trans "Prioridade" %}</label>
+                        <select class="form-select" id="prioridade" name="prioridade">
+                            <option value="">{% trans "Todas" %}</option>
+                            <option value="baixa" {% if request.GET.prioridade == 'baixa' %}selected{% endif %}>{% trans "Baixa" %}</option>
+                            <option value="media" {% if request.GET.prioridade == 'media' %}selected{% endif %}>{% trans "Média" %}</option>
+                            <option value="alta" {% if request.GET.prioridade == 'alta' %}selected{% endif %}>{% trans "Alta" %}</option>
+                            <option value="urgente" {% if request.GET.prioridade == 'urgente' %}selected{% endif %}>{% trans "Urgente" %}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="responsavel" class="form-label">{% trans "Responsável" %}</label>
+                        <select class="form-select" id="responsavel" name="responsavel">
+                            <option value="">{% trans "Todos" %}</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if request.GET.responsavel|add:"0" == user.id %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="q" class="form-label">{% trans "Pesquisar" %}</label>
+                        <input type="text" class="form-control" id="q" name="q" value="{{ request.GET.q|default:'' }}" placeholder="{% trans 'Título, descrição...' %}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search mr-1"></i> {% trans "Filtrar" %}
+                        </button>
+                        <a href="{% url 'notas:listar_tarefas_a_fazer' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo mr-1"></i> {% trans "Limpar" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Tarefas" %}</h6>
+        </div>
+        <div class="card-body">
+            {% if tarefas %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="tarefasTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Título" %}</th>
+                                <th>{% trans "Prioridade" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th>{% trans "Responsável" %}</th>
+                                <th>{% trans "Data Limite" %}</th>
+                                <th>{% trans "Relacionado a" %}</th>
+                                <th>{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tarefa in tarefas %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}">{{ tarefa.titulo }}</a>
+                                </td>
+                                <td>
+                                    {% if tarefa.prioridade == 'baixa' %}
+                                        <span class="badge bg-success">{% trans "Baixa" %}</span>
+                                    {% elif tarefa.prioridade == 'media' %}
+                                        <span class="badge bg-primary">{% trans "Média" %}</span>
+                                    {% elif tarefa.prioridade == 'alta' %}
+                                        <span class="badge bg-warning">{% trans "Alta" %}</span>
+                                    {% elif tarefa.prioridade == 'urgente' %}
+                                        <span class="badge bg-danger">{% trans "Urgente" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tarefa.status == 'pendente' %}
+                                        <span class="badge bg-warning">{% trans "Pendente" %}</span>
+                                    {% elif tarefa.status == 'em_andamento' %}
+                                        <span class="badge bg-primary">{% trans "Em Andamento" %}</span>
+                                    {% elif tarefa.status == 'concluida' %}
+                                        <span class="badge bg-success">{% trans "Concluída" %}</span>
+                                    {% elif tarefa.status == 'cancelada' %}
+                                        <span class="badge bg-secondary">{% trans "Cancelada" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tarefa.responsavel %}
+                                        {{ tarefa.responsavel.get_full_name|default:tarefa.responsavel.username }}
+                                    {% else %}
+                                        <span class="text-muted">{% trans "Não atribuído" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tarefa.data_limite %}
+                                        {{ tarefa.data_limite|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">{% trans "Sem prazo" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tarefa.cliente %}
+                                        <a href="{% url 'clientes:detalhes_cliente' tarefa.cliente.id %}">
+                                            <i class="fas fa-user mr-1"></i> {{ tarefa.cliente.nome }}
+                                        </a>
+                                    {% elif tarefa.pat %}
+                                        <a href="{% url 'assistencia:detalhes_pat' tarefa.pat.id %}">
+                                            <i class="fas fa-tools mr-1"></i> PAT #{{ tarefa.pat.numero }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">{% trans "Não associado" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'notas:detalhes_tarefa' tarefa.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'notas:editar_tarefa' tarefa.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if tarefa.status != 'concluida' %}
+                                        <a href="{% url 'notas:fechar_tarefa' tarefa.id %}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'notas:reabrir_tarefa' tarefa.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% include 'includes/pagination.html' with page_obj=tarefas %}
+            {% else %}
+                <div class="alert alert-info">
+                    {% if request.GET %}
+                        {% trans "Nenhuma tarefa encontrada com os filtros selecionados." %}
+                    {% else %}
+                        {% trans "Não há tarefas cadastradas." %}
+                    {% endif %}
+                    <a href="{% url 'notas:criar_tarefa' %}" class="alert-link">{% trans "Criar nova tarefa" %}</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize datatable if needed
+        if (document.getElementById('tarefasTable')) {
+            $('#tarefasTable').DataTable({
+                "paging": false,
+                "searching": false,
+                "language": {
+                    "emptyTable": "{% trans 'Nenhuma tarefa encontrada' %}"
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

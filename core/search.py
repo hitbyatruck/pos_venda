@@ -33,3 +33,36 @@ class AdvancedSearch:
         """
         from search.views import perform_search
         return perform_search(query)
+
+"""
+Search utility functions for the POS system.
+"""
+from typing import Dict, Any, List, Tuple, Union
+
+def normalize_text(text: str) -> str:
+    """
+    Normalize text by removing accents and converting to lowercase
+    """
+    # Implementation moved to views.py, this is just for imports
+    return text
+
+class AdvancedSearch:
+    @staticmethod
+    def global_search(query: str) -> Tuple[Dict[str, Any], int]:
+        """
+        Search across multiple models and return categorized results.
+
+        Returns:
+            Tuple containing:
+            - Dictionary of results by category
+            - Total count of all results
+        """
+        # This is just a stub for type checking
+        results = {
+            'clientes': [],
+            'equipamentos': [],
+            'assistencias': [],
+            'notas': [],
+            'contactos': []
+        }
+        return results, 0

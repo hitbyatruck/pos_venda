@@ -1,136 +1,543 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
-{% block title %}Detalhes do PAT{% endblock %}
+{% load assistencia_extras %}
+
+{% block title %}PAT #{{ pat.pat_number }}{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h2>{% trans "Detalhes do Pedido de Assistência Técnica (PAT)" %}</h2>
-  
-  {% if breadcrumbs %}
-    {% include 'includes/breadcrumbs.html' %}
-  {% endif %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-clipboard-list me-2"></i>PAT #{{ pat.pat_number }}
+        </h1>
+        <div class="d-flex align-items-center gap-3">
+            <!-- Status badge -->
+            <div class="text-end">
+                <span class="d-block text-muted small">{% trans "Estado Atual" %}</span>
+                <span class="badge {% if pat.estado == 'aberto' %}bg-warning{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-primary{% endif %} mb-0">
+                    {{ pat.get_estado_display }}
+                </span>
+            </div>
 
-  {% include 'includes/mini_nav.html' %}
+            <!-- Action buttons -->
+            <div>
+                <a href="{% url 'assistencia:editar_pat' pat_id=pat.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i> {% trans "Editar" %}
+                </a>
+                <!-- Add other action buttons here -->
+            </div>
+        </div>
+    </div>
 
-  <ul class="nav nav-tabs" id="patTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="cliente-tab" data-bs-toggle="tab" data-bs-target="#cliente" type="button" role="tab">Cliente</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="equipamento-tab" data-bs-toggle="tab" data-bs-target="#equipamento" type="button" role="tab">Equipamento</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="pat-info-tab" data-bs-toggle="tab" data-bs-target="#pat-info" type="button" role="tab">Informação da PAT</button>
-    </li>
-  </ul>
-  <div class="tab-content mt-3" id="patTabContent">
-    <!-- Aba Cliente -->
-    <div class="tab-pane fade show active" id="cliente" role="tabpanel">
-      <h4>Cliente</h4>
-      <p><strong>{% trans "Nome:" %}</strong> {{ pat.cliente.nome }}</p>
-      <p><strong>{% trans "Email:" %}</strong> {{ pat.cliente.email }}</p>
-      <p><strong>{% trans "Telefone:" %}</strong> {{ pat.cliente.telefone }}</p>
-      <div class="mt-3">
-        <a href="{% url 'clientes:editar_cliente' pat.cliente.id %}" class="btn btn-primary">{% trans "Editar Cliente" %}</a>
-      </div>
-    </div>
-    
-    <!-- Aba Equipamento -->
-    <div class="tab-pane fade" id="equipamento" role="tabpanel">
-      <h4>{% trans "Equipamento" %}</h4>
-      {% if pat.equipamento.equipamento_fabricado.fotografia %}
-        <img src="{{ pat.equipamento.equipamento_fabricado.fotografia.url }}" alt="Fotografia do Equipamento" class="img-fluid mb-3" style="max-width: 300px;">
-      {% else %}
-        <p>{% trans "Sem fotografia disponível." %}</p>
-      {% endif %}
-      <p><strong>{% trans "Equipamento:" %}</strong> {{ pat.equipamento.equipamento_fabricado.nome }}</p>
-      <p><strong>{% trans "Número de Série:" %}</strong> {{ pat.equipamento.numero_serie }}</p>
-      <div class="mt-3">
-        <a href="{% url 'equipamentos:editar_equipamento_fabricado' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-primary">{% trans "Editar Equipamento" %}</a>
-        <a href="{% url 'equipamentos:detalhes_equipamento' pat.equipamento.equipamento_fabricado.id %}" class="btn btn-secondary">{% trans "Ver Detalhes do Equipamento" %}</a>
-      </div>
-    </div>
-    
-    <!-- Aba Informação da PAT -->
-    <div class="tab-pane fade" id="pat-info" role="tabpanel">
-      <h4>{% trans "Informação da PAT" %}</h4>
-      <!-- Primeira linha: Número da PAT -->
-      <div class="row mb-2">
-        <div class="col-md-12">
-          <p><strong>{% trans "Número da PAT:" %}</strong> {{ pat.pat_number }}</p>
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assistencia:listar_pats' %}">{% trans "Assistência Técnica" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">PAT #{{ pat.pat_number }}</li>
+        </ol>
+    </nav>
+
+    <!-- Main content with tabs -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
+                            type="button" role="tab" aria-controls="details" aria-selected="true">
+                        <i class="fas fa-info-circle me-1"></i> {% trans "Detalhes" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items"
+                            type="button" role="tab" aria-controls="items" aria-selected="false">
+                        <i class="fas fa-tools me-1"></i> {% trans "Itens" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report"
+                            type="button" role="tab" aria-controls="report" aria-selected="false">
+                        <i class="fas fa-file-alt me-1"></i> {% trans "Relatório Técnico" %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history"
+                            type="button" role="tab" aria-controls="history" aria-selected="false">
+                        <i class="fas fa-history me-1"></i> {% trans "Histórico" %}
+                    </button>
+                </li>
+            </ul>
         </div>
-      </div>
-      <!-- Segunda linha: Data de Entrada e Data de Reparação -->
-      <div class="row mb-2">
-        <div class="col-md-6">
-          <p><strong>{% trans "Data de Entrada:" %}</strong> {{ pat.data_entrada|date:"d/m/Y" }}</p>
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Details tab content -->
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <!-- Basic PAT information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">{% trans "Cliente" %}</h6>
+                            <p class="mb-3">
+                                {% if pat.cliente %}
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=pat.cliente.id %}">
+                                    {{ pat.cliente.nome }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">{% trans "Não especificado" %}</span>
+                                {% endif %}
+                            </p>
+
+                            <h6 class="font-weight-bold">{% trans "Equipamento" %}</h6>
+                            <p class="mb-3">
+                                {% if pat.equipamento %}
+                                <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=pat.equipamento.id %}">
+                                    {{ pat.equipamento.equipamento_fabricado.nome }}
+                                    <small class="text-muted">(S/N: {{ pat.equipamento.numero_serie }})</small>
+                                </a>
+                                {% elif pat.numero_serie_equipamento %}
+                                <span>S/N: {{ pat.numero_serie_equipamento }}</span>
+                                {% else %}
+                                <span class="text-muted">{% trans "Não especificado" %}</span>
+                                {% endif %}
+                            </p>
+
+                            <h6 class="font-weight-bold">{% trans "Data de Entrada" %}</h6>
+                            <p>{{ pat.data_entrada|date:"d/m/Y" }}</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">{% trans "Estado" %}</h6>
+                            <p>
+                                <span class="badge {% if pat.estado == 'aberto' %}bg-warning{% elif pat.estado == 'concluido' %}bg-success{% else %}bg-info{% endif %} px-3 py-2">
+                                    {{ pat.get_estado_display }}
+                                </span>
+                            </p>
+
+                            <h6 class="font-weight-bold">{% trans "Data de Conclusão" %}</h6>
+                            <p>
+                                {% if pat.data_conclusao %}
+                                {{ pat.data_conclusao|date:"d/m/Y" }}
+                                {% else %}
+                                <span class="text-muted">{% trans "Não concluída" %}</span>
+                                {% endif %}
+                            </p>
+
+                            <h6 class="font-weight-bold">{% trans "Técnico Responsável" %}</h6>
+                            <p>
+                                {% if pat.tecnico %}
+                                {{ pat.tecnico.get_full_name }}
+                                {% else %}
+                                <span class="text-muted">{% trans "Não atribuído" %}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <h6 class="font-weight-bold">{% trans "Descrição do Problema" %}</h6>
+                    <textarea class="form-control descricao-problema-field" readonly>{{ pat.descricao_problema }}</textarea>
+
+                    <h6 class="font-weight-bold">{% trans "Relatório Técnico" %}</h6>
+                    <textarea class="form-control relatorio-tecnico-field" readonly>{{ pat.relatorio }}</textarea>
+                </div>
+                </div>
+
+                <!-- Items tab content -->
+                <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+                    <div class="table-responsive mb-3">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "Tipo" %}</th>
+                                    <th>{% trans "Referência" %}</th>
+                                    <th>{% trans "Designação" %}</th>
+                                    <th>{% trans "Quantidade" %}</th>
+                                    <th>{% trans "Preço Unit." %}</th>
+                                    <th>{% trans "Total" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in pat.itens.all %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if item.tipo == 'peca' %}bg-info
+                                              {% elif item.tipo == 'servico' %}bg-primary
+                                              {% else %}bg-secondary{% endif %}">
+                                            {{ item.get_tipo_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ item.referencia }}</td>
+                                    <td>{{ item.designacao }}</td>
+                                    <td>{{ item.quantidade }}</td>
+                                    <td>{{ item.preco_unitario|floatformat:2 }} €</td>
+                                    <td class="line-total">{{ item.subtotal }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3">
+                                        <p class="text-muted mb-0">
+                                            {% trans "Nenhum item adicionado a esta PAT" %}
+                                        </p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="5" class="text-end">{% trans "Total da PAT:" %}</th>
+                                    <th id="grand-total">{{ pat.total_valor|floatformat:2 }} €</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Report tab content -->
+                <div class="tab-pane fade" id="report" role="tabpanel" aria-labelledby="report-tab">
+                    <!-- Technical report content... -->
+                </div>
+
+                <!-- History tab content -->
+                <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">{% trans "Histórico de Status" %}</h5>
         </div>
-        <div class="col-md-6">
-          <p><strong>{% trans "Data de Reparação:" %}</strong> {% if pat.data_reparacao %}{{ pat.data_reparacao|date:"d/m/Y" }}{% else %}N/A{% endif %}</p>
-        </div>
-      </div>
-      <!-- Terceira linha: Estado e Garantia -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <p><strong>{% trans "Estado:" %}</strong> {{ pat.get_estado_display }}</p>
-        </div>
-        <div class="col-md-6">
-          <p><strong>{% trans "Em Garantia:" %}</strong>
-            {% if pat.garantia %}
-              <span class="badge bg-success">{% trans "Sim" %}</span>
+        <div class="card-body p-0">
+            {% if pat.status_history.all %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Data" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th>{% trans "Observações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in pat.status_history.all %}
+                            <tr>
+                                <td>{{ record.data_alteracao|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if record.estado == 'aberto' %}bg-warning{% elif record.estado == 'concluido' %}bg-success{% else %}bg-primary{% endif %}">
+                                        {{ record.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td>{{ record.observacoes|default:"-"|linebreaks }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-              <span class="badge bg-danger">{% trans "Não" %}</span>
+                <div class="alert alert-info m-3">
+                    {% trans "Não há registros de alteração de status para esta PAT." %}
+                </div>
             {% endif %}
-          </p>
         </div>
-      </div>
-      
-      <!-- Tabela de Itens -->
-      <h5>{% trans "Itens" %}</h5>
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>{% trans "Tipo" %}</th>
-            <th>{% trans "Referência" %}</th>
-            <th>{% trans "Designação" %}</th>
-            <th>{% trans "Quantidade" %}</th>
-            <th>{% trans "Preço (€)" %}</th>
-            <th>{% trans "Total (€)" %}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in pat.itens.all %}
-          <tr>
-            <td>{{ item.get_tipo_display }}</td>
-            <td>{{ item.referencia }}</td>
-            <td>{{ item.designacao }}</td>
-            <td>{{ item.quantidade }}</td>
-            <td>{{ item.preco|floatformat:2 }}</td>
-            <td>{{ item.total|floatformat:2 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-              <td colspan="5" class="text-end"><strong>{% trans "Total Geral:" %}</strong></td>
-              <td>{{ total_geral|floatformat:2 }}</td>
-            </tr>
-          </tfoot>
-      </table>
-      
-      <!-- Relatório -->
-      <div class="mb-3">
-        <h5>{% trans "Relatório" %}</h5>
-        <p>{{ pat.relatorio }}</p>
-      </div>
-      
-      <!-- Botões de Ação -->
-      <div class="mt-3">
-        <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-secondary">{% trans "Voltar" %}</a>
-
-        <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-primary">{% trans "Editar PAT" %}</a>
-      </div>
     </div>
-  </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">{% trans "Alterações Detalhadas" %}</h5>
+        </div>
+        <div class="card-body">
+            {% if history_data %}
+                <div class="timeline">
+                    {% for item in history_data %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if item.history_item.history_type == '+' %}bg-success{% elif item.history_item.history_type == '~' %}bg-primary{% else %}bg-danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">
+                                    {% if item.history_item.history_type == '+' %}
+                                        <span class="badge bg-success">{% trans "Criação" %}</span>
+                                    {% elif item.history_item.history_type == '~' %}
+                                        <span class="badge bg-primary">{% trans "Atualização" %}</span>
+                                    {% elif item.history_item.history_type == '-' %}
+                                        <span class="badge bg-danger">{% trans "Exclusão" %}</span>
+                                    {% endif %}
+                                    <span class="ms-2">{{ item.history_item.history_date|date:"d/m/Y H:i" }}</span>
+                                    <small class="text-muted ms-2">
+                                        {% if item.history_item.history_user %}
+                                            por {{ item.history_item.history_user }}
+                                        {% else %}
+                                            (usuário desconhecido)
+                                        {% endif %}
+                                    </small>
+                                </h6>
+
+                                {% if item.history_item.history_change_reason %}
+                                    <p class="mb-2 text-primary">{{ item.history_item.history_change_reason }}</p>
+                                {% endif %}
+
+                                {% if item.changes %}
+                                    <div class="changes-details mt-2">
+                                        <h6 class="changes-title">{% trans "Campos alterados:" %}</h6>
+                                        <ul class="list-unstyled">
+                                            {% for change in item.changes %}
+                                                <li class="change-item">
+                                                    <strong>{{ change.field_verbose }}</strong>:
+                                                    <span class="old-value">{{ change.old_display }}</span>
+                                                    <i class="fas fa-arrow-right mx-1"></i>
+                                                    <span class="new-value">{{ change.new_display }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% elif item.history_item.history_type == '~' %}
+                                    <div class="alert alert-light">
+                                        {% trans "Não foram detectadas alterações específicas." %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    {% trans "Não há registros de alterações para esta PAT." %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Timeline styling for history */
+    .timeline {
+        position: relative;
+        padding-left: 24px;
+        margin-left: 16px;
+    }
+
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -25px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        margin-top: 5px;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .timeline:before {
+        background-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .timeline-marker {
+        border-color: #343a40;
+    }
+
+    /* Timeline styling */
+    .timeline {
+        position: relative;
+        padding: 0;
+        list-style: none;
+    }
+
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 18px;
+        height: 100%;
+        width: 2px;
+        background: #e9ecef;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-left: 10px;
+        padding: 15px 0 15px 20px;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        top: 20px;
+        left: -14px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        background: #adb5bd;
+        box-shadow: 0 0 0 3px #e9ecef;
+    }
+
+    .timeline-content {
+        padding-left: 15px;
+    }
+
+    .timeline-heading {
+        margin-bottom: 5px;
+    }
+
+    .timeline-body {
+        padding-bottom: 0;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .timeline:before {
+        background: #495057;
+    }
+
+    [data-bs-theme="dark"] .timeline-item {
+        border-bottom-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .timeline-marker {
+        border-color: #343a40;
+        background: #6c757d;
+        box-shadow: 0 0 0 3px #495057;
+    }
+
+    /* Dark mode compatibility improvements */
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select {
+        background-color: rgba(45, 50, 55, 0.9);
+        color: #f8f9fa;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus {
+        background-color: rgba(55, 60, 65, 0.9);
+        color: #fff;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: rgba(173, 181, 189, 0.7);
+    }
+
+    /* Fix for date inputs in dark mode */
+    [data-bs-theme="dark"] input[type="date"] {
+        color-scheme: dark;
+    }
+
+    /* Fix for disabled inputs in dark mode */
+    [data-bs-theme="dark"] .form-control:disabled,
+    [data-bs-theme="dark"] .form-select:disabled {
+        background-color: rgba(35, 40, 45, 0.9);
+        color: #adb5bd;
+    }
+
+    /* Fix read-only inputs in dark mode */
+    [data-bs-theme="dark"] .form-control:read-only {
+        background-color: rgba(35, 40, 45, 0.9);
+        color: #e9ecef;
+    }
+
+    /* Fix for info panels */
+    [data-bs-theme="dark"] .card {
+        background-color: rgba(33, 37, 41, 0.95);
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .card-header {
+        background-color: rgba(45, 50, 55, 0.95);
+        border-bottom-color: #495057;
+    }
+
+    /* Fix for tables in dark mode */
+    [data-bs-theme="dark"] .table {
+        color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+        background-color: rgba(255, 255, 255, 0.075);
+        color: #fff;
+    }
+
+    /* Dark mode styling for PAT description and report fields */
+    [data-bs-theme="dark"] .descricao-problema-field,
+    [data-bs-theme="dark"] .relatorio-tecnico-field,
+    [data-bs-theme="dark"] textarea.form-control[readonly],
+    [data-bs-theme="dark"] .readonly-text-area {
+        background-color: #2b3035 !important;
+        color: #e9ecef !important;
+        border-color: #495057 !important;
+    }
+
+    /* Ensure all readonly fields in dark mode are correctly styled */
+    [data-bs-theme="dark"] .form-control[readonly],
+    [data-bs-theme="dark"] .form-control-plaintext {
+        background-color: #2b3035 !important;
+        color: #e9ecef !important;
+    }
+
+    /* Fix pre-formatted text in dark mode */
+    [data-bs-theme="dark"] pre {
+        background-color: #212529 !important;
+        color: #e9ecef !important;
+        border: 1px solid #495057;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format currency values with exactly 2 decimal places
+    function formatCurrency(value) {
+        return parseFloat(value || 0).toFixed(2) + ' €';
+    }
+
+    // Calculate grand total from line items
+    function calculateGrandTotal() {
+        let grandTotal = 0;
+        document.querySelectorAll('.line-total').forEach(function(element) {
+            const text = element.textContent.trim();
+            const value = parseFloat(text.replace('€', '').trim()) || 0;
+            grandTotal += value;
+        });
+
+        // Update the grand total element
+        const grandTotalElement = document.getElementById('grand-total');
+        if (grandTotalElement) {
+            grandTotalElement.textContent = formatCurrency(grandTotal);
+        } else {
+            console.error("Grand total element not found!");
+        }
+    }
+
+    // Format all line totals immediately
+    document.querySelectorAll('.line-total').forEach(function(element) {
+        const text = element.textContent.trim();
+        const value = parseFloat(text.replace('€', '').trim()) || 0;
+        element.textContent = formatCurrency(value);
+    });
+
+    // Calculate and update grand total
+    calculateGrandTotal();
+});
+</script>
 {% endblock %}

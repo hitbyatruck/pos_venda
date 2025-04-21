@@ -1,0 +1,4 @@
+{% for categoria in categorias %}
+<option value="{{ categoria.id }}" {% if categoria_selecionada==categoria.id|stringformat:"i" %}selected{% endif %}>{{
+    categoria.nome }}</option>
+{% endfor %}

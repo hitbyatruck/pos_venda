@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Configurações de Aparência" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{% trans "Configurações de Aparência" %}</h1>
+
+    {% include 'configuracao/includes/config_nav.html' with active_tab='appearance' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Aparência" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="theme" class="form-label">{% trans "Tema" %}</label>
+                    <select class="form-select" id="theme" name="theme">
+                        <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>{% trans "Claro" %}</option>
+                        <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>{% trans "Escuro" %}</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="site_logo" class="form-label">{% trans "Logo do Sistema" %}</label>
+
+                    {% if settings.site_logo %}
+                    <div class="mb-2">
+                        <img src="{{ settings.site_logo.url }}" alt="Site Logo" style="max-height: 100px;">
+                    </div>
+                    {% endif %}
+
+                    <input type="file" class="form-control" id="site_logo" name="site_logo">
+                </div>
+
+                <div class="mb-3">
+                    <label for="custom_css" class="form-label">{% trans "CSS Personalizado" %}</label>
+                    <textarea class="form-control" id="custom_css" name="custom_css"
+                              rows="5">{{ settings.custom_css|default:'' }}</textarea>
+                    <small class="form-text text-muted">{% trans "CSS personalizado para o sistema" %}</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

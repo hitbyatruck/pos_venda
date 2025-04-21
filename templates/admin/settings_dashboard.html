@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Definições do Sistema{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>{% trans "Definições do Sistema" %}
+        </h1>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item active">Definições</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- User Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>{% trans "Utilizadores e Permissões" %}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{% trans "Gerir utilizadores, grupos e permissões de acesso" %}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'core:user_management' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-cog me-2"></i>{% trans "Gestão de Utilizadores" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cliente Settings -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-building me-2"></i>{% trans "Configuração de Clientes" %}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{% trans "Gerir setores e tipos de contacto" %}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'clientes:listar_setores' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-industry me-2"></i>{% trans "Setores de Clientes" %}
+                        </a>
+                        <a href="{% url 'clientes:listar_tipos_contacto' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-address-card me-2"></i>{% trans "Tipos de Contacto" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment Settings -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>{% trans "Equipamentos" %}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{% trans "Gerir categorias de equipamentos" %}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'equipamentos:listar_categorias' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-boxes me-2"></i>{% trans "Categorias de Equipamentos" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -64,7 +64,7 @@
     <!-- Filtros e busca avançada -->
     <div class="card shadow mb-4">
         <div class="card-header bg-dark bg-opacity-10">
-            <form method="get" class="row g-3">
+            <form method="get" id="filterForm" class="row g-3">
                 <div class="col-md-4">
                     <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
                     <div class="input-group">
@@ -80,6 +80,10 @@
                         <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
                     </button>
                 </div>
+
+                <!-- Hidden sort fields -->
+                <input type="hidden" name="sort" id="sort-field" value="{{ sort_by|default:'nome' }}">
+                <input type="hidden" name="sort_dir" id="sort-direction" value="{{ sort_dir|default:'asc' }}">
             </form>
         </div>
     </div>
@@ -95,9 +99,21 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead class="bg-dark text-light">
                         <tr>
-                            <th>{% trans "Modelo" %}</th>
-                            <th>{% trans "Referência" %}</th>
-                            <th>{% trans "Categoria" %}</th>
+                            <th class="sortable" data-sort="nome">
+                                {% trans "Modelo" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="referencia_interna">
+                                {% trans "Referência" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'referencia_interna' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="categoria__nome">
+                                {% trans "Categoria" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'categoria__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
                             <th class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
@@ -109,7 +125,6 @@
                                     class="fw-semibold text-decoration-none">
                                     {% if equipamento.fotografia %}
                                     <img src="{{ equipamento.fotografia.url }}" alt="{{ equipamento.nome }}"
-                                        class="img-thumbnail me-2"
                                         style="width: 30px; height: 30px; object-fit: cover;">
                                     {% else %}
                                     <i class="fas fa-cog text-secondary me-2"></i>
@@ -163,9 +178,21 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead class="bg-dark text-light">
                         <tr>
-                            <th>{% trans "Modelo" %}</th>
-                            <th>{% trans "Nº Série" %}</th>
-                            <th>{% trans "Cliente" %}</th>
+                            <th class="sortable" data-sort="equipamento_fabricado__nome">
+                                {% trans "Modelo" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'equipamento_fabricado__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="numero_serie">
+                                {% trans "Nº Série" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'numero_serie' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="cliente__nome">
+                                {% trans "Cliente" %}
+                                <i
+                                    class="fas fa-sort{% if sort_by == 'cliente__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
                             <th class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
@@ -213,4 +240,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% include 'includes/sortable_tables.html' %}
 {% endblock %}

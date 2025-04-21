@@ -1,215 +1,761 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Nova PAT{% endblock %}
+{% block title %}{% trans "Criar PAT" %}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Criar Pedido de Assistência Técnica (PAT)</h2>
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>{% trans "Criar Novo PAT" %}
+        </h1>
+    </div>
 
-    {% include 'includes/mini_nav.html' %}
-    <form method="post" id="patForm">
-        {% csrf_token %}
-        
-        <!-- Include formset management form -->
-        {{ formset.management_form }}
-        
-        <!-- PAT Details Section -->
-        <div class="row mb-4">
-            <!-- Left Column -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        Informações da PAT
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.pat_number.id_for_label }}" class="form-label">Número da PAT</label>
-                            {{ form.pat_number }}
-                            {% if form.pat_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.pat_number.errors|striptags }}
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assistencia:listar_pats' %}">{% trans "Assistência Técnica" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Criar PAT" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Mini Navigation Bar - MODIFY THIS SECTION -->
+    <div class="nav nav-tabs mb-4" id="assistencia-tabs" role="tablist">
+        <a class="nav-link active" href="{% url 'assistencia:listar_pats' %}">
+            <i class="fas fa-clipboard-list me-1"></i> {% trans "PATs" %}
+        </a>
+        <!-- Remove the Estatísticas and Configuração tabs -->
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h5 class="m-0 font-weight-bold text-primary">{% trans "Formulário de PAT" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- Main form tabs -->
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i> {% trans "Informações Básicas" %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab" aria-controls="items" aria-selected="false">
+                            <i class="fas fa-tools me-1"></i> {% trans "Itens" %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab" aria-controls="report" aria-selected="false">
+                            <i class="fas fa-file-alt me-1"></i> {% trans "Relatório Técnico" %}
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab content -->
+                <div class="tab-content">
+                    <!-- Basic info tab -->
+                    <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                        <div class="row">
+                            <!-- PAT Number field (manual entry) -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.pat_number.id_for_label }}" class="form-label">{% trans "Número PAT" %}*</label>
+                                {{ form.pat_number }}
+                                {% if form.pat_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.pat_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.cliente.id_for_label }}" class="form-label">{% trans "Cliente" %}*</label>
+                                {{ form.cliente }}
+                                {% if form.cliente.errors %}
+                                <div class="invalid-feedback d-block">{{ form.cliente.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">{% trans "Estado" %}*</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.equipamento.id_for_label }}" class="form-label">{% trans "Equipamento" %}</label>
+                                {{ form.equipamento }}
+                                {% if form.equipamento.errors %}
+                                <div class="invalid-feedback d-block">{{ form.equipamento.errors }}</div>
+                                {% endif %}
+                                <div class="form-text" id="equipamento-help">{% trans "Selecione primeiro um cliente para carregar os equipamentos" %}</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.numero_serie_equipamento.id_for_label }}" class="form-label">{% trans "Número de Série" %}</label>
+                                <div class="input-group">
+                                    {{ form.numero_serie_equipamento }}
+                                    <button type="button" class="btn btn-outline-primary" id="search-by-serial">
+                                        <i class="fas fa-search"></i>
+                                    </button>
                                 </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Número único que identifica este pedido de assistência.</small>
+                                <div class="form-text" id="serial-help">{% trans "Pesquise um equipamento por número de série" %}</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_entrada.id_for_label }}" class="form-label">{% trans "Data de Entrada" %}*</label>
+                                {{ form.data_entrada }}
+                                {% if form.data_entrada.errors %}
+                                <div class="invalid-feedback d-block">{{ form.data_entrada.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_conclusao.id_for_label }}" class="form-label">{% trans "Data de Conclusão" %}</label>
+                                {{ form.data_conclusao }}
+                                {% if form.data_conclusao.errors %}
+                                <div class="invalid-feedback d-block">{{ form.data_conclusao.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{% trans "Deixe em branco se o serviço ainda não foi concluído" %}</div>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.descricao_problema.id_for_label }}" class="form-label">{% trans "Descrição do Problema" %}*</label>
+                                {{ form.descricao_problema }}
+                                {% if form.descricao_problema.errors %}
+                                <div class="invalid-feedback d-block">{{ form.descricao_problema.errors }}</div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="{{ form.cliente.id_for_label }}" class="form-label">Cliente</label>
-                            {{ form.cliente }}
+                    </div>
+
+                    <!-- Items tab -->
+                    <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+                        {{ itemformset.management_form }}
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered" id="items-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "Tipo" %}</th>
+                                        <th>{% trans "Referência" %}</th>
+                                        <th>{% trans "Designação" %}</th>
+                                        <th>{% trans "Quantidade" %}</th>
+                                        <th>{% trans "Preço Unit." %}</th>
+                                        <th>{% trans "Total" %}</th>
+                                        <th style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="item-rows">
+                                    {% for item_form in itemformset %}
+                                    <tr class="item-row">
+                                        <td>
+                                            {{ item_form.tipo }}
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary search-stock-btn" style="display:none;">
+                                                    <i class="fas fa-search"></i> {% trans "Buscar no Stock" %}
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>{{ item_form.referencia }}</td>
+                                        <td>{{ item_form.designacao }}</td>
+                                        <td>{{ item_form.quantidade }}</td>
+                                        <td>{{ item_form.preco_unitario }}</td>
+                                        <td class="line-total">0.00 €</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% for hidden in item_form.hidden_fields %}
+                                            {{ hidden }}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    <!-- Template row for adding new items (hidden) -->
+                                    <tr id="item-template" class="d-none">
+                                        <td>
+                                            {{ itemformset.empty_form.tipo }}
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary search-stock-btn" style="display:none;">
+                                                    <i class="fas fa-search"></i> {% trans "Buscar no Stock" %}
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>{{ itemformset.empty_form.referencia }}</td>
+                                        <td>{{ itemformset.empty_form.designacao }}</td>
+                                        <td>{{ itemformset.empty_form.quantidade }}</td>
+                                        <td>{{ itemformset.empty_form.preco_unitario }}</td>
+                                        <td class="line-total">0.00 €</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% for hidden in itemformset.empty_form.hidden_fields %}
+                                            {{ hidden }}
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="5" class="text-end">{% trans "Total da PAT:" %}</th>
+                                        <th id="grand-total">0.00 €</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
-                        <div class="mb-3">
-                            <label for="{{ form.equipamento.id_for_label }}" class="form-label">Equipamento</label>
-                            {{ form.equipamento }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.data_entrada.id_for_label }}" class="form-label">Data de Entrada</label>
-                            {{ form.data_entrada }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
-                            {{ form.estado }}
-                        </div>
-                        <div class="mb-3 form-check">
-                            {{ form.garantia }}
-                            <label for="{{ form.garantia.id_for_label }}" class="form-check-label">Em Garantia</label>
+                        <button type="button" class="btn btn-outline-primary" id="add-item-btn">
+                            <i class="fas fa-plus me-1"></i> {% trans "Adicionar Item" %}
+                        </button>
+                    </div>
+
+                    <!-- Report tab -->
+                    <div class="tab-pane fade" id="report" role="tabpanel" aria-labelledby="report-tab">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.relatorio.id_for_label }}" class="form-label">{% trans "Relatório Técnico" %}</label>
+                                {{ form.relatorio }}
+                                {% if form.relatorio.errors %}
+                                <div class="invalid-feedback d-block">{{ form.relatorio.errors }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Right Column -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        Detalhes Adicionais
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.relatorio.id_for_label }}" class="form-label">Relatório</label>
-                            {{ form.relatorio }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.data_reparacao.id_for_label }}" class="form-label">Data de Reparação</label>
-                            {{ form.data_reparacao }}
-                        </div>
-                    </div>
+
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i> {% trans "Salvar PAT" %}
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
-        
-        <!-- Items Table -->
-        <h4>Itens</h4>
-        <table class="table table-bordered" id="itensTable">
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Referência</th>
-                    <th>Designação</th>
-                    <th>Quantidade</th>
-                    <th>Preço (€)</th>
-                    <th>Total (€)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- New Items -->
-                {% for form in formset %}
-                    <tr class="item-row">
-                        <td>
-                            <div class="form-group">
-                                {{ form.tipo }}
-                                {% if form.tipo.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.tipo.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.referencia }}
-                                {% if form.referencia.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.referencia.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.designacao }}
-                                {% if form.designacao.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.designacao.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="1">
-                                {% if form.quantidade.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.quantidade.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="0.00">
-                                {% if form.preco.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.preco.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="row-total">0.00</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                        </td>
-                    </tr>
-                {% endfor %}
-                
-                <!-- Template row for new items -->
-                <tr class="item-row template-row" style="display: none;">
-                    {% with form=formset.empty_form %}
-                        <td>
-                            <div class="form-group">
-                                {{ form.tipo }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.referencia }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.designacao }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" value="1">
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" name="{{ form.preco.html_name }}" class="form-control preco" step="0.01" value="0.00">
-                            </div>
-                        </td>
-                        <td class="row-total">0.00</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                        </td>
-                    {% endwith %}
-                </tr>
-                
-                <!-- Grand Total Row -->
-                <tr id="grandTotalRow">
-                    <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
-                    <td class="text-end" id="grandTotalValue">0.00</td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
-
-        <!-- Botões de Ação -->
-        <div class="mb-4">
-            <button type="submit" class="btn btn-primary">Criar PAT</button>
-            <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-outline-secondary">Cancelar</a>
-        </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-    <script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Clear any saved form data when the page loads (for new PAT creation)
+        sessionStorage.removeItem('pat_form_values');
+
+        // Apply Bootstrap classes to form fields - enhanced with better selectors and debugging
+        function applyFormStyling() {
+            console.log("Applying styling to form fields...");
+
+            // Select inputs by name attribute pattern to ensure we're getting the correct elements
+            const referenceInputs = document.querySelectorAll('input[name^="items-"][name$="-referencia"]');
+            const designationInputs = document.querySelectorAll('input[name^="items-"][name$="-designacao"]');
+            const quantityInputs = document.querySelectorAll('input[name^="items-"][name$="-quantidade"]');
+            const priceInputs = document.querySelectorAll('input[name^="items-"][name$="-preco_unitario"]');
+            const typeSelects = document.querySelectorAll('select[name^="items-"][name$="-tipo"]');
+
+            console.log(`Found ${referenceInputs.length} reference inputs`);
+            console.log(`Found ${designationInputs.length} designation inputs`);
+            console.log(`Found ${quantityInputs.length} quantity inputs`);
+            console.log(`Found ${priceInputs.length} price inputs`);
+            console.log(`Found ${typeSelects.length} type selects`);
+
+            // Apply classes to all inputs by type
+            referenceInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            designationInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            quantityInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            priceInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            typeSelects.forEach(select => {
+                select.classList.add('form-select');
+                console.log(`Applied form-select to ${select.name}`);
+            });
+        }
+
+        // Apply styling to initial elements
+        applyFormStyling();
+
+        // Format a number as currency with exactly 2 decimal places
+        function formatCurrency(value) {
+            return parseFloat(value || 0).toFixed(2) + ' €';
+        }
+
+        // Get required elements
+        const itemRows = document.querySelector('#item-rows');
+        const addItemBtn = document.querySelector('#add-item-btn');
+        const itemTemplate = document.querySelector('#item-template');
+
+        // Initialize the formset management
+        const totalFormsInput = document.querySelector('[name="items-TOTAL_FORMS"]');
+
+        // Make sure formset management form inputs exist
+        if (!totalFormsInput) {
+            console.error("Missing formset management form field: items-TOTAL_FORMS");
+        }
+
+        // Setup event listeners for existing item rows
+        function initializeAllRows() {
+            document.querySelectorAll('.item-row').forEach(function(row) {
+                if (!row.classList.contains('d-none') && !row.hasAttribute('data-initialized')) {
+                    setupLineItemEvents(row);
+                    row.setAttribute('data-initialized', 'true');
+                }
+            });
+        }
+
+        // Initialize rows on page load
+        initializeAllRows();
+
+        // Add new item button
+        if (addItemBtn && itemTemplate && totalFormsInput) {
+            addItemBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log("Add item button clicked");
+
+                // Get the current form count
+                const formCount = parseInt(totalFormsInput.value);
+                console.log("Current form count:", formCount);
+
+                // Clone the template
+                const newRow = itemTemplate.cloneNode(true);
+                newRow.removeAttribute('id');
+                newRow.classList.remove('d-none');
+
+                // Update form indices
+                newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+
+                // Add the new row before the template
+                itemTemplate.parentNode.insertBefore(newRow, itemTemplate);
+
+                // Update total forms
+                totalFormsInput.value = formCount + 1;
+
+                // Apply styles to the new row - with a slight delay to ensure DOM is updated
+                setTimeout(() => {
+                    applyFormStyling();
+                }, 50);
+
+                // Setup events for the new row
+                setupLineItemEvents(newRow);
+
+                // Update grand total
+                updateGrandTotal();
+
+                console.log("New row added. New form count:", totalFormsInput.value);
+            });
+        } else {
+            console.error("Missing element: addItemBtn, itemTemplate, or totalFormsInput");
+        }
+
+        function setupLineItemEvents(row) {
+            const quantityInput = row.querySelector('[name$="-quantidade"]');
+            const priceInput = row.querySelector('[name$="-preco_unitario"]');
+            const lineTotal = row.querySelector('.line-total');
+            const deleteBtn = row.querySelector('.remove-item');
+
+            if (!quantityInput || !priceInput || !lineTotal) {
+                console.error("Missing required elements in row");
+                return;
+            }
+
+            // Function to calculate line total
+            function calculateLineTotal() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                lineTotal.textContent = formatCurrency(total);
+                updateGrandTotal();
+            }
+
+            // Initialize line total
+            calculateLineTotal();
+
+            // Add event listeners
+            quantityInput.addEventListener('input', calculateLineTotal);
+            priceInput.addEventListener('input', calculateLineTotal);
+
+            // Handle delete button
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    // Find DELETE checkbox or create a hidden input for deletion
+                    const deleteCheck = row.querySelector('[name$="-DELETE"]');
+                    if (deleteCheck) {
+                        deleteCheck.checked = true;
+                        row.style.display = 'none';
+                    } else {
+                        row.remove();
+                    }
+
+                    // Update grand total
+                    updateGrandTotal();
+                });
+            }
+        }
+
+        // Calculate grand total from visible rows
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            document.querySelectorAll('.item-row:not(.d-none)').forEach(function(row) {
+                if (row.style.display !== 'none') {
+                    const lineTotal = row.querySelector('.line-total');
+                    if (lineTotal) {
+                        const value = parseFloat(lineTotal.textContent.replace('€', '')) || 0;
+                        grandTotal += value;
+                    }
+                }
+            });
+
+            const grandTotalElement = document.getElementById('grand-total');
+            if (grandTotalElement) {
+                grandTotalElement.textContent = formatCurrency(grandTotal);
+            }
+        }
+
+        // Initial grand total calculation
+        updateGrandTotal();
+
+        // Equipment and serial number functionality
+        const clienteSelect = document.getElementById('id_cliente');
+        const equipamentoSelect = document.getElementById('id_equipamento');
+        const numeroSerieInput = document.getElementById('id_numero_serie_equipamento');
+        const searchBySerialBtn = document.getElementById('search-by-serial');
+        const equipamentoHelp = document.getElementById('equipamento-help');
+        const serialHelp = document.getElementById('serial-help');
+
+        // Serial number search functionality
+        if (searchBySerialBtn && numeroSerieInput) {
+            searchBySerialBtn.addEventListener('click', function() {
+                const serialNumber = numeroSerieInput.value.trim();
+                if (!serialNumber) {
+                    alert('Por favor, insira um número de série para pesquisar.');
+                    return;
+                }
+
+                // Show searching message
+                serialHelp.textContent = "Pesquisando equipamento...";
+
+                // Make AJAX request to search for equipment by serial number
+                fetch(`/equipamentos/api/serial/${serialNumber}/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.found) {
+                            // If found, update the form
+                            if (data.cliente_id) {
+                                clienteSelect.value = data.cliente_id;
+
+                                // Trigger client change event to load equipments
+                                clienteSelect.dispatchEvent(new Event('change'));
+
+                                // Wait a bit for the equipment dropdown to populate
+                                setTimeout(() => {
+                                    if (data.equipamento_id) {
+                                        equipamentoSelect.value = data.equipamento_id;
+                                    }
+                                }, 500);
+                            }
+                            serialHelp.textContent = `Equipamento encontrado: ${data.equipamento_nome} (Cliente: ${data.cliente_nome})`;
+                            serialHelp.classList.add('text-success');
+                        } else {
+                            serialHelp.textContent = "Número de série não encontrado. Preencha os outros campos normalmente.";
+                            serialHelp.classList.add('text-warning');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching for serial number:', error);
+                        serialHelp.textContent = "Erro ao pesquisar. Por favor, tente novamente.";
+                        serialHelp.classList.add('text-danger');
+                    });
+            });
+        }
+
+        if (clienteSelect && equipamentoSelect) {
+            clienteSelect.addEventListener('change', function() {
+                const clienteId = this.value;
+
+                // Clear existing options
+                equipamentoSelect.innerHTML = '<option value="">---------</option>';
+
+                // Reset serial help message
+                if (serialHelp) {
+                    serialHelp.textContent = "Pesquise um equipamento por número de série";
+                    serialHelp.classList.remove('text-success', 'text-warning', 'text-danger');
+                }
+
+                if (clienteId) {
+                    // Show loading indicator
+                    equipamentoHelp.textContent = "A carregar equipamentos...";
+                    equipamentoSelect.disabled = true;
+
+                    console.log(`Fetching equipment for client ID: ${clienteId}`); // Debug log
+
+                    // Make AJAX request with proper error handling
+                    fetch(`/equipamentos/api/cliente/${clienteId}/`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        console.log('Response status:', response.status); // Debug log
+
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.error || `Server returned ${response.status}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Received data:', data); // Debug log
+
+                        // Add new options
+                        if (Array.isArray(data)) {
+                            data.forEach(eq => {
+                                const option = document.createElement('option');
+                                option.value = eq.id;
+                                option.textContent = `${eq.nome || eq.modelo} - S/N: ${eq.numero_serie || 'N/A'}`;
+                                equipamentoSelect.appendChild(option);
+                            });
+
+                            // Update help text
+                            if (data.length === 0) {
+                                equipamentoHelp.textContent = "Este cliente não tem equipamentos. Use o número de série para registrar um novo.";
+                                equipamentoHelp.classList.add('text-warning');
+                            } else {
+                                equipamentoHelp.textContent = `${data.length} equipamento(s) encontrado(s).`;
+                                equipamentoHelp.classList.remove('text-warning', 'text-danger');
+                            }
+                        } else {
+                            throw new Error("Formato de resposta inválido do servidor");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching equipment:', error);
+                        equipamentoHelp.textContent = `Erro ao carregar equipamentos: ${error.message}`;
+                        equipamentoHelp.classList.add('text-danger');
+                    })
+                    .finally(() => {
+                        equipamentoSelect.disabled = false;
+                    });
+                } else {
+                    equipamentoHelp.textContent = "Selecione primeiro um cliente para carregar os equipamentos";
+                    equipamentoHelp.classList.remove('text-warning', 'text-danger');
+                }
+            });
+
+            // Trigger change if a client is already selected
+            if (clienteSelect.value) {
+                clienteSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dark mode compatibility improvements */
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select {
+        background-color: rgba(45, 50, 55, 0.9);
+        color: #f8f9fa;
+        border-color: #495057;
+    }
+
+    /* Fix for tables in dark mode */
+    [data-bs-theme="dark"] .table {
+        color: #e9ecef;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .table thead th {
+        background-color: rgba(45, 50, 55, 0.9);
+        color: #e9ecef;
+        border-color: #495057;
+    }
+
+    /* Fix for item rows in tables */
+    [data-bs-theme="dark"] .item-row td {
+        border-color: #495057;
+    }
+
+    /* Tab styling for dark mode */
+    [data-bs-theme="dark"] .nav-tabs .nav-link {
+        color: #adb5bd;
+    }
+
+    [data-bs-theme="dark"] .nav-tabs .nav-link.active {
+        background-color: rgba(33, 37, 41, 0.95);
+        border-color: #495057 #495057 transparent;
+        color: #fff;
+    }
+
+    [data-bs-theme="dark"] .tab-content {
+        background-color: rgba(33, 37, 41, 0.95);
+        border-color: #495057;
+    }
+
+    /* Required field styling for dark mode */
+    [data-bs-theme="dark"] .required-field::after {
+        color: #f77;
+    }
+
+    /* Validation styling for dark mode */
+    [data-bs-theme="dark"] .form-control.is-invalid,
+    [data-bs-theme="dark"] .form-select.is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    }
+
+    [data-bs-theme="dark"] .form-control.is-valid,
+    [data-bs-theme="dark"] .form-select.is-valid {
+        border-color: #198754;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    }
+
+    [data-bs-theme="dark"] .invalid-feedback {
+        color: #ea868f;
+    }
+
+    [data-bs-theme="dark"] .valid-feedback {
+        color: #75b798;
+    }
+
+    /* Fix dark mode styles for form elements */
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select,
+    [data-bs-theme="dark"] input[type="text"],
+    [data-bs-theme="dark"] input[type="number"],
+    [data-bs-theme="dark"] input[type="date"],
+    [data-bs-theme="dark"] textarea {
+        color: #f8f9fa !important;
+        background-color: #343a40 !important;
+        border-color: #495057 !important;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus {
+        color: #f8f9fa !important;
+        background-color: #343a40 !important;
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: #6c757d !important;
+    }
+
+    /* Specific styling for item form fields */
+    #items-table select,
+    #items-table input[type="text"],
+    #items-table input[type="number"],
+    /* Add specific attribute selectors as fallback */
+    input[name^="items-"][name$="-referencia"],
+    input[name^="items-"][name$="-designacao"],
+    input[name^="items-"][name$="-quantidade"],
+    input[name^="items-"][name$="-preco_unitario"] {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+
+    /* Select elements */
+    select[name^="items-"][name$="-tipo"] {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.5rem;
+    }
+
+    /* Dark mode support for item form fields */
+    [data-bs-theme="dark"] #items-table select,
+    [data-bs-theme="dark"] #items-table input[type="text"],
+    [data-bs-theme="dark"] #items-table input[type="number"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-referencia"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-designacao"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-quantidade"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-preco_unitario"] {
+        color: #e9ecef;
+        background-color: #2b3035;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] #items-table select:focus,
+    [data-bs-theme="dark"] #items-table input[type="text"]:focus,
+    [data-bs-theme="dark"] #items-table input[type="number"]:focus,
+    [data-bs-theme="dark"] input[name^="items-"][name$="-referencia"]:focus,
+    [data-bs-theme="dark"] input[name^="items-"][name$="-designacao"]:focus,
+    [data-bs-theme="dark"] input[name^="items-"][name$="-quantidade"]:focus,
+    [data-bs-theme="dark"] input[name^="items-"][name$="-preco_unitario"]:focus {
+        color: #f8f9fa;
+        background-color: #343a40;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Fix issues with select elements */
+    #items-table select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.5rem;
+    }
+
+    [data-bs-theme="dark"] #items-table select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23adb5bd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    }
+</style>
 {% endblock %}

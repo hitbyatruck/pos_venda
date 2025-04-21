@@ -1,163 +1,315 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Lista de PAT's{% endblock %}
+{% block title %}{% trans "Pedidos de Assistência Técnica" %}{% endblock %}
 
 {% block content %}
-<div class="container">
-  <!-- Título com botões à direita -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Lista de Pedidos de Assistência Técnica (PAT's)</h2>
-    <div>
-      <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary">Criar PAT</a>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-tools me-2"></i>{% trans "Pedidos de Assistência Técnica" %}
+        </h1>
+        <div>
+            <a href="{% url 'assistencia:criar_pat' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Nova PAT" %}
+            </a>
+        </div>
     </div>
-  </div>
 
-  <!-- Breadcrumbs -->
-  {% if breadcrumbs %}
-    {% include 'includes/breadcrumbs.html' %}
-  {% endif %}
+    <!-- Breadcrumbs - Added for consistency with other apps -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Assistência Técnica" %}</li>
+        </ol>
+    </nav>
 
-  <!-- Mini Nav Bar com opções de filtro por estado -->
-  <div class="mb-4 mini-nav">
-    <a href="{% url 'assistencia:listar_pats' %}?estado=aberto" class="btn {% if request.GET.estado == 'aberto' or not request.GET.estado %}btn-danger{% else %}btn-outline-danger{% endif %}">Abertos</a>
-    <a href="{% url 'assistencia:listar_pats' %}?estado=em_curso" class="btn {% if request.GET.estado == 'em_curso' %}btn-warning{% else %}btn-outline-warning{% endif %}">Em Curso</a>
-    <a href="{% url 'assistencia:listar_pats' %}?estado=em_diagnostico" class="btn {% if request.GET.estado == 'em_diagnostico' %}btn-info{% else %}btn-outline-info{% endif %}">Em Diagnóstico</a>
-    <a href="{% url 'assistencia:listar_pats' %}?estado=concluido" class="btn {% if request.GET.estado == 'concluido' %}btn-success{% else %}btn-outline-success{% endif %}">Concluídos</a>
-    <a href="{% url 'assistencia:listar_pats' %}?estado=cancelado" class="btn {% if request.GET.estado == 'cancelado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Cancelados</a>
-    <a href="{% url 'assistencia:listar_pats' %}?estado=todos" class="btn {% if request.GET.estado == 'todos' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todos</a>
-  </div>
-
-  <!-- Formulário de Pesquisa - Substituir pelo componente avançado -->
-  <div class="card mb-4">
-    <div class="card-body">
-      {% include 'includes/advanced_search.html' with filter_content=filter_html %}
+    <!-- Replace the mini navigation with just the active tab -->
+    <div class="nav nav-tabs mb-4" id="assistencia-tabs" role="tablist">
+        <a class="nav-link active" href="{% url 'assistencia:listar_pats' %}">
+            <i class="fas fa-clipboard-list me-1"></i> {% trans "PATs" %}
+        </a>
+        <!-- Other tabs removed until functionality is implemented -->
     </div>
-  </div>
 
-  <!-- Tabela de PATs -->
-  <div class="table-responsive">
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>
-            <a href="?ordenar_por=pat_number&direcao={{ direcao }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Número da PAT</a>
-          </th>
-          <th>
-            <a href="?ordenar_por=cliente__nome&direcao={{ direcao }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Cliente</a>
-          </th>
-          <th>
-            <a href="?ordenar_por=equipamento__equipamento_fabricado__nome&direcao={{ direcao }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Equipamento</a>
-          </th>
-          <th>
-            <a href="?ordenar_por=data_entrada&direcao={{ direcao }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Data de Entrada</a>
-          </th>
-          <th>
-            <a href="?ordenar_por=estado&direcao={{ direcao }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Estado</a>
-          </th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for pat in pats %}
-        <tr id="pat-row-{{ pat.id }}">
-          <td>{{ pat.pat_number }}</td>
-          <td>{{ pat.cliente.nome }}</td>
-          <td>{{ pat.equipamento.equipamento_fabricado.nome }} ({{ pat.equipamento.numero_serie }})</td>
-          <td>{{ pat.data_entrada|date:"d/m/Y" }}</td>
-          <td>
-            {% if pat.estado == 'aberto' %}
-              <span class="badge bg-danger">Aberto</span>
-            {% elif pat.estado == 'em_curso' %}
-              <span class="badge bg-warning text-dark">Em Curso</span>
-            {% elif pat.estado == 'em_diagnostico' %}
-              <span class="badge bg-info text-dark">Em Diagnóstico</span>
-            {% elif pat.estado == 'concluido' %}
-              <span class="badge bg-success">Concluído</span>
-            {% elif pat.estado == 'cancelado' %}
-              <span class="badge bg-secondary">Cancelado</span>
-            {% else %}
-              {{ pat.get_estado_display }}
-            {% endif %}
-          </td>
-          <td>
-            <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-info btn-sm">Detalhes</a>
-            <a href="{% url 'assistencia:editar_pat' pat.id %}" class="btn btn-warning btn-sm">Editar</a>
-            <button class="btn btn-danger btn-sm pat-delete" data-id="{{ pat.id }}" data-url="{% url 'assistencia:excluir_pat' pat.id %}">Excluir</button>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6" class="text-center">Nenhuma PAT encontrada.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <!-- Status filter tabs with dynamic badges -->
+    <ul class="nav nav-tabs mb-4" id="statusTabs" role="tablist">
+        <!-- "Todas" tab -->
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'todas' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=todas{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Todas" %}
+                <span class="badge rounded-pill bg-secondary">{{ estado_counts.todas }}</span>
+            </a>
+        </li>
 
-  <!-- Paginação -->
-  {% if pats.has_other_pages %}
-  <nav aria-label="Paginação" class="mt-4">
-    <ul class="pagination justify-content-center">
-      {% if pats.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?page=1{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Primeira">
-          <span aria-hidden="true">&laquo;&laquo;</span>
-        </a>
-      </li>
-      <li class="page-item">
-        <a class="page-link" href="?page={{ pats.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Anterior">
-          <span aria-hidden="true">&laquo;</span>
-        </a>
-      </li>
-      {% endif %}
-      
-      {% for i in pats.paginator.page_range %}
-        {% if pats.number == i %}
-          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-        {% elif i > pats.number|add:'-3' and i < pats.number|add:'3' %}
-          <li class="page-item"><a class="page-link" href="?page={{ i }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a></li>
-        {% endif %}
-      {% endfor %}
-      
-      {% if pats.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ pats.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Próxima">
-          <span aria-hidden="true">&raquo;</span>
-        </a>
-      </li>
-      <li class="page-item">
-        <a class="page-link" href="?page={{ pats.paginator.num_pages }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Última">
-          <span aria-hidden="true">&raquo;&raquo;</span>
-        </a>
-      </li>
-      {% endif %}
+        <!-- Static status tabs -->
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'aberto' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=aberto{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Abertas" %}
+                <span class="badge rounded-pill bg-warning">{{ estado_counts.aberto }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'em_diagnostico' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=em_diagnostico{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Em Diagnóstico" %}
+                <span class="badge rounded-pill bg-info">{{ estado_counts.em_diagnostico }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'em_andamento' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=em_andamento{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Em Andamento" %}
+                <span class="badge rounded-pill bg-primary">{{ estado_counts.em_andamento }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'aguardando_peca' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=aguardando_peca{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Aguardando Peça" %}
+                <span class="badge rounded-pill bg-secondary">{{ estado_counts.aguardando_peca }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'aguardando_cliente' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=aguardando_cliente{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Aguardando Cliente" %}
+                <span class="badge rounded-pill bg-dark">{{ estado_counts.aguardando_cliente }}</span>
+            </a>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if estado_filter == 'concluido' %}active{% endif %}"
+               href="{% url 'assistencia:listar_pats' %}?estado=concluido{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}">
+                {% trans "Concluídas" %}
+                <span class="badge rounded-pill bg-success">{{ estado_counts.concluido }}</span>
+            </a>
+        </li>
     </ul>
-  </nav>
-  {% endif %}
-</div>
 
-<!-- Modal de Confirmação para Exclusão de PAT -->
-<div class="modal fade" id="patConfirmModal" tabindex="-1" aria-labelledby="patConfirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="patConfirmModalLabel">Confirmar Exclusão da PAT</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body">
-        Tem certeza que deseja excluir esta PAT?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="patConfirmModalBtn" class="btn btn-primary">Confirmar Exclusão</button>
-      </div>
+    <!-- Enhanced PAT table with more information -->
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="sortable" data-sort="pat_number">
+                                {% trans "PAT #" %}
+                                <i class="fas fa-sort{% if sort_by == 'pat_number' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="cliente__nome">
+                                {% trans "Cliente" %}
+                                <i class="fas fa-sort{% if sort_by == 'cliente__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="equipamento__equipamento_fabricado__nome">
+                                {% trans "Equipamento" %}
+                                <i class="fas fa-sort{% if sort_by == 'equipamento__equipamento_fabricado__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="data_entrada">
+                                {% trans "Data Entrada" %}
+                                <i class="fas fa-sort{% if sort_by == 'data_entrada' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="tecnico__username">
+                                {% trans "Técnico" %}
+                                <i class="fas fa-sort{% if sort_by == 'tecnico__username' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="estado">
+                                {% trans "Estado" %}
+                                <i class="fas fa-sort{% if sort_by == 'estado' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="text-end">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pat in pats %}
+                        <tr>
+                            <td><a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="fw-bold text-decoration-none">{{ pat.pat_number }}</a></td>
+                            <td>
+                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=pat.cliente.id %}">
+                                    {{ pat.cliente.nome }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if pat.equipamento %}
+                                <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=pat.equipamento.id %}">
+                                    {{ pat.equipamento.equipamento_fabricado.nome }}
+                                    <small class="text-muted d-block">S/N: {{ pat.equipamento.numero_serie }}</small>
+                                </a>
+                                {% elif pat.numero_serie_equipamento %}
+                                <span>S/N: {{ pat.numero_serie_equipamento }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ pat.data_entrada|date:"d/m/Y" }}
+                            </td>
+                            <td>
+                                {% if pat.tecnico %}
+                                <div class="d-flex align-items-center">
+                                    <div class="tech-avatar me-2">
+                                        <i class="fas fa-user-md"></i>
+                                    </div>
+                                    <div>{{ pat.tecnico.get_full_name|default:pat.tecnico.username }}</div>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-secondary">Não atribuído</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge
+                                    {% if pat.estado == 'aberto' %}bg-warning
+                                    {% elif pat.estado == 'em_diagnostico' %}bg-info
+                                    {% elif pat.estado == 'em_andamento' %}bg-primary
+                                    {% elif pat.estado == 'aguardando_peca' %}bg-secondary
+                                    {% elif pat.estado == 'aguardando_cliente' %}bg-dark
+                                    {% elif pat.estado == 'concluido' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ pat.get_estado_display }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'assistencia:editar_pat' pat_id=pat.id %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-success action-btn" data-action="change-status" data-id="{{ pat.id }}">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger action-btn" data-action="delete" data-id="{{ pat.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-search me-2"></i>{% trans "Nenhum pedido de assistência encontrado." %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
+    <!-- Pagination controls -->
+    {% if pats.has_other_pages %}
+    <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center">
+            <!-- Previous page button -->
+            {% if pats.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ pats.previous_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+            </li>
+            {% endif %}
+
+            <!-- Page numbers -->
+            {% for i in pats.paginator.page_range %}
+                {% if pats.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% elif i > pats.number|add:'-3' and i < pats.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                        {{ i }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next page button -->
+            {% if pats.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ pats.next_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
 {% endblock %}
 
-{% block scripts %}
-<script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sorting functionality
+        const sortableHeaders = document.querySelectorAll('th.sortable');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const sort = this.dataset.sort;
+                let sortDir = 'asc';
+
+                // If this column is already being sorted, toggle direction
+                if ('{{ sort_by }}' === sort) {
+                    sortDir = '{{ sort_dir }}' === 'asc' ? 'desc' : 'asc';
+                }
+
+                // Redirect with new sorting parameters
+                window.location.href = '?sort=' + sort + '&sort_dir=' + sortDir
+                    + '{% if estado_filter %}&estado={{ estado_filter }}{% endif %}'
+                    + '{% if search_query %}&q={{ search_query }}{% endif %}';
+            });
+        });
+
+        // Status change modal
+        const actionButtons = document.querySelectorAll('.action-btn');
+        actionButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.dataset.action;
+                const patId = this.dataset.id;
+
+                if (action === 'delete') {
+                    if (confirm('Tem certeza que deseja excluir esta PAT?')) {
+                        // Send delete request
+                        fetch(`/assistencia/excluir-pat/${patId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert('Erro ao excluir PAT: ' + data.message);
+                            }
+                        });
+                    }
+                } else if (action === 'change-status') {
+                    // Implement status change modal
+                    alert('Funcionalidade em desenvolvimento');
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

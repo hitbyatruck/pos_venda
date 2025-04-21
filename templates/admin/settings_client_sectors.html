@@ -1,0 +1,191 @@
+{% extends 'admin/settings_layout.html' %}
+{% load i18n %}
+
+{% block settings_title %}{% trans "Setores de Clientes" %}{% endblock %}
+
+{% block settings_breadcrumbs %}
+<li class="breadcrumb-item active">{% trans "Setores de Clientes" %}</li>
+{% endblock %}
+
+{% block settings_content %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-industry me-2"></i>{% trans "Setores de Clientes" %}</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addSectorModal">
+            <i class="fas fa-plus-circle me-1"></i>{% trans "Novo Setor" %}
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "Nome" %}</th>
+                        <th>{% trans "Descrição" %}</th>
+                        <th>{% trans "Clientes" %}</th>
+                        <th class="text-center">{% trans "Ações" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sector in sectors %}
+                    <tr>
+                        <td>{{ sector.nome }}</td>
+                        <td>{{ sector.descricao|default:"-" }}</td>
+                        <td>{{ sector.cliente_set.count }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary edit-sector-btn"
+                                        data-sector-id="{{ sector.id }}"
+                                        data-sector-name="{{ sector.nome }}"
+                                        data-sector-description="{{ sector.descricao|default:'' }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editSectorModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-sector-btn"
+                                        data-sector-id="{{ sector.id }}"
+                                        data-sector-name="{{ sector.nome }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteSectorModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-3">{% trans "Nenhum setor encontrado." %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Sector Modal -->
+<div class="modal fade" id="addSectorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:adicionar_setor' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-industry me-2"></i>{% trans "Adicionar Setor" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-sector-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="add-sector-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-sector-description" class="form-label">{% trans "Descrição" %}</label>
+                        <textarea class="form-control" id="add-sector-description" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Sector Modal -->
+<div class="modal fade" id="editSectorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:editar_setor' setor_id=0 %}" id="edit-sector-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-industry me-2"></i>{% trans "Editar Setor" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-sector-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="edit-sector-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-sector-description" class="form-label">{% trans "Descrição" %}</label>
+                        <textarea class="form-control" id="edit-sector-description" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Sector Modal -->
+<div class="modal fade" id="deleteSectorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'clientes:excluir_setor' setor_id=0 %}" id="delete-sector-form">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o setor" %} <strong id="delete-sector-name"></strong>?</p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        {% trans "Esta ação não pode ser desfeita." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit sector modal setup
+        const editSectorBtns = document.querySelectorAll('.edit-sector-btn');
+        const editSectorForm = document.getElementById('edit-sector-form');
+
+        editSectorBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sectorId = this.getAttribute('data-sector-id');
+                const sectorName = this.getAttribute('data-sector-name');
+                const sectorDescription = this.getAttribute('data-sector-description');
+
+                document.getElementById('edit-sector-name').value = sectorName;
+                document.getElementById('edit-sector-description').value = sectorDescription;
+
+                // Update form action URL with the correct sector ID
+                const formAction = "{% url 'clientes:editar_setor' setor_id=999999 %}".replace('999999', sectorId);
+                editSectorForm.setAttribute('action', formAction);
+            });
+        });
+
+        // Delete sector modal setup
+        const deleteSectorBtns = document.querySelectorAll('.delete-sector-btn');
+        const deleteSectorForm = document.getElementById('delete-sector-form');
+
+        deleteSectorBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sectorId = this.getAttribute('data-sector-id');
+                const sectorName = this.getAttribute('data-sector-name');
+
+                document.getElementById('delete-sector-name').textContent = sectorName;
+
+                // Update form action URL with the correct sector ID
+                const formAction = "{% url 'clientes:excluir_setor' setor_id=999999 %}".replace('999999', sectorId);
+                deleteSectorForm.setAttribute('action', formAction);
+            });
+        });
+    });
+</script>
+{% endblock %}

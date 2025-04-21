@@ -3,7 +3,7 @@
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'equipamentos:index' %}">{% trans "Equipamentos" %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'equipamentos:listar_fabricados' %}">Equipamentos</a></li>
         {% if view_title %}
         <li class="breadcrumb-item active" aria-current="page">{{ view_title }}</li>
         {% endif %}

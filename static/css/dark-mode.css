@@ -1,0 +1,170 @@
+/* Dark mode improvements for form elements */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: rgba(45, 50, 55, 0.9);
+    color: #f8f9fa;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: rgba(55, 60, 65, 0.9);
+    color: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: rgba(173, 181, 189, 0.7);
+}
+
+/* Fix for date inputs in dark mode */
+[data-bs-theme="dark"] input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Fix for disabled inputs in dark mode */
+[data-bs-theme="dark"] .form-control:disabled,
+[data-bs-theme="dark"] .form-control[readonly],
+[data-bs-theme="dark"] .form-select:disabled {
+    background-color: rgba(35, 40, 45, 0.9);
+    color: #adb5bd;
+}
+
+/* Fix for tables in dark mode */
+[data-bs-theme="dark"] .table {
+    color: #e9ecef;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+    background-color: rgba(255, 255, 255, 0.075);
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .table thead th {
+    background-color: rgba(45, 50, 55, 0.9);
+    color: #e9ecef;
+    border-color: #495057;
+}
+
+/* Fix for cards in dark mode */
+[data-bs-theme="dark"] .card {
+    background-color: rgba(33, 37, 41, 0.95);
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .card-header {
+    background-color: rgba(45, 50, 55, 0.95);
+    border-bottom-color: #495057;
+}
+
+/* Tab styling for dark mode */
+[data-bs-theme="dark"] .nav-tabs .nav-link {
+    color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: rgba(33, 37, 41, 0.95);
+    border-color: #495057 #495057 transparent;
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .tab-content {
+    background-color: rgba(33, 37, 41, 0.95);
+    border-color: #495057;
+}
+
+/* Validation styling for dark mode */
+[data-bs-theme="dark"] .form-control.is-invalid,
+[data-bs-theme="dark"] .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+}
+
+[data-bs-theme="dark"] .form-control.is-valid,
+[data-bs-theme="dark"] .form-select.is-valid {
+    border-color: #198754;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+}
+
+[data-bs-theme="dark"] .invalid-feedback {
+    color: #ea868f;
+}
+
+[data-bs-theme="dark"] .valid-feedback {
+    color: #75b798;
+}
+
+/* Dropdown menus in dark mode */
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: rgba(45, 50, 55, 0.95);
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: rgba(13, 110, 253, 0.2);
+    color: #fff;
+}
+
+/* Modal styling for dark mode */
+[data-bs-theme="dark"] .modal-content {
+    background-color: rgba(33, 37, 41, 0.95);
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .modal-header,
+[data-bs-theme="dark"] .modal-footer {
+    border-color: #495057;
+}
+
+/* List group styling for dark mode */
+[data-bs-theme="dark"] .list-group-item {
+    background-color: rgba(33, 37, 41, 0.95);
+    border-color: #495057;
+    color: #e9ecef;
+}
+
+/* Add specific overrides for form fields in dark mode */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] input[type="text"],
+[data-bs-theme="dark"] input[type="number"],
+[data-bs-theme="dark"] input[type="date"],
+[data-bs-theme="dark"] textarea,
+[data-bs-theme="dark"] select {
+    background-color: #2b3035 !important;
+    color: #e9ecef !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus,
+[data-bs-theme="dark"] input:focus,
+[data-bs-theme="dark"] textarea:focus,
+[data-bs-theme="dark"] select:focus {
+    background-color: #343a40 !important;
+    color: #f8f9fa !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #6c757d !important;
+}
+
+[data-bs-theme="dark"] .form-control[readonly],
+[data-bs-theme="dark"] input[readonly],
+[data-bs-theme="dark"] textarea[readonly] {
+    background-color: #343a40 !important;
+}

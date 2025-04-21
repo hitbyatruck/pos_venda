@@ -1,0 +1,114 @@
+.timeline {
+  position: relative;
+  padding: 20px 0;
+}
+
+.timeline-container {
+  position: relative;
+  padding-left: 50px;
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ddd;
+  left: 24px;
+  margin-left: -1px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.timeline-badge {
+  position: absolute;
+  top: 16px;
+  left: -25px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 50px;
+  color: #fff;
+  z-index: 100;
+  border: 4px solid white;
+}
+
+.timeline-badge i {
+  font-size: 18px;
+}
+
+.timeline-panel {
+  position: relative;
+  background: #f9f9f9;
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-panel::before {
+  position: absolute;
+  top: 26px;
+  left: -15px;
+  right: auto;
+  display: inline-block;
+  border-top: 15px solid transparent;
+  border-left: 0 solid #ccc;
+  border-right: 15px solid #ccc;
+  border-bottom: 15px solid transparent;
+  content: " ";
+}
+
+.timeline-panel::after {
+  position: absolute;
+  top: 27px;
+  left: -14px;
+  right: auto;
+  display: inline-block;
+  border-top: 14px solid transparent;
+  border-left: 0 solid #f9f9f9;
+  border-right: 14px solid #f9f9f9;
+  border-bottom: 14px solid transparent;
+  content: " ";
+}
+
+.timeline-heading h6 {
+  margin-top: 0;
+  color: #333;
+}
+
+.timeline-heading small {
+  color: #777;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .timeline-container::before {
+  background: #444;
+}
+
+[data-bs-theme="dark"] .timeline-panel {
+  background: #333;
+  border: 1px solid #444;
+}
+
+[data-bs-theme="dark"] .timeline-panel::before {
+  border-right-color: #444;
+}
+
+[data-bs-theme="dark"] .timeline-panel::after {
+  border-right-color: #333;
+}
+
+[data-bs-theme="dark"] .timeline-heading h6 {
+  color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .timeline-heading small {
+  color: #adb5bd;
+}

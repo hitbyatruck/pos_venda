@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -16,6 +15,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -26,16 +26,33 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
+static_collected/
 
-# Ambientes virtuais
+# Virtual Environment
 venv/
 ENV/
 env/
-.env
 
-# VS Code
-.vscode/
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# Outros
+# Backup files
+*_backup/
+*_backup.*
+*/migrations_backup/
+*~
+\#*\#
+
+# OS specific
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db

@@ -1,0 +1,129 @@
+{% load static %}
+<!-- Main Navigation Menu -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'core:dashboard' %}">
+      <img src="{% static 'images/logo.png' %}" alt="Logo" height="30" class="d-inline-block align-text-top me-2">
+      SysVendas
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <!-- Dashboard Link -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+             href="{% url 'core:dashboard' %}">
+            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+          </a>
+        </li>
+
+        <!-- Clientes Link -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'clientes' %}active{% endif %}"
+             href="{% url 'clientes:listar_clientes' %}">
+            <i class="fas fa-users me-1"></i> Clientes
+          </a>
+        </li>
+
+        <!-- Equipamentos Link - Changed to direct link -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'equipamentos' %}active{% endif %}"
+             href="{% url 'equipamentos:listar_fabricados' %}">
+            <i class="fas fa-cogs me-1"></i> Equipamentos
+          </a>
+        </li>
+
+        <!-- Assistência Link -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'assistencia' %}active{% endif %}"
+             href="{% url 'assistencia:listar_pats' %}">
+            <i class="fas fa-tools me-1"></i> Assistência
+          </a>
+        </li>
+
+        <!-- Notas Link -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'notas' %}active{% endif %}"
+             href="{% url 'notas:listar_notas' %}">
+            <i class="fas fa-sticky-note me-1"></i> Notas
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Side Menu Items -->
+      <ul class="navbar-nav">
+        <!-- Search Form -->
+        <li class="nav-item me-2">
+          <form class="d-flex" action="{% url 'search_global' %}" method="get">
+            <input class="form-control me-2" type="search" name="q" placeholder="Pesquisar...">
+            <button class="btn btn-light" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </form>
+        </li>
+
+        <!-- Definições Dropdown - Added this section -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownSettings" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-cog me-1"></i> Definições
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownSettings">
+            <li>
+              <a class="dropdown-item" href="{% url 'core:settings_dashboard' %}">
+                <i class="fas fa-sliders-h me-1"></i> Painel de Definições
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'core:user_management' %}">
+                <i class="fas fa-users-cog me-1"></i> Gestão de Utilizadores
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'core:roles_permissions' %}">
+                <i class="fas fa-user-shield me-1"></i> Perfis e Permissões
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'clientes:listar_setores' %}">
+                <i class="fas fa-building me-1"></i> Setores de Clientes
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'equipamentos:listar_categorias' %}">
+                <i class="fas fa-boxes me-1"></i> Categorias de Equipamentos
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- User Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+            <li>
+              <a class="dropdown-item" href="#">
+                <i class="fas fa-user-cog me-1"></i> Meu Perfil
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'logout' %}">
+                <i class="fas fa-sign-out-alt me-1"></i> Sair
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

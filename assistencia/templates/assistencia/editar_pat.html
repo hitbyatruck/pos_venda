@@ -1,250 +1,566 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Editar PAT{% endblock %}
+{% block title %}{% trans "Editar PAT" %} - {{ pat.pat_number }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Editar Pedido de Assistência Técnica (PAT)</h2>
-    {% if breadcrumbs %}
-        {% include 'includes/breadcrumbs.html' %}
-    {% endif %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-edit me-2"></i>{% trans "Editar PAT" %} #{{ pat.pat_number }}
+        </h1>
+    </div>
 
-    {% include 'includes/mini_nav.html' %}
-    <form method="post" id="patForm">
-        {% csrf_token %}
-        
-        <!-- Include formset management form -->
-        <div style="display: none;">
-            {{ formset.management_form }}
-            
-            <!-- Esconder checkboxes DELETE que podem estar aparecendo incorretamente -->
-            {% for form in formset %}
-                {% if form.DELETE %}
-                    <div>{{ form.DELETE }}</div>
-                {% endif %}
-            {% endfor %}
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assistencia:listar_pats' %}">{% trans "Assistência Técnica" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assistencia:detalhes_pat' pat_id=pat.id %}">{% trans "PAT" %} #{{ pat.pat_number }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Editar" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Mini Navigation Bar -->
+    <div class="nav nav-tabs mb-4" id="assistencia-tabs" role="tablist">
+        <a class="nav-link active" href="{% url 'assistencia:listar_pats' %}">
+            <i class="fas fa-clipboard-list me-1"></i> {% trans "PATs" %}
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h5 class="m-0 font-weight-bold text-primary">{% trans "Editar PAT" %} #{{ pat.pat_number }}</h5>
         </div>
-        <!-- PAT Details Section -->
-        <div class="row mb-4">
-            <!-- Left Column -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        Informações da PAT
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- Main form tabs -->
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i> {% trans "Informações Básicas" %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab" aria-controls="items" aria-selected="false">
+                            <i class="fas fa-tools me-1"></i> {% trans "Itens" %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab" aria-controls="report" aria-selected="false">
+                            <i class="fas fa-file-alt me-1"></i> {% trans "Relatório Técnico" %}
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab content -->
+                <div class="tab-content">
+                    <!-- Basic info tab -->
+                    <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                        <div class="row">
+                            <!-- PAT Number field (manual entry) -->
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.pat_number.id_for_label }}" class="form-label">{% trans "Número PAT" %}*</label>
+                                {{ form.pat_number }}
+                                {% if form.pat_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.pat_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.cliente.id_for_label }}" class="form-label">{% trans "Cliente" %}*</label>
+                                {{ form.cliente }}
+                                {% if form.cliente.errors %}
+                                <div class="invalid-feedback d-block">{{ form.cliente.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">{% trans "Estado" %}*</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                <div class="invalid-feedback d-block">{{ form.estado.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.equipamento.id_for_label }}" class="form-label">{% trans "Equipamento" %}</label>
+                                {{ form.equipamento }}
+                                {% if form.equipamento.errors %}
+                                <div class="invalid-feedback d-block">{{ form.equipamento.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{% trans "Selecione primeiro um cliente para carregar os equipamentos" %}</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.numero_serie_equipamento.id_for_label }}" class="form-label">{% trans "Número de Série" %}</label>
+                                {{ form.numero_serie_equipamento }}
+                                <div class="form-text">{% trans "Preencha caso o equipamento não esteja na lista acima" %}</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_entrada.id_for_label }}" class="form-label">{% trans "Data de Entrada" %}*</label>
+                                {{ form.data_entrada }}
+                                {% if form.data_entrada.errors %}
+                                <div class="invalid-feedback d-block">{{ form.data_entrada.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.data_conclusao.id_for_label }}" class="form-label">{% trans "Data de Conclusão" %}</label>
+                                {{ form.data_conclusao }}
+                                {% if form.data_conclusao.errors %}
+                                <div class="invalid-feedback d-block">{{ form.data_conclusao.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{% trans "Deixe em branco se o serviço ainda não foi concluído" %}</div>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.descricao_problema.id_for_label }}" class="form-label">{% trans "Descrição do Problema" %}*</label>
+                                {{ form.descricao_problema }}
+                                {% if form.descricao_problema.errors %}
+                                <div class="invalid-feedback d-block">{{ form.descricao_problema.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.pat_number.id_for_label }}" class="form-label">Número da PAT</label>
-                            {{ form.pat_number }}
-                            {% if form.pat_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.pat_number.errors|striptags }}
-                                </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Número único que identifica este pedido de assistência.</small>
+
+                    <!-- Items tab -->
+                    <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+                        <div class="card shadow mt-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">{% trans "Itens" %}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% include "assistencia/includes/pat_item_formset.html" with itemformset=itemformset %}
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="{{ form.cliente.id_for_label }}" class="form-label">Cliente</label>
-                            {{ form.cliente }}
-                            {% if form.cliente.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.cliente.errors|striptags }}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.equipamento.id_for_label }}" class="form-label">Equipamento</label>
-                            {{ form.equipamento }}
-                            {% if form.equipamento.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.equipamento.errors|striptags }}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.data_entrada.id_for_label }}" class="form-label">Data de Entrada</label>
-                            {{ form.data_entrada }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.data_reparacao.id_for_label }}" class="form-label">Data de Reparação</label>
-                            {{ form.data_reparacao }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
-                            {{ form.estado }}
-                        </div>
-                        <div class="mb-3 form-check">
-                            {{ form.garantia }}
-                            <label for="{{ form.garantia.id_for_label }}" class="form-check-label">Em Garantia</label>
+                    </div>
+
+                    <!-- Report tab -->
+                    <div class="tab-pane fade" id="report" role="tabpanel" aria-labelledby="report-tab">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.relatorio.id_for_label }}" class="form-label">{% trans "Relatório Técnico" %}</label>
+                                {{ form.relatorio }}
+                                {% if form.relatorio.errors %}
+                                <div class="invalid-feedback d-block">{{ form.relatorio.errors }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Right Column -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        Detalhes Adicionais
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="{{ form.relatorio.id_for_label }}" class="form-label">Relatório</label>
-                            {{ form.relatorio }}
-                        </div>
-                    </div>
+
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Cancelar" %}
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i> {% trans "Atualizar PAT" %}
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
-        
-        <!-- Items Table -->
-        <h4>Itens</h4>
-        <table class="table table-bordered" id="itensTable">
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Referência</th>
-                    <th>Designação</th>
-                    <th>Quantidade</th>
-                    <th>Preço (€)</th>
-                    <th>Total (€)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Existing Items -->
-                {% for form in formset %}
-                    <tr class="item-row{% if form.instance.pk %} existing-row{% endif %}">
-                        
-                    {% if form.instance.pk %}
-                        {{ form.id }}
-                        <div style="display: none;">{{ form.DELETE }}</div>
-                    {% endif %}
-                        
-                        <td>
-                            <div class="form-group">
-                                {{ form.tipo }}
-                                {% if form.tipo.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.tipo.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.referencia }}
-                                {% if form.referencia.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.referencia.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                {{ form.designacao }}
-                                {% if form.designacao.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.designacao.errors|striptags }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <input type="number" 
-                                       name="{{ form.quantidade.html_name }}" 
-                                       class="form-control quantidade" 
-                                       min="1" 
-                                       step="1" 
-                                       value="{{ form.quantidade.value|floatformat:'0' }}" 
-                                       onchange="this.value=Math.floor(this.value)">
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-group">
-                                <!-- Mudar para type="text" para evitar problemas com o cursor -->
-                                <input type="text" 
-                                       name="{{ form.preco.html_name }}" 
-                                       class="form-control preco" 
-                                       placeholder="0.00" 
-                                       value="{{ form.instance.preco|floatformat:2 }}" 
-                                       data-original-value="{{ form.instance.preco|floatformat:2 }}"
-                                       onfocus="this.select()">
-                            </div>
-                        </td>
-                        <td class="row-total">0.00</td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                        </td>
-                    </tr>
-                {% endfor %}
-                
-                <!-- Template row for new items -->
-            
-                <tr class="item-row template-row" style="display: none;">
-                        {% with form=formset.empty_form %}
-                            <td>
-                                <div class="form-group">
-                                    {{ form.tipo }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-group">
-                                    {{ form.referencia }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-group">
-                                    {{ form.designacao }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-group">
-                                    <input type="number" name="{{ form.quantidade.html_name }}" class="form-control quantidade" min="1" step="1" value="{{ form.quantidade.value|default:'1' }}">
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-group">
-                                    <input type="text" 
-                                           name="{{ form.preco.html_name }}" 
-                                           class="form-control preco" 
-                                           value="0.00" 
-                                           onfocus="this.select()">
-                                </div>
-                            </td>
-                            <td class="row-total">0.00</td>
-                            <td>
-                                <button type="button" class="btn btn-danger btn-sm item-delete">Excluir</button>
-                            </td>
-                        {% endwith %}
-                    </tr>
-                
-                <!-- Grand Total Row -->
-                <tr id="grandTotalRow">
-                    <td colspan="5" class="text-end"><strong>Total Geral: €</strong></td>
-                    <td class="text-end" id="grandTotalValue">0.00</td>
-                    <td>
-                        <input type="hidden" name="total_geral" id="total_geral_input" value="0.00">
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-4">Adicionar Item</button>
-
-        <!-- Botões de Ação -->
-        <div class="mb-4">
-            <button type="submit" class="btn btn-primary">Atualizar PAT</button>
-            <a href="{% url 'assistencia:detalhes_pat' pat.id %}" class="btn btn-secondary">Cancelar</a>
-            <a href="{% url 'assistencia:listar_pats' %}" class="btn btn-outline-secondary">Voltar à Lista</a>
-        </div>
-    </form>
+    </div>
 </div>
-
 {% endblock %}
-{% block scripts %}
-    <script src="{% static 'assistencia/js/assistencia_scripts.js' %}"></script>
+
+{% block extra_css %}
+<style>
+    /* Dark mode compatibility improvements */
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select {
+        background-color: rgba(45, 50, 55, 0.9);
+        color: #f8f9fa;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus {
+        background-color: rgba(55, 60, 65, 0.9);
+        color: #fff;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: rgba(173, 181, 189, 0.7);
+    }
+
+    /* Fix for date inputs in dark mode */
+    [data-bs-theme="dark"] input[type="date"] {
+        color-scheme: dark;
+    }
+
+    /* Fix for disabled inputs in dark mode */
+    [data-bs-theme="dark"] .form-control:disabled,
+    [data-bs-theme="dark"] .form-select:disabled {
+        background-color: rgba(35, 40, 45, 0.9);
+        color: #adb5bd;
+    }
+
+    /* Fix read-only inputs in dark mode */
+    [data-bs-theme="dark"] .form-control:read-only {
+        background-color: rgba(35, 40, 45, 0.9);
+        color: #e9ecef;
+    }
+
+    /* Fix for dropdown menus in dark mode */
+    [data-bs-theme="dark"] .dropdown-menu {
+        background-color: rgba(45, 50, 55, 0.95);
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .dropdown-item {
+        color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .dropdown-item:hover,
+    [data-bs-theme="dark"] .dropdown-item:focus {
+        background-color: rgba(13, 110, 253, 0.2);
+        color: #fff;
+    }
+
+    /* Fix for line items in dark mode */
+    [data-bs-theme="dark"] .item-row {
+        background-color: rgba(45, 50, 55, 0.5);
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .item-row:nth-child(odd) {
+        background-color: rgba(40, 45, 50, 0.5);
+    }
+
+    /* Tab styling for dark mode */
+    [data-bs-theme="dark"] .nav-tabs .nav-link {
+        color: #adb5bd;
+    }
+
+    [data-bs-theme="dark"] .nav-tabs .nav-link.active {
+        background-color: rgba(33, 37, 41, 0.95);
+        border-color: #495057 #495057 transparent;
+        color: #fff;
+    }
+
+    [data-bs-theme="dark"] .tab-content {
+        background-color: rgba(33, 37, 41, 0.95);
+        border-color: #495057;
+    }
+
+    /* Fix dark mode styles for form elements */
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select,
+    [data-bs-theme="dark"] input[type="text"],
+    [data-bs-theme="dark"] input[type="number"],
+    [data-bs-theme="dark"] input[type="date"],
+    [data-bs-theme="dark"] textarea {
+        background-color: #2b3035 !important;
+        color: #e9ecef !important;
+        border-color: #495057 !important;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus {
+        background-color: #343a40 !important;
+        color: #f8f9fa !important;
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: #6c757d !important;
+    }
+
+    /* Fix for date inputs in dark mode */
+    [data-bs-theme="dark"] input[type="date"] {
+        color-scheme: dark;
+    }
+
+    /* Specific styling for item form fields */
+    #items-table select,
+    #items-table input[type="text"],
+    #items-table input[type="number"],
+    /* Add specific attribute selectors as fallback */
+    input[name^="items-"][name$="-referencia"],
+    input[name^="items-"][name$="-designacao"],
+    input[name^="items-"][name$="-quantidade"],
+    input[name^="items-"][name$="-preco_unitario"] {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+
+    /* Select elements */
+    select[name^="items-"][name$="-tipo"] {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.5rem;
+    }
+
+    /* Dark mode support extended */
+    [data-bs-theme="dark"] input[name^="items-"][name$="-referencia"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-designacao"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-quantidade"],
+    [data-bs-theme="dark"] input[name^="items-"][name$="-preco_unitario"] {
+        color: #e9ecef;
+        background-color: #2b3035;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] select[name^="items-"][name$="-tipo"] {
+        color: #e9ecef;
+        background-color: #2b3035;
+        border-color: #495057;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23adb5bd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format a number as currency with exactly 2 decimal places
+        function formatCurrency(value) {
+            return parseFloat(value || 0).toFixed(2) + ' €';
+        }
+
+        // Get required elements
+        const itemRows = document.querySelector('#item-rows');
+        const addItemBtn = document.querySelector('#add-item-btn');
+        const itemTemplate = document.querySelector('#item-template');
+
+        // Initialize the formset management
+        const totalFormsInput = document.querySelector('#id_items-TOTAL_FORMS');
+        const initialFormsInput = document.querySelector('#id_items-INITIAL_FORMS');
+
+        // Setup event listeners for existing item rows - initialize all rows that exist when the page loads
+        function initializeAllRows() {
+            document.querySelectorAll('.item-row').forEach(function(row) {
+                if (!row.classList.contains('d-none') && !row.hasAttribute('data-initialized')) {
+                    setupLineItemEvents(row);
+                    row.setAttribute('data-initialized', 'true');
+                }
+            });
+        }
+
+        // Initialize rows on page load
+        initializeAllRows();
+
+        // Add new item button
+        if (addItemBtn) {
+            addItemBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Get the current form count
+                const formCount = parseInt(totalFormsInput.value);
+
+                // Clone the template
+                const newRow = itemTemplate.cloneNode(true);
+                newRow.removeAttribute('id');
+                newRow.classList.remove('d-none');
+
+                // Update form indexes
+                newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+
+                // Insert before the template
+                itemRows.insertBefore(newRow, itemTemplate);
+
+                // Update total forms
+                totalFormsInput.value = formCount + 1;
+
+                // Setup events for the new row
+                setupLineItemEvents(newRow);
+                newRow.setAttribute('data-initialized', 'true');
+
+                // Apply styles to the new row
+                applyFormStyling();
+
+                // Update the grand total
+                updateGrandTotal();
+            });
+        }
+
+        function setupLineItemEvents(row) {
+            const quantityInput = row.querySelector('[name$="-quantidade"]');
+            const priceInput = row.querySelector('[name$="-preco_unitario"]');
+            const lineTotal = row.querySelector('.line-total');
+            const deleteBtn = row.querySelector('.delete-item-btn');
+
+            // Calculate line total when quantity or price changes
+            function calculateLineTotal() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                lineTotal.textContent = formatCurrency(total);
+                updateGrandTotal();
+            }
+
+            // Set initial value
+            calculateLineTotal();
+
+            // Add event listeners
+            if (quantityInput) {
+                quantityInput.addEventListener('input', calculateLineTotal);
+            }
+
+            if (priceInput) {
+                priceInput.addEventListener('input', calculateLineTotal);
+            }
+
+            // Handle delete button
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Instead of removing the row, mark it as to be deleted
+                    const deleteInput = row.querySelector('[name$="-DELETE"]');
+                    if (deleteInput) {
+                        deleteInput.checked = true;
+                        row.classList.add('item-deleted');
+                        row.style.display = 'none';
+                    } else {
+                        // For new rows that don't have a DELETE checkbox yet
+                        row.remove();
+                    }
+
+                    updateGrandTotal();
+                });
+            }
+        }
+
+        // Calculate and update grand total
+        function updateGrandTotal() {
+            const lineTotals = document.querySelectorAll('.item-row:not(.d-none):not(.item-deleted) .line-total');
+            let grandTotal = 0;
+
+            lineTotals.forEach(lineTotal => {
+                const valueText = lineTotal.textContent.replace('€', '').trim();
+                const value = parseFloat(valueText) || 0;
+                grandTotal += value;
+            });
+
+            const grandTotalElement = document.getElementById('grand-total');
+            if (grandTotalElement) {
+                grandTotalElement.textContent = formatCurrency(grandTotal);
+            }
+        }
+
+        // Format existing prices on page load
+        document.querySelectorAll('.line-total').forEach(function(element) {
+            const text = element.textContent.trim();
+            const value = parseFloat(text.replace('€', '').trim()) || 0;
+            element.textContent = formatCurrency(value);
+        });
+
+        // Calculate initial grand total
+        updateGrandTotal();
+
+        // Apply Bootstrap classes to form fields in the items table
+        function applyFormStyling() {
+            console.log("Applying styling to form fields...");
+
+            // Select inputs by name attribute pattern to ensure we're getting the correct elements
+            const referenceInputs = document.querySelectorAll('input[name^="items-"][name$="-referencia"]');
+            const designationInputs = document.querySelectorAll('input[name^="items-"][name$="-designacao"]');
+            const quantityInputs = document.querySelectorAll('input[name^="items-"][name$="-quantidade"]');
+            const priceInputs = document.querySelectorAll('input[name^="items-"][name$="-preco_unitario"]');
+            const typeSelects = document.querySelectorAll('select[name^="items-"][name$="-tipo"]');
+
+            console.log(`Found ${referenceInputs.length} reference inputs`);
+            console.log(`Found ${designationInputs.length} designation inputs`);
+            console.log(`Found ${quantityInputs.length} quantity inputs`);
+            console.log(`Found ${priceInputs.length} price inputs`);
+            console.log(`Found ${typeSelects.length} type selects`);
+
+            // Apply classes to all inputs by type
+            referenceInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            designationInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            quantityInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            priceInputs.forEach(input => {
+                input.classList.add('form-control');
+                console.log(`Applied form-control to ${input.name}`);
+            });
+
+            typeSelects.forEach(select => {
+                select.classList.add('form-select');
+                console.log(`Applied form-select to ${select.name}`);
+            });
+        }
+
+        // Apply styling to initial elements
+        applyFormStyling();
+
+        // Add new item button
+        if (addItemBtn && itemTemplate && totalFormsInput) {
+            addItemBtn.addEventListener('click', function(e) {
+                // Get the current form count
+                const formCount = parseInt(totalFormsInput.value);
+
+                // Clone the template
+                const newRow = itemTemplate.cloneNode(true);
+                newRow.removeAttribute('id');
+                newRow.classList.remove('d-none');
+
+                // Update form indexes
+                newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+
+                // Insert before the template
+                itemRows.insertBefore(newRow, itemTemplate);
+
+                // Update total forms
+                totalFormsInput.value = formCount + 1;
+
+                // Setup events for the new row
+                setupLineItemEvents(newRow);
+                newRow.setAttribute('data-initialized', 'true');
+
+                // Apply styles to the new row - with a slight delay to ensure DOM is updated
+                setTimeout(() => {
+                    applyFormStyling();
+                }, 50);
+
+                // Update the grand total
+                updateGrandTotal();
+            });
+        }
+    });
+</script>
 {% endblock %}

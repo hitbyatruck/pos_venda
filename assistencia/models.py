@@ -8,306 +8,181 @@ from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
 from equipamentos.models import EquipamentoFabricado, EquipamentoCliente
 import datetime
+from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
 
 class PedidoAssistencia(models.Model):
-    ESTADO_CHOICES = [
-        ('aberto', 'Aberto'),
-        ('em_curso', 'Em Curso'),
-        ('concluido', 'Concluído'),
-        ('cancelado', 'Cancelado'),
-        ('em_diagnostico', 'Em Diagnóstico'),
+    STATUS_CHOICES = [
+        ('aberto', _('Aberto')),
+        ('em_diagnostico', _('Em Diagnóstico')),
+        ('em_andamento', _('Em Andamento')),
+        ('aguardando_peca', _('Aguardando Peça')),
+        ('aguardando_cliente', _('Aguardando Cliente')),
+        ('concluido', _('Concluído')),
+        ('cancelado', _('Cancelado')),
     ]
 
-    cliente = models.ForeignKey(
-        Cliente, 
-        on_delete=models.CASCADE, 
-        related_name="pats",
-        verbose_name="Cliente"
-    )
-    pat_number = models.CharField(
-        max_length=10, 
-        unique=True, 
-        verbose_name="Número da PAT"
-    )
-    data_entrada = models.DateField(
-        verbose_name="Data de Entrada",
-        default=timezone.now
-    )
-    estado = models.CharField(
-        max_length=20, 
-        choices=ESTADO_CHOICES, 
-        default='aberto',
-        verbose_name="Estado da PAT",
-        db_index=True  # Indexar para melhor performance em filtros
-    )
-    equipamento = models.ForeignKey(
-        EquipamentoCliente, 
-        on_delete=models.CASCADE, 
-        related_name="pats",
-        verbose_name="Equipamento"
-    )
-    numero_serie_equipamento = models.CharField(
-        max_length=100, 
-        blank=True,
-        verbose_name="Número de Série (histórico)",
-        help_text="Preserva o número de série mesmo que o equipamento seja transferido"
-    )
-    proprietario_original = models.CharField(
-        max_length=255, 
-        blank=True,
-        verbose_name="Proprietário Original"
-    )
-    proprietario_atual = models.CharField(
-        max_length=255, 
-        blank=True,
-        verbose_name="Proprietário Atual"
-    )
-    data_ultima_transferencia = models.DateTimeField(
-        null=True, 
-        blank=True,
-        verbose_name="Data da Última Transferência"
-    )
-    relatorio = models.TextField(
-        blank=True, 
-        null=True, 
-        verbose_name="Relatório"
-    )
-    garantia = models.BooleanField(
-        default=False,
-        verbose_name="Em Garantia",
-        help_text="Marque se o equipamento estiver em garantia."
-    )
-    data_reparacao = models.DateField(
-        blank=True, 
-        null=True, 
-        verbose_name="Data de Reparação"
-    )
-    data_criacao = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Data de Criação"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Última Atualização"
-    )
+    pat_number = models.CharField(_('Número PAT'), max_length=50, unique=True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='pats')
+    equipamento = models.ForeignKey(EquipamentoCliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='pats')
+    numero_serie_equipamento = models.CharField(_('Número de Série do Equipamento'), max_length=100, blank=True, null=True)
+
+    data_entrada = models.DateField(_('Data de Entrada'), default=timezone.now)
+    data_criacao = models.DateTimeField(_('Data de Criação'), auto_now_add=True)
+    data_atualizacao = models.DateTimeField(_('Data de Atualização'), auto_now=True)  # Add this field back
+    data_conclusao = models.DateField(_('Data de Conclusão'), null=True, blank=True)
+
+    estado = models.CharField(_('Estado'), max_length=50, choices=STATUS_CHOICES, default='aberto')
+    tecnico = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='pats_atribuidas')
+
+    descricao_problema = models.TextField(_('Descrição do Problema'))
+    relatorio = models.TextField(_('Relatório Técnico'), blank=True, null=True)  # Make sure this is nullable
+
+    # Add the history field
     history = HistoricalRecords()
-    class Meta:
-        verbose_name = "Pedido de Assistência Técnica"
-        verbose_name_plural = "Pedidos de Assistência Técnica"
-        ordering = ['-data_entrada', 'estado']
-        indexes = [
-            models.Index(fields=['estado', 'data_entrada']),
-            models.Index(fields=['cliente', 'estado']),
-        ]
 
     def __str__(self):
-        return f"PAT {self.pat_number or '---'} - {self.cliente.nome}"
-
-    
-    def get_estado_class(self):
-        """Retorna a classe Bootstrap adequada para o estado"""
-        estado_classes = {
-            'aberto': 'warning',
-            'em_andamento': 'info',
-            'concluido': 'success',
-            'cancelado': 'danger'
-        }
-        return estado_classes.get(self.estado, 'secondary')
-
-    def _generate_pat_number(self):
-        """Gera um número único para a PAT no formato YYYYMMXXXX"""
-        today = datetime.date.today()
-        year = today.year
-        month = today.month
-        
-        # Encontra o último número usado este mês
-        last_pat = PedidoAssistencia.objects.filter(
-            pat_number__startswith=f"{year}{month:02d}"
-        ).order_by('-pat_number').first()
-
-        if last_pat:
-            last_number = int(last_pat.pat_number[-4:])
-            new_number = last_number + 1
-        else:
-            new_number = 1
-
-        return f"{year}{month:02d}{new_number:04d}"
+        return f"PAT #{self.pat_number}"
 
     def save(self, *args, **kwargs):
-        # Gerar número de PAT se não existir
+        # Auto-set conclusion date when status is set to 'concluido'
+        if self.estado == 'concluido' and not self.data_conclusao:
+            from django.utils import timezone
+            self.data_conclusao = timezone.now().date()
+
+        # Clear conclusion date when status is not 'concluido'
+        if self.estado != 'concluido':
+            self.data_conclusao = None
+
+        # Debug logging for important saving actions
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Saving PAT {self.pat_number}: estado={self.estado}, cliente={self.cliente}, equipamento={self.equipamento}")
+
+        # Check for missing required fields and handle gracefully
         if not self.pat_number:
-            self.pat_number = self._generate_pat_number()
-        
-        # Preservar número de série ao salvar
-        if self.equipamento and not self.numero_serie_equipamento:
-            self.numero_serie_equipamento = self.equipamento.numero_serie
-            
-        # Preservar proprietário original se ainda não estiver definido
-        if self.cliente and not self.proprietario_original:
-            self.proprietario_original = self.cliente.nome
-            
-        # Atualizar proprietário atual
-        if self.cliente:
-            self.proprietario_atual = self.cliente.nome
-        
+            from datetime import datetime
+            prefix = f"PAT-{datetime.now().strftime('%Y%m%d')}"
+            count = PedidoAssistencia.objects.filter(pat_number__startswith=prefix).count()
+            self.pat_number = f"{prefix}-{count+1:03d}"
+            logger.warning(f"Auto-generating missing PAT number: {self.pat_number}")
+
         super().save(*args, **kwargs)
 
-    def clean(self):
-        """Validações personalizadas"""
-        
-        if self.pat_number:
-            # Verificar se já existe um número PAT igual na base de dados
-            # excluindo o atual objeto sendo editado
-            existing = PedidoAssistencia.objects.filter(
-                pat_number=self.pat_number
-            ).exclude(pk=self.pk).exists()
-            
-            if existing:
-                raise ValidationError({
-                    'pat_number': ('Este número de PAT já existe. Por favor, escolha outro número.')
-                })
+    # Add a method to record status changes with comments
+    def change_status(self, new_status, observations=None):
+        """
+        Change status and record history with observations
+        """
+        self.estado = new_status
+        if observations:
+            self.observacoes_tecnico = f"{self.observacoes_tecnico or ''}\n\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}] {observations}"
 
-        if self.estado == 'concluido' and not self.data_reparacao:
-            raise ValidationError({
-                'data_reparacao': 'Data de reparação é obrigatória para PATs concluídas.'
-            })
-        
-        if self.data_reparacao and self.data_reparacao < self.data_entrada:
-            raise ValidationError({
-                'data_reparacao': 'Data de reparação não pode ser anterior à data de entrada.'
-            })
-        super().clean()
+        # Add change reason for better history tracking
+        self._change_reason = f"Status changed to {dict(self.STATUS_CHOICES).get(new_status)}"
+        self.save()
+
+        # Record in status history
+        StatusHistory.objects.create(
+            pat=self,
+            estado=new_status,
+            data_alteracao=timezone.now(),
+            observacoes=observations
+        )
+
+        return True
 
     @property
-    def dias_em_aberto(self):
-        """Retorna o número de dias que a PAT está em aberto"""
-        if self.estado in ['concluido', 'cancelado']:
-            return (self.data_reparacao - self.data_entrada).days
-        return (timezone.now().date() - self.data_entrada).days
+    def total_items(self):
+        """Calculate the total sum of all line items"""
+        return sum(item.subtotal for item in self.itens.all())
 
-    @property
-    def total(self):
-        """Retorna o valor total da PAT"""
-        return sum(item.total for item in self.itens.all())
-    
-class ItemPat(models.Model):
-    TIPO_CHOICES = [
+    class Meta:
+        verbose_name = _('Pedido de Assistência Técnica')
+        verbose_name_plural = _('Pedidos de Assistência Técnica')
+        ordering = ['-data_criacao']
+
+
+class ItemPAT(models.Model):
+    """
+    Representa um item (peça ou serviço) associado a um pedido de assistência técnica.
+    """
+    TIPO_CHOICES = (
+        ('peca', 'Peça'),
         ('servico', 'Serviço'),
         ('componente', 'Componente'),
-    ]
-    
-    pat = models.ForeignKey(
-        'PedidoAssistencia', 
-        on_delete=models.CASCADE, 
-        related_name="itens",
-        verbose_name="PAT"
+        ('outro', 'Outro'),
     )
-    tipo = models.CharField(
-        max_length=20, 
-        choices=TIPO_CHOICES,
-        verbose_name="Tipo",
-        db_index=True
-    )
-    referencia = models.CharField(
-        max_length=100, 
-        verbose_name="Referência",
-        help_text="Código de referência do serviço ou componente"
-    )
-    designacao = models.CharField(
-        max_length=255, 
-        verbose_name="Designação",
-        help_text="Descrição do serviço ou componente"
-    )
-    quantidade = models.PositiveIntegerField(
-        default=1, 
-        verbose_name="Quantidade",
-        validators=[MinValueValidator(1)],
-        help_text="Quantidade mínima é 1"
-    )
-    preco = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        verbose_name="Preço",
-        validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Preço unitário em euros"
-    )
-    data_entrada = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Data de Criação"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Última Atualização"
-    )
-    history = HistoricalRecords()
+
+    pat = models.ForeignKey(PedidoAssistencia, on_delete=models.CASCADE, related_name='itens')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='peca')
+    referencia = models.CharField(max_length=100, blank=True, null=True)
+    designacao = models.CharField(max_length=255)
+    quantidade = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        verbose_name = "Item de PAT"
-        verbose_name_plural = "Itens de PAT"
-        ordering = ['tipo', 'designacao']
-        indexes = [
-            models.Index(fields=['pat', 'tipo']),
-            models.Index(fields=['referencia']),
-        ]
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(quantidade__gt=0),
-                name='quantidade_positiva'
-            ),
-            models.CheckConstraint(
-                check=models.Q(preco__gte=0),
-                name='preco_nao_negativo'
-            )
-        ]
-        
+        verbose_name = "Item PAT"
+        verbose_name_plural = "Itens PAT"
 
     def __str__(self):
-        return f"{self.get_tipo_display()}: {self.designacao} ({self.referencia})"
-
-    def clean(self):
-        # For completely empty rows, return without validation
-        if self.tipo is None and not self.referencia and not self.designacao:
-            # Set defaults for numeric fields to avoid comparison errors
-            if self.quantidade is None:
-                self.quantidade = 1
-            if self.preco is None:
-                self.preco = 0
-            return
-        
-        # Otherwise validate normally    
-        if self.preco is not None and self.preco < 0:
-            raise ValidationError("O preço não pode ser negativo.")
-            
-        if self.quantidade is not None and self.quantidade <= 0:
-            raise ValidationError("A quantidade deve ser maior que zero.")
+        return f"{self.designacao} ({self.get_tipo_display()})"
 
     @property
-    def total(self):
-        if self.quantidade is None or self.preco is None:
-            return Decimal('0.00')
-        return Decimal(str(self.quantidade)) * self.preco
+    def subtotal(self):
+        return self.quantidade * self.preco_unitario
 
-    @property
-    def is_servico(self):
-        """Verifica se o item é um serviço"""
-        return self.tipo == 'servico'
-
-    @property
-    def is_componente(self):
-        """Verifica se o item é um componente"""
-        return self.tipo == 'componente'
 
 class HistoricoPAT(models.Model):
-    pat = models.ForeignKey('PedidoAssistencia', on_delete=models.CASCADE, related_name='historico')
-    data_registo = models.DateTimeField(auto_now_add=True, verbose_name="Data de Registo")
-    utilizador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    estado_anterior = models.CharField(max_length=50, blank=True, null=True, verbose_name="Estado Anterior")
-    estado_novo = models.CharField(max_length=50, verbose_name="Estado Novo")
-    comentario = models.TextField(blank=True, null=True, verbose_name="Comentário")
+    TIPO_CHOICES = [
+        ('status', _('Mudança de Status')),
+        ('note', _('Observação')),
+        ('item', _('Item Adicionado/Removido')),
+    ]
+
+    pat = models.ForeignKey(PedidoAssistencia, on_delete=models.CASCADE, related_name='historico')
+    tipo = models.CharField(_('Tipo'), max_length=20, choices=TIPO_CHOICES)
+    descricao = models.TextField(_('Descrição'))
+    data_registo = models.DateTimeField(_('Data de Registo'), auto_now_add=True)
+    usuario = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return f"Alteração em PAT #{self.pat.numero} - {self.data_registo.strftime('%d/%m/%Y %H:%M')}"
-    
+        return f"{self.get_tipo_display()} em {self.data_registo.strftime('%d/%m/%Y %H:%M')}"
+
     class Meta:
-        verbose_name = "Histórico de PAT"
-        verbose_name_plural = "Históricos de PAT"
+        verbose_name = _('Histórico de PAT')
+        verbose_name_plural = _('Históricos de PAT')
+        ordering = ['-data_registo']
+
+
+class StatusHistory(models.Model):
+    """Model to track status changes for PATs"""
+    pat = models.ForeignKey(
+        PedidoAssistencia,
+        on_delete=models.CASCADE,
+        related_name='status_history'
+    )
+    estado = models.CharField(
+        max_length=30,
+        choices=PedidoAssistencia.STATUS_CHOICES,
+        verbose_name=_('Estado')
+    )
+    data_alteracao = models.DateTimeField(
+        default=timezone.now,
+        verbose_name=_('Data de alteração')
+    )
+    observacoes = models.TextField(
+        blank=True, null=True,
+        verbose_name=_('Observações')
+    )
+
+    class Meta:
+        verbose_name = _('Histórico de Status')
+        verbose_name_plural = _('Históricos de Status')
+        ordering = ['-data_alteracao']
+
+    def __str__(self):
+        return f"{self.pat.pat_number} - {self.get_estado_display()} ({self.data_alteracao})"
+
+    def get_estado_display(self):
+        return dict(PedidoAssistencia.STATUS_CHOICES).get(self.estado, self.estado)

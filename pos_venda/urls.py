@@ -10,20 +10,26 @@ from core.views import dashboard
 urlpatterns = [
     # Adicione as URLs de autenticação aqui!
     path('accounts/', include('django.contrib.auth.urls')),
-    
+
     # URL para mudar idioma
     path('i18n/', include('django.conf.urls.i18n')),
-    
+
     # Rosetta para traduções
     path('rosetta/', include('rosetta.urls')),
-    
+
     path('', dashboard, name='dashboard'),
-    
+
     # Outras URLs existentes
     path('notas/', include(('notas.urls', 'notas'), namespace='notas')),
-    
+
     # Unified search - use the search app's URLs
     path('search/', include('search.urls')),
+
+    # Include core URLs with the namespace explicitly specified
+    path('', include('core.urls', namespace='core')),
+
+    # Add the configuracao app with namespace
+    path('configuracao/', include('configuracao.urls', namespace='configuracao')),
 ]
 
 # URLs com prefixo de idioma (ex: /en/admin/, /pt/clientes/)
@@ -39,6 +45,7 @@ urlpatterns += i18n_patterns(
 # Arquivos de mídia em modo DEBUG
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 else:
     # For production, you should configure your web server to serve media files
     # This is just a fallback for development-like environments

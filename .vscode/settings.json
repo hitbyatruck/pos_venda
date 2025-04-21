@@ -1,0 +1,145 @@
+{
+    "github.copilot.chat.followUps": "always",
+    "github.copilot.chat.reviewSelection.instructions": [],
+    "github.copilot.enable": {
+        "enabled": true
+    },
+    "github.copilot.chat.localeOverride": "en",
+    "github.copilot.advanced": {
+        "projectContext": [
+            "This is a Django-based POS (Point of Sale) and Post-Sales Management System.",
+            "Project structure conventions:",
+            "- All apps should maintain consistent UI/UX across pages",
+            "- All client-related pages should include the same menu_clientes, breadcrumbs, and advanced search components",
+            "- Templates should extend from the base.html and include app-specific includes",
+            "- All list views should have the same layout and features (pagination, filters, etc.)",
+            "- Use Bootstrap 5 for styling, with the project's custom CSS modifications",
+            "- All URLs in templates must use proper namespacing (app_name:url_name)",
+            "- All forms should have consistent styling and validation",
+            "When modifying templates:",
+            "1. Maintain consistent structure between similar pages (list pages should look alike)",
+            "2. Include the app's common components (menu_clientes for cliente app, etc.)",
+            "3. Ensure breadcrumbs are always present and following the same pattern",
+            "4. Preserve advanced search functionality where applicable",
+            "5. Don't reinvent components that already exist - reuse them",
+            "Always check how the code you suggest affects the different applications in the project",
+            "Stop being formal and apologizing for your mistakes. Give me solutions to properly debug and solve the problems we face.",
+            "Focus on solving one problem at a time and maintain consistency with existing code."
+        ]
+    },
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": [
+        "--ignore=E225,E226,E228"
+    ],
+    "[python]": {
+        "editor.rulers": [
+            100
+        ],
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "editor.wordBasedSuggestions": "off",
+        "editor.suggestSelection": "first",
+        "editor.suggest.showKeywords": true
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "[django-html]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnType": false,
+        "editor.formatOnPaste": false,
+        "editor.defaultFormatter": null,
+        "editor.autoIndent": "advanced",
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": true,
+            "strings": true
+        }
+    },
+    "emmet.includeLanguages": {
+        "django-html": "html"
+    },
+    "files.associations": {
+        "*.html": "django-html",
+        "**/templates/**/*.html": "django-html",
+        "**/templates/**/*.txt": "django-txt"
+    },
+    "files.trimTrailingWhitespace": true,
+    "files.autoSave": "off",
+    // Disable automatic language detection
+    "editor.autoDetectLanguage": false,
+    // Disable suggestions on typing certain characters
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    "editor.suggestOnTriggerCharacters": false,
+    // Disable spell checking features that might cause auto-translation
+    "cSpell.enabled": false,
+    "cSpell.enableFiletypes": [],
+    // Set the editor language explicitly
+    "workbench.editor.languageDetection": false,
+    // Configure git for UTF-8 to prevent encoding issues with special characters
+    "files.encoding": "utf8",
+    // Disable automatic closing of brackets and quotes
+    "editor.autoClosingBrackets": "beforeWhitespace",
+    "editor.autoClosingQuotes": "beforeWhitespace",
+    // Disable automatic surround with quotes
+    "editor.autoSurround": "never",
+    // Disable language detection in status bar
+    "editor.showLanguageDetectionNotification": false,
+    "css.validate": false,   // Disable CSS validation
+    "less.validate": false,
+    "scss.validate": false,
+    "html.validate.styles": false,
+    "html.validate.scripts": false,
+    "html.validate.html": false,
+    "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
+    // Removed this setting as it conflicts with pyrightconfig.json
+    // "python.analysis.extraPaths": [
+    //     "${workspaceFolder}"
+    // ],
+    "python.linting.pylintArgs": [
+        "--disable=C0111,C0103,C0303",
+        "--load-plugins=pylint_django",
+        "--django-settings-module=pos_venda.settings"
+    ],
+    // Removed this setting as it conflicts with pyrightconfig.json
+    // "python.analysis.typeCheckingMode": "basic",
+    // Disable problematic autoformatting features
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "never"
+    },
+    // Better handling of Django template variables
+    "files.trimTrailingWhitespace.trimOnSave": true,
+    "[django-html][django-txt]": {
+        "files.trimTrailingWhitespace": false
+    },
+    // Prevent unnecessary changes
+    "diffEditor.ignoreTrimWhitespace": true,
+    // Better bracket matching for Django templates
+    "editor.guides.bracketPairs": true,
+    // Exclude directories from search
+    "search.exclude": {
+        "**/venv": true,
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    // Git settings
+    "git.ignoreLimitWarning": true,
+    // Django template highlighting specifics
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "keyword.control.tag.django-html",
+                "settings": {
+                    "foreground": "#9cdcfe"
+                }
+            }
+        ]
+    }
+}

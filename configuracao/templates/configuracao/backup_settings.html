@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{% trans "Backup e Restauração" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{% trans "Backup e Restauração" %}</h1>
+
+    {% include 'configuracao/includes/config_nav.html' with active_tab='backup' %}
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Criar Backup" %}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="backup_type" class="form-label">{% trans "Tipo de Backup" %}</label>
+                            <select class="form-select" id="backup_type" name="backup_type">
+                                <option value="full">{% trans "Completo (Banco de Dados e Arquivos)" %}</option>
+                                <option value="db">{% trans "Apenas Banco de Dados" %}</option>
+                                <option value="files">{% trans "Apenas Arquivos" %}</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download mr-1"></i> {% trans "Iniciar Backup" %}
+                        </button>
+                    </form>
+
+                    {% if settings.last_backup %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        {% trans "Último backup realizado em" %}: {{ settings.last_backup|date:"d/m/Y H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Backups Realizados" %}</h6>
+                </div>
+                <div class="card-body">
+                    {% if backups %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "Data" %}</th>
+                                        <th>{% trans "Tipo" %}</th>
+                                        <th>{% trans "Tamanho" %}</th>
+                                        <th>{% trans "Criado por" %}</th>
+                                        <th>{% trans "Ações" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for backup in backups %}
+                                    <tr>
+                                        <td>{{ backup.date_created|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if backup.backup_type == 'full' %}
+                                                <span class="badge bg-primary">{% trans "Completo" %}</span>
+                                            {% elif backup.backup_type == 'db' %}
+                                                <span class="badge bg-info">{% trans "Banco de Dados" %}</span>
+                                            {% elif backup.backup_type == 'files' %}
+                                                <span class="badge bg-secondary">{% trans "Arquivos" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ backup.file_size|filesizeformat }}</td>
+                                        <td>{{ backup.created_by.username }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-success">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {% include 'includes/pagination.html' with page_obj=backups %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Nenhum backup encontrado." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

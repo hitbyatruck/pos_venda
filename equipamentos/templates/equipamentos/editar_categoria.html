@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Editar Categoria" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-edit me-2"></i>{% trans "Editar Categoria" %}
+        </h1>
+    </div>
+
+    <!-- Breadcrumbs -->
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Editar Categoria" %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">{% trans "Formulário de Categoria" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="{{ form.nome.id_for_label }}" class="form-label">{% trans "Nome da Categoria" %} <span
+                            class="text-danger">*</span></label>
+                    {{ form.nome }}
+                    {% if form.nome.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.nome.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.pai.id_for_label }}" class="form-label">{% trans "Categoria Pai" %}</label>
+                    {{ form.pai }}
+                    <div class="form-text">{{ form.pai.help_text }}</div>
+                    {% if form.pai.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.pai.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Warning if this is its own parent -->
+                    {% if categoria.pai == categoria %}
+                    <div class="alert alert-warning mt-2">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        {% trans "Uma categoria não pode ser pai dela mesma. Por favor, selecione outra categoria pai ou
+                        deixe em branco." %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{% trans "Descrição" %}</label>
+                    {{ form.descricao }}
+                    {% if form.descricao.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.descricao.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "Salvar" %}
+                    </button>
+                    <a href="{% url 'equipamentos:detalhes_categoria' categoria_id=categoria.id %}"
+                        class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "Voltar" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Disable selecting itself as parent
+        const categoryId = '{{ categoria.id }}';
+        const parentSelect = document.getElementById('{{ form.pai.id_for_label }}');
+
+        if (parentSelect) {
+            // Disable the option for itself
+            for (let i = 0; i < parentSelect.options.length; i++) {
+                if (parentSelect.options[i].value === categoryId) {
+                    parentSelect.options[i].disabled = true;
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

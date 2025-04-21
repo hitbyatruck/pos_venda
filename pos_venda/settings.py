@@ -31,12 +31,17 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '192.168.1.119']
 # Application definition
 
 INSTALLED_APPS = [
+    # Django built-in apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Only include humanize once - it's already included somewhere else
+    # 'django.contrib.humanize',  # Comment this out to avoid duplication
+
+    # Your project apps
     'clientes',
     'equipamentos',
     'assistencia',
@@ -48,6 +53,7 @@ INSTALLED_APPS = [
     'stock',
     'django_countries',
     'configuracao',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +74,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
+        'APP_DIRS': False,  # Changed from True to False since we're defining loaders
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -77,7 +83,10 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.navigation',
                 'configuracao.context_processors.configuracao_sistema',
-
+            ],
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
             ],
         },
     },
@@ -122,6 +131,9 @@ AUTH_PASSWORD_VALIDATORS = [
 USE_I18N = True
 USE_L10N = True  # This might be USE_TZ in newer Django versions
 USE_TZ = True
+
+# Time zone settings
+TIME_ZONE = 'Europe/Lisbon'  # Set to Portugal's timezone
 
 # Add these settings below the existing ones:
 # Available languages

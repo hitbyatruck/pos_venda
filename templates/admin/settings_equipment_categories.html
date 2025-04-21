@@ -1,0 +1,253 @@
+{% extends 'admin/settings_layout.html' %}
+{% load i18n %}
+
+{% block settings_title %}{% trans "Categorias de Equipamentos" %}{% endblock %}
+
+{% block settings_breadcrumbs %}
+<li class="breadcrumb-item active">{% trans "Categorias de Equipamentos" %}</li>
+{% endblock %}
+
+{% block settings_content %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>{% trans "Categorias de Equipamentos" %}</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="fas fa-plus-circle me-1"></i>{% trans "Nova Categoria" %}
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "Nome" %}</th>
+                        <th>{% trans "Categoria Pai" %}</th>
+                        <th>{% trans "Nível" %}</th>
+                        <th>{% trans "Equipamentos" %}</th>
+                        <th class="text-center">{% trans "Ações" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>{{ category.nome }}</td>
+                        <td>{{ category.pai.nome|default:"-" }}</td>
+                        <td>
+                            {% if category.pai %}
+                            <span class="badge bg-secondary">Subcategoria</span>
+                            {% else %}
+                            <span class="badge bg-primary">Categoria Principal</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ category.equipamentofabricado_set.count }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary edit-category-btn"
+                                        data-category-id="{{ category.id }}"
+                                        data-category-name="{{ category.nome }}"
+                                        data-parent-id="{{ category.pai.id|default:'' }}"
+                                        data-description="{{ category.descricao|default:'' }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editCategoryModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-category-btn"
+                                        data-category-id="{{ category.id }}"
+                                        data-category-name="{{ category.nome }}"
+                                        data-equipment-count="{{ category.equipamentofabricado_set.count }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteCategoryModal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-3">{% trans "Nenhuma categoria encontrada." %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipamentos:adicionar_categoria' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-boxes me-2"></i>{% trans "Adicionar Categoria" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-category-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="add-category-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-parent-category" class="form-label">{% trans "Categoria Pai" %}</label>
+                        <select class="form-select" id="add-parent-category" name="pai">
+                            <option value="">{% trans "Nenhuma (Categoria Raiz)" %}</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-category-description" class="form-label">{% trans "Descrição" %}</label>
+                        <textarea class="form-control" id="add-category-description" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipamentos:editar_categoria' categoria_id=0 %}" id="edit-category-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-boxes me-2"></i>{% trans "Editar Categoria" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-category-name" class="form-label">{% trans "Nome" %}*</label>
+                        <input type="text" class="form-control" id="edit-category-name" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-parent-category" class="form-label">{% trans "Categoria Pai" %}</label>
+                        <select class="form-select" id="edit-parent-category" name="pai">
+                            <option value="">{% trans "Nenhuma (Categoria Raiz)" %}</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-category-description" class="form-label">{% trans "Descrição" %}</label>
+                        <textarea class="form-control" id="edit-category-description" name="descricao" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Category Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipamentos:excluir_categoria' categoria_id=0 %}" id="delete-category-form">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir a categoria" %} <strong id="delete-category-name"></strong>?</p>
+                    <p id="equipment-warning" class="d-none text-warning">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        <span id="equipment-count"></span> {% trans "equipamentos pertencem a esta categoria." %}
+                    </p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        {% trans "Esta ação não pode ser desfeita." %}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit category modal setup
+        const editCategoryBtns = document.querySelectorAll('.edit-category-btn');
+        const editCategoryForm = document.getElementById('edit-category-form');
+
+        editCategoryBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const categoryId = this.getAttribute('data-category-id');
+                const categoryName = this.getAttribute('data-category-name');
+                const parentId = this.getAttribute('data-parent-id');
+                const description = this.getAttribute('data-description');
+
+                document.getElementById('edit-category-name').value = categoryName;
+                document.getElementById('edit-category-description').value = description;
+
+                // Set parent category dropdown
+                const parentSelect = document.getElementById('edit-parent-category');
+                for (let i = 0; i < parentSelect.options.length; i++) {
+                    if (parentSelect.options[i].value === parentId) {
+                        parentSelect.options[i].selected = true;
+                        break;
+                    }
+                }
+
+                // Remove current category from parent options to prevent circular references
+                for (let i = 0; i < parentSelect.options.length; i++) {
+                    if (parentSelect.options[i].value === categoryId) {
+                        parentSelect.options[i].disabled = true;
+                    } else {
+                        parentSelect.options[i].disabled = false;
+                    }
+                }
+
+                // Update form action URL with the correct category ID
+                const formAction = "{% url 'equipamentos:editar_categoria' categoria_id=999999 %}".replace('999999', categoryId);
+                editCategoryForm.setAttribute('action', formAction);
+            });
+        });
+
+        // Delete category modal setup
+        const deleteCategoryBtns = document.querySelectorAll('.delete-category-btn');
+        const deleteCategoryForm = document.getElementById('delete-category-form');
+        const equipmentWarning = document.getElementById('equipment-warning');
+        const equipmentCount = document.getElementById('equipment-count');
+
+        deleteCategoryBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const categoryId = this.getAttribute('data-category-id');
+                const categoryName = this.getAttribute('data-category-name');
+                const equipmentCount = parseInt(this.getAttribute('data-equipment-count') || '0');
+
+                document.getElementById('delete-category-name').textContent = categoryName;
+
+                // Show warning if there are equipments using this category
+                if (equipmentCount > 0) {
+                    document.getElementById('equipment-warning').classList.remove('d-none');
+                    document.getElementById('equipment-count').textContent = equipmentCount;
+                } else {
+                    document.getElementById('equipment-warning').classList.add('d-none');
+                }
+
+                // Update form action URL with the correct category ID
+                const formAction = "{% url 'equipamentos:excluir_categoria' categoria_id=999999 %}".replace('999999', categoryId);
+                deleteCategoryForm.setAttribute('action', formAction);
+            });
+        });
+    });
+</script>
+{% endblock %}

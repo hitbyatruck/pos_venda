@@ -1,95 +1,337 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
+
 {% block title %}Equipamentos dos Clientes{% endblock %}
 
 {% block content %}
-<div class="container">
-  <h2 class="mb-4">Lista de Equipamentos dos Clientes</h2>
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">
+      <i class="fas fa-cogs me-2"></i>{% trans "Equipamentos dos Clientes" %}
+    </h1>
+    <div>
+      <a href="{% url 'equipamentos:adicionar_cliente' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i> {% trans "Adicionar Equipamento" %}
+      </a>
+    </div>
+  </div>
+
   {% if breadcrumbs %}
   {% include 'includes/breadcrumbs.html' with items=breadcrumbs %}
   {% endif %}
 
   {% include 'equipamentos/includes/mini_nav.html' with nav_active='cliente' %}
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Cliente</th>
-        <th>Equipamento</th>
-        <th>Número de Série</th>
-        <th>Data de Aquisição</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for equipamento in equipamentos %}
-      <tr id="equipment-row-{{ equipamento.id }}">
-        <td>{{ equipamento.cliente.nome }}</td>
-        <td>{{ equipamento.equipamento_fabricado.nome }}</td>
-        <td>{{ equipamento.numero_serie }}</td>
-        <td>{{ equipamento.data_aquisicao }}</td>
-        <td>
-          <a href="#" class="btn btn-info btn-sm">Detalhes</a>
-          <a href="#" class="btn btn-warning btn-sm">Editar</a>
-          <a href="{% url 'equipamentos:historico_equipamento_cliente' equipamento_id=equipamento.id %}"
-            class="btn btn-sm btn-info" title="Ver histórico completo">
-            <i class="bi bi-clock-history"></i> Histórico
-          </a>
-          <button class="btn btn-danger btn-sm deassociate-equipment" data-id="{{ equipamento.id }}"
-            data-url="{% url 'clientes:desassociar_equipamento' equipamento.id %}">
-            Desassociar
+  <!-- Search and filters -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-dark bg-opacity-10">
+      <form method="get" id="filterForm" class="row g-3">
+        <div class="col-md-4">
+          <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+              placeholder="{% trans 'Nº série, cliente, equipamento...' %}">
+            <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="cliente" class="form-label">{% trans "Cliente" %}</label>
+          <select class="form-select" id="cliente" name="cliente">
+            <option value="">{% trans "Todos" %}</option>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id }}" {% if selected_clients %}{{ selected_clients|default:'' }}{% endif %}>
+              {{ cliente.nome }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-1"></i> Filtrar
           </button>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5">Nenhum equipamento registrado.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </div>
+
+        <!-- Hidden sort fields -->
+        <input type="hidden" name="sort" id="sort-field" value="{{ sort_by|default:'cliente__nome' }}">
+        <input type="hidden" name="sort_dir" id="sort-direction" value="{{ sort_dir|default:'asc' }}">
+      </form>
+    </div>
+  </div>
+
+  <!-- Equipment table -->
+  <div class="card shadow mb-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+          <thead class="bg-dark text-light">
+            <tr>
+              <th class="sortable" data-sort="cliente__nome">
+                {% trans "Cliente" %}
+                <i
+                  class="fas fa-sort{% if sort_by == 'cliente__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+              </th>
+              <th class="sortable" data-sort="equipamento_fabricado__nome">
+                {% trans "Modelo" %}
+                <i
+                  class="fas fa-sort{% if sort_by == 'equipamento_fabricado__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+              </th>
+              <th class="sortable" data-sort="numero_serie">
+                {% trans "Nº Série" %}
+                <i
+                  class="fas fa-sort{% if sort_by == 'numero_serie' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+              </th>
+              <th class="sortable" data-sort="data_instalacao">
+                {% trans "Data Instalação" %}
+                <i
+                  class="fas fa-sort{% if sort_by == 'data_instalacao' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+              </th>
+              <th class="text-center">{% trans "Ações" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for equipamento in equipamentos %}
+            <tr>
+              <td>
+                <a href="{% url 'clientes:detalhes_cliente' cliente_id=equipamento.cliente.id %}"
+                  class="text-decoration-none">
+                  {{ equipamento.cliente.nome }}
+                </a>
+              </td>
+              <td>
+                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.equipamento_fabricado.id %}"
+                  class="text-decoration-none">
+                  {{ equipamento.equipamento_fabricado.nome }}
+                </a>
+              </td>
+              <td>{{ equipamento.numero_serie }}</td>
+              <td>{{ equipamento.data_instalacao|date:"d/m/Y"|default:"-" }}</td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'equipamentos:detalhes_cliente' equipamento_id=equipamento.id %}"
+                    class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'equipamentos:editar_cliente' equipamento_id=equipamento.id %}"
+                    class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <button type="button" class="btn btn-outline-danger delete-equipment" data-id="{{ equipamento.id }}"
+                    data-model="{{ equipamento.equipamento_fabricado.nome }}"
+                    data-client="{{ equipamento.cliente.nome }}" title="{% trans 'Excluir' %}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-3">{% trans "Nenhum equipamento encontrado." %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if equipamentos.has_other_pages %}
+  <nav aria-label="{% trans 'Paginação' %}">
+    <ul class="pagination justify-content-center">
+      {% if equipamentos.has_previous %}
+      <li class="page-item">
+        <a class="page-link"
+          href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&sort_dir={{ sort_dir }}{% endif %}">
+          <i class="fas fa-angle-double-left"></i>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link"
+          href="?pagina={{ equipamentos.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&sort_dir={{ sort_dir }}{% endif %}">
+          <i class="fas fa-angle-left"></i>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+      </li>
+      {% endif %}
+
+      {% for i in equipamentos.paginator.page_range %}
+      {% if equipamentos.number == i %}
+      <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > equipamentos.number|add:'-3' and i < equipamentos.number|add:'3' %} <li class="page-item">
+        <a class="page-link"
+          href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&sort_dir={{ sort_dir }}{% endif %}">{{
+          i }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if equipamentos.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+            href="?pagina={{ equipamentos.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&sort_dir={{ sort_dir }}{% endif %}">
+            <i class="fas fa-angle-right"></i>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link"
+            href="?pagina={{ equipamentos.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if cliente_id %}&cliente={{ cliente_id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_dir %}&sort_dir={{ sort_dir }}{% endif %}">
+            <i class="fas fa-angle-double-right"></i>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link"><i class="fas fa-angle-right"></i></span>
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 
-<!-- Modal de Confirmação Inicial -->
+<!-- Confirmation Modals -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirmar Desassociação</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Tem a certeza que deseja desassociar este equipamento do cliente?
+        <p>{% trans "Tem certeza que deseja excluir este equipamento?" %}</p>
+        <p><strong id="equipmentInfo"></strong></p>
+        <p class="text-danger">
+          <i class="fas fa-exclamation-circle me-1"></i>
+          {% trans "Esta ação não pode ser desfeita e todos os dados associados serão perdidos." %}
+        </p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="confirmModalBtn" class="btn btn-danger">Confirmar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          {% trans "Cancelar" %}
+        </button>
+        <form id="deleteForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+          </button>
+        </form>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal de Aviso Extra (para equipamentos associados a PATs) -->
 <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="warningModalLabel">Atenção: Desassociação Irreversível</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="warningModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Aviso" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" id="warningModalBody">
-        <!-- A mensagem será inserida aqui dinamicamente -->
+      <div class="modal-body">
+        <p id="warningMessage"></p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" id="warningModalBtn" class="btn btn-danger">Confirmar Desassociação</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          {% trans "Cancelar" %}
+        </button>
+        <button type="button" class="btn btn-warning" id="forceDelete">
+          <i class="fas fa-exclamation-triangle me-1"></i> {% trans "Continuar Mesmo Assim" %}
+        </button>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-{{ block.super }}
-<script src="{% static 'clientes/js/equipment_deassociation.js' %}"></script>
+{% block extra_js %}
+{% include 'includes/sortable_tables.html' %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Delete equipment functionality
+    const deleteButtons = document.querySelectorAll('.delete-equipment');
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    const equipmentInfo = document.getElementById('equipmentInfo');
+    const warningMessage = document.getElementById('warningMessage');
+    const forceDeleteBtn = document.getElementById('forceDelete');
+
+    let currentEquipmentId = null;
+
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const id = this.getAttribute('data-id');
+        const model = this.getAttribute('data-model');
+        const client = this.getAttribute('data-client');
+
+        currentEquipmentId = id;
+        equipmentInfo.textContent = `${model} (${client})`;
+        deleteForm.action = `/equipamentos/cliente/${id}/excluir/`;
+
+        confirmModal.show();
+      });
+    });
+
+    // Handle force delete
+    forceDeleteBtn.addEventListener('click', function () {
+      warningModal.hide();
+
+      // Submit the delete form with force=true
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'force';
+      input.value = 'true';
+      deleteForm.appendChild(input);
+
+      deleteForm.submit();
+    });
+
+    // Handle form submission with potential warnings
+    deleteForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this),
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'warning') {
+            // Show warning modal
+            confirmModal.hide();
+            warningMessage.textContent = data.message;
+            warningModal.show();
+          } else if (data.status === 'success') {
+            // Redirect or reload on success
+            window.location.reload();
+          } else {
+            // Show error message
+            confirmModal.hide();
+            alert('Erro: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          confirmModal.hide();
+          alert('Erro ao processar a solicitação.');
+        });
+    });
+  });
+</script>
 {% endblock %}

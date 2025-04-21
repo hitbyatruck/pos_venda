@@ -1,0 +1,435 @@
+{% extends 'admin/settings_layout.html' %}
+{% load i18n %}
+
+{% block settings_title %}{% trans "Gestão de Utilizadores" %}{% endblock %}
+
+{% block settings_breadcrumbs %}
+    <li class="breadcrumb-item active">{% trans "Utilizadores" %}</li>
+{% endblock %}
+
+{% block settings_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>{% trans "Utilizadores do Sistema" %}</h5>
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-plus-circle me-1"></i>{% trans "Novo Utilizador" %}
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Nome de Utilizador" %}</th>
+                                <th>{% trans "Email" %}</th>
+                                <th>{% trans "Nome" %}</th>
+                                <th>{% trans "Grupos" %}</th>
+                                <th>{% trans "Estado" %}</th>
+                                <th class="text-center">{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.get_full_name|default:"-" }}</td>
+                                <td>
+                                    {% for group in user.groups.all %}
+                                    <span class="badge bg-info">{{ group.name }}</span>
+                                    {% empty %}
+                                    <span class="text-muted">-</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">{% trans "Ativo" %}</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{% trans "Inativo" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary edit-user-btn"
+                                                data-user-id="{{ user.id }}"
+                                                data-username="{{ user.username }}"
+                                                data-email="{{ user.email }}"
+                                                data-first-name="{{ user.first_name }}"
+                                                data-last-name="{{ user.last_name }}"
+                                                data-is-active="{{ user.is_active|yesno:'true,false' }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editUserModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger delete-user-btn"
+                                                data-user-id="{{ user.id }}"
+                                                data-username="{{ user.username }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteUserModal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3">{% trans "Nenhum utilizador encontrado." %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-tag me-2"></i>{% trans "Grupos de Utilizadores" %}</h5>
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                    <i class="fas fa-plus-circle me-1"></i>{% trans "Novo Grupo" %}
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Nome do Grupo" %}</th>
+                                <th>{% trans "Utilizadores" %}</th>
+                                <th>{% trans "Permissões" %}</th>
+                                <th class="text-center">{% trans "Ações" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in groups %}
+                            <tr>
+                                <td>{{ group.name }}</td>
+                                <td>{{ group.user_set.count }}</td>
+                                <td>{{ group.permissions.count }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary edit-group-btn"
+                                                data-group-id="{{ group.id }}"
+                                                data-group-name="{{ group.name }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editGroupModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger delete-group-btn"
+                                                data-group-id="{{ group.id }}"
+                                                data-group-name="{{ group.name }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteGroupModal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">{% trans "Nenhum grupo encontrado." %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:user_add' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>{% trans "Adicionar Utilizador" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-username" class="form-label">{% trans "Nome de Utilizador" %}*</label>
+                        <input type="text" class="form-control" id="add-username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-email" class="form-label">{% trans "Email" %}*</label>
+                        <input type="email" class="form-control" id="add-email" name="email" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="add-first-name" class="form-label">{% trans "Nome Próprio" %}</label>
+                            <input type="text" class="form-control" id="add-first-name" name="first_name">
+                        </div>
+                        <div class="col">
+                            <label for="add-last-name" class="form-label">{% trans "Apelido" %}</label>
+                            <input type="text" class="form-control" id="add-last-name" name="last_name">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-password" class="form-label">{% trans "Password" %}*</label>
+                        <input type="password" class="form-control" id="add-password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-confirm-password" class="form-label">{% trans "Confirmar Password" %}*</label>
+                        <input type="password" class="form-control" id="add-confirm-password" name="confirm_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "Grupos" %}</label>
+                        <div class="row">
+                            {% for group in groups %}
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="groups" value="{{ group.id }}" id="add-group-{{ group.id }}">
+                                    <label class="form-check-label" for="add-group-{{ group.id }}">
+                                        {{ group.name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:user_edit' %}">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" id="edit-user-id">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>{% trans "Editar Utilizador" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-username" class="form-label">{% trans "Nome de Utilizador" %}*</label>
+                        <input type="text" class="form-control" id="edit-username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-email" class="form-label">{% trans "Email" %}*</label>
+                        <input type="email" class="form-control" id="edit-email" name="email" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="edit-first-name" class="form-label">{% trans "Nome Próprio" %}</label>
+                            <input type="text" class="form-control" id="edit-first-name" name="first_name">
+                        </div>
+                        <div class="col">
+                            <label for="edit-last-name" class="form-label">{% trans "Apelido" %}</label>
+                            <input type="text" class="form-control" id="edit-last-name" name="last_name">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="edit-is-active">
+                            <label class="form-check-label" for="edit-is-active">{% trans "Ativo" %}</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{% trans "Grupos" %}</label>
+                        <div class="row">
+                            {% for group in groups %}
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input edit-group-checkbox"
+                                           type="checkbox"
+                                           name="groups"
+                                           value="{{ group.id }}"
+                                           id="edit-group-{{ group.id }}"
+                                           data-group-id="{{ group.id }}">
+                                    <label class="form-check-label" for="edit-group-{{ group.id }}">
+                                        {{ group.name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:user_delete' %}">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" id="delete-user-id">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o utilizador" %} <strong id="delete-username"></strong>?</p>
+                    <p class="text-danger">{% trans "Essa ação não pode ser desfeita." %}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Group Modal -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_add' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users-cog me-2"></i>{% trans "Adicionar Grupo" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-group-name" class="form-label">{% trans "Nome do Grupo" %}*</label>
+                        <input type="text" class="form-control" id="add-group-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Adicionar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Group Modal -->
+<div class="modal fade" id="editGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_edit' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="edit-group-id">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users-cog me-2"></i>{% trans "Editar Grupo" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-group-name" class="form-label">{% trans "Nome do Grupo" %}*</label>
+                        <input type="text" class="form-control" id="edit-group-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Guardar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Group Modal -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'core:group_delete' %}">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="delete-group-id">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o grupo" %} <strong id="delete-group-name"></strong>?</p>
+                    <p class="text-danger">{% trans "Essa ação não pode ser desfeita e todos os utilizadores serão removidos deste grupo." %}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Excluir" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit user modal setup
+        const editUserBtns = document.querySelectorAll('.edit-user-btn');
+        editUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                const email = this.getAttribute('data-email');
+                const firstName = this.getAttribute('data-first-name');
+                const lastName = this.getAttribute('data-last-name');
+                const isActive = this.getAttribute('data-is-active') === 'true';
+
+                document.getElementById('edit-user-id').value = userId;
+                document.getElementById('edit-username').value = username;
+                document.getElementById('edit-email').value = email;
+                document.getElementById('edit-first-name').value = firstName;
+                document.getElementById('edit-last-name').value = lastName;
+                document.getElementById('edit-is-active').checked = isActive;
+            });
+        });
+
+        // Delete user modal setup
+        const deleteUserBtns = document.querySelectorAll('.delete-user-btn');
+        deleteUserBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+
+                document.getElementById('delete-user-id').value = userId;
+                document.getElementById('delete-username').textContent = username;
+            });
+        });
+
+        // Edit group modal setup
+        const editGroupBtns = document.querySelectorAll('.edit-group-btn');
+        editGroupBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                const groupName = this.getAttribute('data-group-name');
+
+                document.getElementById('edit-group-id').value = groupId;
+                document.getElementById('edit-group-name').value = groupName;
+            });
+        });
+
+        // Delete group modal setup
+        const deleteGroupBtns = document.querySelectorAll('.delete-group-btn');
+        deleteGroupBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                const groupName = this.getAttribute('data-group-name');
+
+                document.getElementById('delete-group-id').value = groupId;
+                document.getElementById('delete-group-name').textContent = groupName;
+            });
+        });
+    });
+</script>
+{% endblock %}

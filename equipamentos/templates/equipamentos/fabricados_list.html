@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Equipamentos Fabricados" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-industry me-2"></i>{% trans "Equipamentos Fabricados" %}
+        </h1>
+        <div>
+            <div class="btn-group">
+                <a href="{% url 'equipamentos:adicionar_fabricado' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> {% trans "Novo Equipamento Fabricado" %}
+                </a>
+            </div>
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <i class="fas fa-file-export me-1"></i> {% trans "Exportar" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=excel"><i
+                                class="fas fa-file-excel me-1 text-success"></i> Excel</a></li>
+                    <li><a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=csv"><i
+                                class="fas fa-file-csv me-1 text-primary"></i> CSV</a></li>
+                    <li><a class="dropdown-item" href="{% url 'equipamentos:exportar_fabricados' %}?formato=pdf"><i
+                                class="fas fa-file-pdf me-1 text-danger"></i> PDF</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Equipamentos Fabricados" %}
+    {% include 'equipamentos/includes/mini_nav.html' with nav_active='fabricados' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                            placeholder="{% trans 'Modelo, referência, descrição...' %}">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="categoria" class="form-label">{% trans "Categoria" %}</label>
+                    <select class="form-select" id="categoria" name="categoria">
+                        <option value="">{% trans "Todas" %}</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria_selecionada==categoria.id|stringformat:"i"
+                            %}selected{% endif %}>{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="orderby" class="form-label">{% trans "Ordenar por" %}</label>
+                    <select class="form-select" id="orderby" name="orderby">
+                        <option value="nome" {% if orderby == "nome" %}selected{% endif %}>{% trans "Modelo (A-Z)" %}
+                        </option>
+                        <option value="-nome" {% if orderby == "-nome" %}selected{% endif %}>{% trans "Modelo (Z-A)" %}
+                        </option>
+                        <option value="-data_lancamento" {% if orderby == "-data_lancamento" %}selected{% endif %}>{%
+                            trans "Mais recentes" %}</option>
+                        <option value="data_lancamento" {% if orderby == "data_lancamento" %}selected{% endif %}>{% trans
+                            "Mais antigos" %}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> {% trans
+                        "Filtrar" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Equipamentos Fabricados -->
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            {% if equipamentos_fabricados %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th>{% trans "Modelo" %}</th>
+                            <th>{% trans "Referência" %}</th>
+                            <th>{% trans "Categoria" %}</th>
+                            <th>{% trans "Data de Lançamento" %}</th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos_fabricados %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                    class="fw-semibold text-decoration-none">
+                                    {% if equipamento.fotografia %}
+                                    <img src="{{ equipamento.fotografia.url }}" alt="{{ equipamento.nome }}"
+                                        class="img-thumbnail me-2"
+                                        style="width: 30px; height: 30px; object-fit: cover;">
+                                    {% else %}
+                                    <i class="fas fa-cog text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ equipamento.nome }}
+                                </a>
+                            </td>
+                            <td>{{ equipamento.referencia_interna|default:"-" }}</td>
+                            <td>
+                                {% if equipamento.categoria %}
+                                <span class="badge bg-info">{{ equipamento.categoria.nome }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipamento.data_lancamento|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'equipamentos:detalhes_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-primary" title="{% trans 'Ver detalhes' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:editar_fabricado' equipamento_id=equipamento.id %}"
+                                        class="btn btn-outline-warning" title="{% trans 'Editar' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger confirm-delete" data-id="{{ equipamento.id }}"
+                                        data-url="{% url 'equipamentos:excluir_fabricado' pk=equipamento.id %}"
+                                        title="{% trans 'Excluir' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">{% trans "Nenhum equipamento encontrado." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4">
+                <div class="alert alert-info mb-0">
+                    {% trans "Nenhum equipamento fabricado encontrado." %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if equipamentos_fabricados.has_other_pages %}
+    <nav aria-label="{% trans 'Paginação' %}">
+        <ul class="pagination justify-content-center">
+            {% if equipamentos_fabricados.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?pagina={{ equipamentos_fabricados.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-angle-left"></i></span>
+            </li>
+            {% endif %}
+
+            {% for i in equipamentos_fabricados.paginator.page_range %}
+            {% if equipamentos_fabricados.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i > equipamentos_fabricados.number|add:'-3' and i < equipamentos_fabricados.number|add:'3' %} <li
+                class="page-item">
+                <a class="page-link"
+                    href="?pagina={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">{{
+                    i }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if equipamentos_fabricados.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?pagina={{ equipamentos_fabricados.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?pagina={{ equipamentos_fabricados.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if categoria_selecionada %}&categoria={{ categoria_selecionada }}{% endif %}{% if orderby %}&orderby={{ orderby }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{% trans "Confirmar Exclusão" %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Tem certeza que deseja excluir este equipamento?" %}</p>
+                <p class="fw-bold" id="equipamentoNome"></p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {% trans "Esta ação não pode ser desfeita e todos os dados associados serão perdidos." %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Cancelar" %}
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmModalBtn">
+                    <i class="fas fa-trash me-1"></i> {% trans "Excluir" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'equipamentos/js/equipamentos_scripts.js' %}"></script>
+<script>
+    // Add script to highlight search matches considering accents
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchQuery = '{{ search_query }}';
+        const normalizedQuery = '{{ normalized_query }}';
+
+        if (searchQuery) {
+            highlightSearchMatches(searchQuery, normalizedQuery);
+        }
+
+        function highlightSearchMatches(query, normalizedQuery) {
+            // For each text node in the results
+            const walker = document.createTreeWalker(
+                document.querySelector('.container-fluid'),
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            const nodesToReplace = [];
+            let textNode;
+
+            // First collect all nodes that need replacement
+            while (textNode = walker.nextNode()) {
+                const parent = textNode.parentNode;
+
+                // Skip if parent is a script, style, or already a highlight
+                if (parent.nodeName === 'SCRIPT' ||
+                    parent.nodeName === 'STYLE' ||
+                    parent.classList.contains('highlight')) {
+                    continue;
+                }
+
+                const text = textNode.nodeValue;
+                const normalizedText = text.normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase();
+
+                if (normalizedText.includes(normalizedQuery.toLowerCase())) {
+                    nodesToReplace.push(textNode);
+                }
+            }
+
+            // Then replace them with highlighted versions
+            for (const node of nodesToReplace) {
+                const text = node.nodeValue;
+
+                // Create a document fragment to hold the new content
+                const fragment = document.createDocumentFragment();
+                const parts = [];
+
+                // Find occurrences of the search term (normalized)
+                let lastIndex = 0;
+                let index;
+
+                // Normalize the text for comparison
+                const normalizedText = text.normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase();
+
+                while ((index = normalizedText.indexOf(normalizedQuery.toLowerCase(), lastIndex)) !== -1) {
+                    // Add the text before the match
+                    if (index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, index)));
+                    }
+
+                    // Add the highlighted match
+                    const highlight = document.createElement('span');
+                    highlight.className = 'highlight';
+                    highlight.textContent = text.substring(index, index + query.length);
+                    fragment.appendChild(highlight);
+
+                    lastIndex = index + query.length;
+                }
+
+                // Add any remaining text
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                node.parentNode.replaceChild(fragment, node);
+            }
+        }
+    });
+</script>
+<style>
+    .highlight {
+        background-color: #ffd54f;
+        padding: 2px;
+        border-radius: 2px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

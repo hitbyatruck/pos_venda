@@ -48,14 +48,14 @@ def navigation(request):
                     equipamento_id = request.resolver_match.kwargs['equipamento_id']
                     nav_items = [
                         {'title': _('Detalhes'), 'url_name': 'detalhes_equipamento', 'url': reverse('equipamentos:detalhes_equipamento', args=[equipamento_id]), 'icon': 'info-circle'},
-                        {'title': _('Editar'), 'url_name': 'editar_equipamento_fabricado', 'url': reverse('equipamentos:editar_equipamento_fabricado', args=[equipamento_id]), 'icon': 'edit'},
+                        {'title': _('Editar'), 'url_name': 'editar_equipamento_fabricado', 'url': reverse('equipamentos:editar_fabricado', args=[equipamento_id]), 'icon': 'edit'},
                     ]
             else:
                 nav_items = [
                     {'title': _('Listar Equipamentos'), 'url_name': 'listar_equipamentos', 'url': reverse('equipamentos:listar_equipamentos'), 'icon': 'list'},
                     {'title': _('Equipamentos Fabricados'), 'url_name': 'listar_fabricados', 'url': reverse('equipamentos:listar_fabricados'), 'icon': 'cogs'},
                     {'title': _('Equipamentos de Clientes'), 'url_name': 'listar_cliente', 'url': reverse('equipamentos:listar_cliente'), 'icon': 'users'},
-                    {'title': _('Adicionar Equipamento'), 'url_name': 'adicionar_equipamento_fabricado', 'url': reverse('equipamentos:adicionar_equipamento_fabricado'), 'icon': 'plus-circle'},
+                    {'title': _('Adicionar Equipamento'), 'url_name': 'adicionar_fabricado', 'url': reverse('equipamentos:adicionar_fabricado'), 'icon': 'plus-circle'},
                     {'title': _('Listar Categorias'), 'url_name': 'listar_categorias', 'url': reverse('equipamentos:listar_categorias'), 'icon': 'tags'},
                 ]
                 

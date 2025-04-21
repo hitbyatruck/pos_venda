@@ -111,6 +111,16 @@
         </div>
     </div>
 
+    <!-- Alphabet navigation -->
+    <div class="alphabet-nav mb-3">
+        <div class="btn-group btn-group-sm">
+            {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+            <a href="#letter-{{ letter }}" class="btn btn-outline-secondary letter-link" data-letter="{{ letter }}">{{ letter }}</a>
+            {% endfor %}
+            <a href="#letter-other" class="btn btn-outline-secondary letter-link" data-letter="other">#</a>
+        </div>
+    </div>
+
     <!-- Search Results Section -->
     {% if is_search_result %}
     <div class="card shadow mb-4">
@@ -417,61 +427,131 @@
     <div class="card shadow mb-4">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
+                <table class="table table-hover table-align-middle">
                     <thead class="bg-dark text-white">
                         <tr>
-                            <th class="sortable" data-sort="nome">
-                                {% trans "Nome" %} <i class="fas fa-sort ms-1 sort-icon"></i>
-                            </th>
-                            <th class="sortable" data-sort="email">
-                                {% trans "Email" %} <i class="fas fa-sort ms-1 sort-icon"></i>
-                            </th>
-                            <th class="sortable" data-sort="telefone">
-                                {% trans "Telefone" %} <i class="fas fa-sort ms-1 sort-icon"></i>
-                            </th>
-                            <th class="sortable" data-sort="setor">
-                                {% trans "Setor" %} <i class="fas fa-sort ms-1 sort-icon"></i>
-                            </th>
-                            <th class="sortable" data-sort="cidade">
-                                {% trans "Cidade" %} <i class="fas fa-sort ms-1 sort-icon"></i>
-                            </th>
-                            <th class="text-center">{% trans "Ações" %}</th>
+                            <th style="width: 25%">{% trans "Cliente" %}</th>
+                            <th style="width: 25%">{% trans "Email" %}</th>
+                            <th style="width: 20%">{% trans "Telefone" %}</th>
+                            <th style="width: 10%">{% trans "Setor" %}</th>
+                            <th style="width: 10%">{% trans "Cidade" %}</th>
+                            <th style="width: 10%" class="text-center">{% trans "Ações" %}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for cliente in clientes %}
+                        {% regroup clientes by nome|first|upper as cliente_group_list %}
+                        {% for cliente_group in cliente_group_list %}
+                            <!-- Add letter separator -->
+                            <tr class="letter-separator" id="letter-{{ cliente_group.grouper }}">
+                                <td colspan="6" class="bg-light">
+                                    <strong class="letter-heading">{{ cliente_group.grouper }}</strong>
+                                </td>
+                            </tr>
+
+                            {% for cliente in cliente_group.list %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if cliente.imagem %}
+                                        <div class="client-avatar me-2">
+                                            <img src="{{ cliente.imagem.url }}" alt="{{ cliente.nome }}" class="img-fluid rounded-circle">
+                                        </div>
+                                        {% else %}
+                                        <div class="client-icon me-2">
+                                            <i class="fas fa-user-circle"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}" class="text-decoration-none">
+                                                {{ cliente.nome }}
+                                            </a>
+                                            {% if cliente.nif %}
+                                            <div><small class="text-muted">NIF: {{ cliente.nif }}</small></div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- Email column -->
+                                <td>
+                                    {% if cliente.primary_email %}
+                                        <div>
+                                            <i class="fas fa-envelope me-1 text-muted"></i>
+                                            <a href="mailto:{{ cliente.primary_email.valor }}">{{ cliente.primary_email.valor }}</a>
+                                            {% if cliente.primary_email.principal %}
+                                                <span class="badge bg-success ms-1">Principal</span>
+                                            {% endif %}
+                                        </div>
+                                    {% elif cliente.first_email %}
+                                        <div>
+                                            <i class="fas fa-envelope me-1 text-muted"></i>
+                                            <a href="mailto:{{ cliente.first_email.valor }}">{{ cliente.first_email.valor }}</a>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <!-- Phone column - Fixed to show only one phone number -->
+                                <td>
+                                    {% if cliente.primary_phone %}
+                                        <div>
+                                            <i class="fas fa-{% if cliente.primary_phone.tipo.nome == 'Móvel' or cliente.primary_phone.tipo.nome == 'Telemóvel' or cliente.primary_phone.tipo.nome == 'Celular' %}mobile-alt{% else %}phone{% endif %} me-1 text-muted"></i>
+                                            <a href="tel:{{ cliente.primary_phone.valor }}">{{ cliente.primary_phone.valor }}</a>
+                                            {% if cliente.primary_phone.principal %}
+                                                <span class="badge bg-success ms-1">Principal</span>
+                                            {% endif %}
+                                        </div>
+                                    {% elif cliente.first_phone %}
+                                        <div>
+                                            <i class="fas fa-{% if cliente.first_phone.tipo.nome == 'Móvel' or cliente.first_phone.tipo.nome == 'Telemóvel' or cliente.first_phone.tipo.nome == 'Celular' %}mobile-alt{% else %}phone{% endif %} me-1 text-muted"></i>
+                                            <a href="tel:{{ cliente.first_phone.valor }}">{{ cliente.first_phone.valor }}</a>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cliente.setor %}
+                                    <span class="badge bg-secondary">{{ cliente.setor }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <!-- Cidade column -->
+                                <td>
+                                    {% if cliente.cidade %}
+                                    <div>{{ cliente.cidade }}</div>
+                                    {% if cliente.codigo_postal %}
+                                    <small class="text-muted">{{ cliente.codigo_postal }}</small>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}" class="btn btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-client-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteClientModal"
+                                                data-client-id="{{ cliente.id }}"
+                                                data-client-name="{{ cliente.nome }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% empty %}
                         <tr>
-                            <td>
-                                <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
-                                    class="text-decoration-none">
-                                    <i class="fas fa-user text-primary me-1"></i>
-                                    {{ cliente.nome }}
-                                </a>
-                            </td>
-                            <td>
-                                {% if cliente.email_principal %}
-                                <a href="mailto:{{ cliente.email_principal }}">{{ cliente.email_principal }}</a>
-                                {% endif %}
-                            </td>
-                            <td>{{ cliente.telefone|default:"-" }}</td>
-                            <td>
-                                {% if cliente.setor %}
-                                <span class="badge bg-info">{{ cliente.setor.nome }}</span>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>{{ cliente.cidade|default:"-" }}</td>
-                            <td class="text-center">
-                                <div class="btn-group">
-                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=cliente.id %}"
-                                        class="btn btn-sm btn-outline-primary" title="{% trans 'Ver detalhes' %}">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'clientes:editar_cliente' cliente_id=cliente.id %}"
-                                        class="btn btn-sm btn-outline-warning" title="{% trans 'Editar cliente' %}">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "Nenhum cliente encontrado com os critérios selecionados." %}
                                 </div>
                             </td>
                         </tr>
@@ -783,5 +863,221 @@
     }
 </style>
 
-<!-- ...existing JavaScript for the page... -->
+<!-- Custom styles for tabs -->
+<style>
+    .nav-tabs .nav-link {
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-weight: 500;
+    }
+
+    .nav-tabs .nav-link.active {
+        border-color: #dee2e6 #dee2e6 #fff;
+        color: #0d6efd;
+    }
+
+    .nav-tabs .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+
+    /* Updated sortable header styling to match Equipamentos app */
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    th.sortable .sort-icon {
+        opacity: 0.6;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+
+    th.sortable.asc .sort-icon,
+    th.sortable.desc .sort-icon {
+        opacity: 1;
+        color: #0d6efd;
+    }
+
+    th.sortable.asc,
+    th.sortable.desc {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        font-weight: bold;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] th.sortable:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-bs-theme="dark"] th.sortable.asc,
+    [data-bs-theme="dark"] th.sortable.desc {
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+</style>
+
+{% include 'includes/sortable_tables.html' %}
+<script>
+    // Combine all JavaScript here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Any existing JavaScript from the previous blocks
+
+        // Add sortable functionality, etc.
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete client modal setup
+        const deleteButtons = document.querySelectorAll('.delete-client-btn');
+        const deleteForm = document.getElementById('delete-client-form');
+        const deleteClientName = document.getElementById('delete-client-name');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const clientId = this.getAttribute('data-client-id');
+                const clientName = this.getAttribute('data-client-name');
+
+                deleteForm.action = `{% url 'clientes:excluir_cliente' cliente_id=999999 %}`.replace('999999', clientId);
+                deleteClientName.textContent = clientName;
+            });
+        });
+
+        // Alphabet navigation
+        const letterLinks = document.querySelectorAll('.letter-link');
+        letterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const letter = this.getAttribute('data-letter');
+                const target = document.getElementById('letter-' + letter);
+
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 100, // Offset for fixed headers
+                        behavior: 'smooth'
+                    });
+
+                    // Highlight the letter section briefly
+                    target.classList.add('highlight-section');
+                    setTimeout(() => {
+                        target.classList.remove('highlight-section');
+                    }, 1500);
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Client avatar/icon styling */
+    .client-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #f0f0f0;
+    }
+
+    .client-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .client-icon {
+        font-size: 40px;
+        color: #adb5bd;
+        line-height: 1;
+    }
+
+    /* Alphabet navigation styling */
+    .alphabet-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 8px;
+    }
+
+    .alphabet-nav .btn-group {
+        min-width: 100%;
+    }
+
+    .letter-separator {
+        background-color: #f8f9fa;
+    }
+
+    .letter-heading {
+        font-size: 16px;
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        border-radius: 50%;
+        background-color: #e9ecef;
+    }
+
+    .highlight-section {
+        animation: highlight-flash 1.5s;
+    }
+
+    @keyframes highlight-flash {
+        0%, 100% { background-color: transparent; }
+        20%, 80% { background-color: rgba(0, 123, 255, 0.1); }
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .client-avatar {
+        background-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .client-icon {
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .letter-separator {
+        background-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .letter-heading {
+        background-color: #495057;
+        color: #e9ecef;
+    }
+
+    /* Fix for table alignment */
+    .table-align-middle td,
+    .table-align-middle th {
+        vertical-align: middle;
+    }
+
+    .table-align-middle th {
+        border-top: none;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    /* Ensure the table takes full width */
+    .table-responsive table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    /* Ensure consistent row heights */
+    .table-align-middle tr {
+        height: 60px;
+    }
+
+    /* Letter separators should be shorter */
+    .letter-separator {
+        height: auto !important;
+    }
+
+    /* Force action buttons to stay on one row */
+    .btn-group-sm {
+        display: inline-flex;
+        white-space: nowrap;
+    }
+</style>
 {% endblock %}

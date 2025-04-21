@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Configurações de Email" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{% trans "Configurações de Email" %}</h1>
+
+    {% include 'configuracao/includes/config_nav.html' with active_tab='email' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Email" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="email_from" class="form-label">{% trans "Email de envio" %}</label>
+                    <input type="email" class="form-control" id="email_from" name="email_from"
+                           value="{{ settings.email_from|default:'' }}">
+                    <small class="form-text text-muted">{% trans "Email usado para envio de notificações" %}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email_signature" class="form-label">{% trans "Assinatura" %}</label>
+                    <textarea class="form-control" id="email_signature" name="email_signature"
+                              rows="5">{{ settings.email_signature|default:'' }}</textarea>
+                    <small class="form-text text-muted">{% trans "Assinatura incluída em todos os emails" %}</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+<option value="nome" {% if orderby == "nome" %}selected{% endif %}>{% trans "Modelo (A-Z)" %}</option>
+<option value="-nome" {% if orderby == "-nome" %}selected{% endif %}>{% trans "Modelo (Z-A)" %}</option>
+<option value="-data_lancamento" {% if orderby == "-data_lancamento" %}selected{% endif %}>{% trans "Mais recentes" %}
+</option>
+<option value="data_lancamento" {% if orderby == "data_lancamento" %}selected{% endif %}>{% trans "Mais antigos" %}
+</option>

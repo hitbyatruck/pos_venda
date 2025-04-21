@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Configurações de Notificações" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{% trans "Configurações de Notificações" %}</h1>
+
+    {% include 'configuracao/includes/config_nav.html' with active_tab='notifications' %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Notificações" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="notify_on_new_pat" name="notify_on_new_pat"
+                           {% if settings.notify_on_new_pat %}checked{% endif %}>
+                    <label class="form-check-label" for="notify_on_new_pat">
+                        {% trans "Notificar sobre novos pedidos de assistência técnica" %}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="notify_on_pat_status_change" name="notify_on_pat_status_change"
+                           {% if settings.notify_on_pat_status_change %}checked{% endif %}>
+                    <label class="form-check-label" for="notify_on_pat_status_change">
+                        {% trans "Notificar sobre mudanças de status em PATs" %}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="notify_on_new_client" name="notify_on_new_client"
+                           {% if settings.notify_on_new_client %}checked{% endif %}>
+                    <label class="form-check-label" for="notify_on_new_client">
+                        {% trans "Notificar sobre novos clientes" %}
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">{% trans "Salvar" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

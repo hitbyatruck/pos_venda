@@ -1,0 +1,73 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Setup sortable table headers
+        const sortableHeaders = document.querySelectorAll('th.sortable');
+        const sortField = document.getElementById('sort-field');
+        const sortDirection = document.getElementById('sort-direction');
+        const filterForm = document.getElementById('filterForm');
+
+        if (!sortableHeaders.length || !filterForm || !sortField || !sortDirection) {
+            return; // Exit if required elements are missing
+        }
+
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function () {
+                // Get sort field and current direction
+                const field = this.getAttribute('data-sort');
+                const currentField = sortField.value;
+                const currentDirection = sortDirection.value;
+
+                // Determine new sort direction
+                let newDirection;
+                if (field === currentField) {
+                    // Toggle direction if same field
+                    newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    // Default to ascending for new field
+                    newDirection = 'asc';
+                }
+
+                // Update hidden fields
+                sortField.value = field;
+                sortDirection.value = newDirection;
+
+                // Submit the form
+                filterForm.submit();
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Sortable column header styles */
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+
+    th.sortable:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Default sort icon */
+    th.sortable i.fas {
+        opacity: 0.3;
+        margin-left: 5px;
+    }
+
+    /* Active sort icon */
+    th.sortable i.fas.active {
+        opacity: 1;
+        color: #fff;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] th.sortable:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-bs-theme="dark"] th.sortable i.fas.active {
+        color: #f8f9fa;
+    }
+</style>

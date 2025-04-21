@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Categorias de Equipamento" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-tags me-2"></i>{% trans "Categorias de Equipamento" %}
+        </h1>
+        <div class="btn-group">
+            <a href="{% url 'equipamentos:adicionar_categoria' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> {% trans "Nova Categoria" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    {% include 'equipamentos/includes/breadcrumbs.html' with view_title="Categorias" %}
+    {% include 'equipamentos/includes/mini_nav.html' with nav_active='categorias' %}
+
+    <!-- Filtros e busca avançada -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark bg-opacity-10">
+            <form method="get" id="filterForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">{% trans "Pesquisar" %}</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" name="q" value="{{ search_query }}"
+                               placeholder="{% trans 'Nome, descrição...' %}">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="parent" class="form-label">{% trans "Categoria Pai" %}</label>
+                    <select class="form-select" id="parent" name="parent">
+                        {% for option in parent_options %}
+                        <option value="{{ option.value }}" {{ option.selected }}>{{ option.text }}</option>
+                        {% endfor %}
+                        {% for cat in category_options %}
+                        <option value="{{ cat.id }}" {{ cat.selected }}>{{ cat.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "Filtrar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "Categorias" %} ({{ total_count }})</h5>
+
+            <form id="bulk-actions-form" class="d-flex">
+                {% csrf_token %}
+                <select id="bulk-action" class="form-select form-select-sm me-2" style="width:auto;">
+                    <option value="">{% trans "Ações em massa" %}</option>
+                    <option value="delete">{% trans "Excluir selecionados" %}</option>
+                </select>
+                <button type="submit" id="bulk-submit" class="btn btn-sm btn-outline-primary disabled" disabled>
+                    {% trans "Aplicar" %}
+                </button>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="bg-dark text-light">
+                        <tr>
+                            <th style="width: 40px;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="select-all">
+                                </div>
+                            </th>
+                            <th class="sortable" data-sort="nome">
+                                {% trans "Nome" %}
+                                <i class="fas fa-sort{% if sort_by == 'nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="pai__nome">
+                                {% trans "Categoria Pai" %}
+                                <i class="fas fa-sort{% if sort_by == 'pai__nome' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="sortable" data-sort="equipment_count">
+                                {% trans "Equipamentos" %}
+                                <i class="fas fa-sort{% if sort_by == 'equipment_count' %}{% if sort_dir == 'desc' %}-down{% else %}-up{% endif %} active{% endif %}"></i>
+                            </th>
+                            <th class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias %}
+                        <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input category-checkbox" type="checkbox" value="{{ categoria.id }}">
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'equipamentos:detalhes_categoria' categoria_id=categoria.id %}">
+                                    {{ categoria.nome }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if categoria.pai %}
+                                <a href="{% url 'equipamentos:detalhes_categoria' categoria_id=categoria.pai.id %}">
+                                    {{ categoria.pai.nome }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if categoria.equipment_count %}
+                                <a href="{% url 'equipamentos:listar_fabricados' %}?categoria={{ categoria.id }}">
+                                    {{ categoria.equipment_count }} {% trans "equipamento(s)" %}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Nenhum equipamento</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'equipamentos:detalhes_categoria' categoria_id=categoria.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'equipamentos:editar_categoria' categoria_id=categoria.id %}" class="btn btn-outline-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger delete-category-btn"
+                                            data-id="{{ categoria.id }}"
+                                            data-name="{{ categoria.nome }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">{% trans "Nenhuma categoria encontrada." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a categoria "<span id="category-name"></span>"?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="delete-category-form" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables declarations - all in one place to avoid redeclaration
+        const deleteButtons = document.querySelectorAll('.delete-category-btn');
+        const deleteModal = document.getElementById('deleteCategoryModal');
+        const deleteForm = document.getElementById('delete-category-form');
+        const categoryNameSpan = document.getElementById('category-name');
+        const bulkForm = document.getElementById('bulk-actions-form');
+        const checkboxes = document.querySelectorAll('.category-checkbox');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const bulkActionDropdown = document.getElementById('bulk-action');
+        const bulkSubmitBtn = document.getElementById('bulk-submit');
+
+        // Individual delete buttons
+        if (deleteButtons && deleteModal && deleteForm) {
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const categoryId = this.getAttribute('data-id');
+                    const categoryName = this.getAttribute('data-name');
+
+                    // Update modal content
+                    categoryNameSpan.textContent = categoryName;
+
+                    // Set the correct form action URL
+                    deleteForm.action = `/equipamentos/categorias/${categoryId}/excluir/`;
+
+                    // Show modal using Bootstrap
+                    const modal = new bootstrap.Modal(deleteModal);
+                    modal.show();
+                });
+            });
+        }
+
+        // Bulk actions
+        if (bulkForm && checkboxes.length > 0) {
+            // Select all checkbox
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    });
+                    updateBulkActionState();
+                });
+            }
+
+            // Individual checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateBulkActionState);
+            });
+
+            // Bulk action dropdown
+            if (bulkActionDropdown) {
+                bulkActionDropdown.addEventListener('change', updateBulkActionState);
+            }
+
+            // Handle bulk action submission
+            if (bulkForm) {
+                bulkForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const checkedIds = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+                        .map(checkbox => checkbox.value);
+
+                    if (checkedIds.length === 0) {
+                        return;
+                    }
+
+                    const action = bulkActionDropdown.value;
+
+                    if (action === 'delete') {
+                        // Confirm deletion
+                        if (!confirm(`Tem certeza que deseja excluir ${checkedIds.length} categoria(s)?`)) {
+                            return;
+                        }
+
+                        // Submit via AJAX
+                        fetch('{% url "equipamentos:bulk_categorias" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                            body: new URLSearchParams({
+                                'action': 'delete',
+                                'ids': checkedIds.join(',')
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                window.location.reload();
+                            } else {
+                                alert('Erro: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Erro ao processar a solicitação.');
+                        });
+                    }
+                });
+            }
+        }
+
+        // Update bulk action button state
+        function updateBulkActionState() {
+            const checkedBoxes = document.querySelectorAll('.category-checkbox:checked');
+            const bulkActionValue = bulkActionDropdown ? bulkActionDropdown.value : '';
+
+            if (bulkSubmitBtn) {
+                bulkSubmitBtn.disabled = checkedBoxes.length === 0 || !bulkActionValue;
+
+                if (checkedBoxes.length === 0 || !bulkActionValue) {
+                    bulkSubmitBtn.classList.add('disabled');
+                } else {
+                    bulkSubmitBtn.classList.remove('disabled');
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

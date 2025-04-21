@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{% trans "Dashboard de Estoque" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-warehouse mr-2"></i> {% trans "Dashboard de Estoque" %}
+    </h1>
+
+    {% include 'stock/includes/menu_stock.html' with active='dashboard' %}
+
+    <div class="row">
+        <!-- Quick Stats -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {% trans "Total de Peças" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_pecas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {% trans "Peças com Estoque Baixo" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pecas_baixo_stock }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                {% trans "Fornecedores" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_fornecedores }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-truck fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                {% trans "Encomendas Pendentes" %}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ encomendas_pendentes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Low Stock Items -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Peças com Estoque Baixo" %}</h6>
+                    <a href="{% url 'stock:pecas_baixo_stock' %}" class="btn btn-sm btn-primary">
+                        {% trans "Ver Todos" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if pecas_baixo_stock_list %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "Código" %}</th>
+                                        <th>{% trans "Nome" %}</th>
+                                        <th>{% trans "Estoque Atual" %}</th>
+                                        <th>{% trans "Mínimo" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for peca in pecas_baixo_stock_list %}
+                                    <tr>
+                                        <td>{{ peca.codigo }}</td>
+                                        <td>{{ peca.nome }}</td>
+                                        <td>{{ peca.quantidade_atual }}</td>
+                                        <td>{{ peca.quantidade_minima }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            {% trans "Não há peças com estoque baixo." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Movements -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Movimentações Recentes" %}</h6>
+                    <a href="{% url 'stock:listar_movimentacoes' %}" class="btn btn-sm btn-primary">
+                        {% trans "Ver Todos" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if movimentacoes_recentes %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "Data" %}</th>
+                                        <th>{% trans "Peça" %}</th>
+                                        <th>{% trans "Tipo" %}</th>
+                                        <th>{% trans "Quantidade" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mov in movimentacoes_recentes %}
+                                    <tr>
+                                        <td>{{ mov.data|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ mov.peca.nome }}</td>
+                                        <td>
+                                            {% if mov.tipo == 'entrada' %}
+                                                <span class="badge bg-success">{% trans "Entrada" %}</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{% trans "Saída" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ mov.quantidade }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            {% trans "Não há movimentações recentes." %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

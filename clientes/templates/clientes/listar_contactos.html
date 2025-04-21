@@ -1,0 +1,492 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load clientes_filters %}  <!-- Add this line to load our custom filters -->
+
+{% block title %}{% trans "Livro de Contactos" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            <i class="fas fa-address-book me-2"></i>{% trans "Livro de Contactos" %}
+        </h1>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="fas fa-filter me-1"></i> {% trans "Filtros" %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'clientes:listar_clientes' %}">{% trans "Clientes" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Livro de Contactos" %}</li>
+        </ol>
+    </nav>
+
+    <!-- Include the client navigation menu -->
+    {% include 'clientes/includes/menu_clientes.html' with active_tab='contactos' %}
+
+    <!-- Search box -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'clientes:listar_contactos' %}" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="q" name="q" value="{{ search_query }}"
+                           placeholder="{% trans 'Pesquisar por nome, contacto, cargo ou empresa...' %}">
+                        {% if tipo_id %}
+                        <input type="hidden" name="tipo" value="{{ tipo_id }}">
+                        {% endif %}
+                        <input type="hidden" name="orderby" value="{{ order_by }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> {% trans "Pesquisar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search and filters summary -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <span class="text-muted">
+                {% if search_query %}
+                {% trans "Resultados para" %}: <strong>"{{ search_query }}"</strong>
+                {% endif %}
+                {% if tipo_id and tipo_nome %}
+                {% trans "Tipo" %}: <strong>{{ tipo_nome }}</strong>
+                {% endif %}
+            </span>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-primary">{{ total_contactos }} {% trans "contactos" %}</span>
+        </div>
+    </div>
+
+    <!-- Alphabet navigation -->
+    <div class="alphabet-nav mb-3">
+        <div class="btn-group btn-group-sm">
+            {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+            <a href="#letter-{{ letter }}" class="btn btn-outline-secondary letter-link" data-letter="{{ letter }}">{{ letter }}</a>
+            {% endfor %}
+            <a href="#letter-other" class="btn btn-outline-secondary letter-link" data-letter="other">#</a>
+        </div>
+    </div>
+
+    <!-- Contacts list with grouped contacts -->
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 sortable-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" style="width: 30%">{% trans "Nome / Cargo" %}</th>
+                            <th class="sortable" style="width: 25%">{% trans "Contactos" %}</th>
+                            <th class="sortable" style="width: 30%">{% trans "Cliente" %}</th>
+                            <th style="width: 15%" class="text-center">{% trans "Ações" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% regroup contactos by nome_contacto as contacto_group_list %}
+                        {% for contacto_group in contacto_group_list %}
+                            {% with first_contacto=contacto_group.list|first %}
+                            {% with client=first_contacto.cliente %}
+                            {% with first_letter=contacto_group.grouper|first|upper %}
+
+                            <!-- Add letter separator -->
+                            {% ifchanged first_letter %}
+                            <tr class="letter-separator" id="letter-{{ first_letter }}">
+                                <td colspan="4" class="bg-light">
+                                    <strong class="letter-heading">{{ first_letter }}</strong>
+                                </td>
+                            </tr>
+                            {% endifchanged %}
+
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if client.imagem %}
+                                        <div class="contact-avatar">
+                                            <img src="{{ client.imagem.url }}" alt="{{ client.nome }}" class="img-fluid rounded-circle">
+                                        </div>
+                                        {% else %}
+                                        <div class="contact-icon">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="ms-2">
+                                            <div class="fw-bold">{{ contacto_group.grouper|default:"Sem nome" }}</div>
+                                            {% if first_contacto.cargo %}<small class="text-muted">{{ first_contacto.cargo }}</small>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="contact-group">
+                                        {% for contacto in contacto_group.list %}
+                                        <div class="contact-item {% if not forloop.first %}mt-1{% endif %}">
+                                            <span class="contact-type-icon">
+                                                {% if contacto.tipo.nome == 'Email' %}
+                                                <i class="fas fa-envelope"></i>
+                                                {% elif contacto.tipo.nome == 'Telefone' %}
+                                                <i class="fas fa-phone"></i>
+                                                {% elif contacto.tipo.nome == 'Móvel' %}
+                                                <i class="fas fa-mobile-alt"></i>
+                                                {% elif contacto.tipo.nome == 'Website' %}
+                                                <i class="fas fa-globe"></i>
+                                                {% elif contacto.tipo.nome == 'Fax' %}
+                                                <i class="fas fa-fax"></i>
+                                                {% elif contacto.tipo.nome == 'Skype' %}
+                                                <i class="fab fa-skype"></i>
+                                                {% else %}
+                                                <i class="fas fa-comment-alt"></i>
+                                                {% endif %}
+                                            </span>
+                                            {% if contacto.tipo.nome == 'Email' %}
+                                            <a href="mailto:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                            {% elif contacto.tipo.nome == 'Telefone' or contacto.tipo.nome == 'Móvel' %}
+                                            <a href="tel:{{ contacto.valor }}">{{ contacto.valor }}</a>
+                                            {% else %}
+                                            {{ contacto.valor }}
+                                            {% endif %}
+                                            {% if contacto.principal %}
+                                            <span class="badge bg-success">{% trans "Principal" %}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{% url 'clientes:detalhes_cliente' cliente_id=client.id %}" class="text-decoration-none">
+                                        {{ client.nome }}
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'clientes:cliente_contactos' cliente_id=client.id %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-contact-btn"
+                                                data-contacto-id="{{ first_contacto.id }}"
+                                                data-contacto-nome="{{ contacto_group.grouper|default:first_contacto.valor }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteContactModal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endwith %}
+                            {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center p-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "Nenhum contacto encontrado." %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if paginator.num_pages > 1 %}
+    <nav aria-label="{% trans 'Navegação de página' %}">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?pagina=1{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}" aria-label="{% trans 'Primeira' %}">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?pagina={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}" aria-label="{% trans 'Anterior' %}">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?pagina={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?pagina={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}" aria-label="{% trans 'Próxima' %}">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?pagina={{ paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}" aria-label="{% trans 'Última' %}">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Filter Modal -->
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-filter me-2"></i>{% trans "Filtrar Contactos" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="get" action="{% url 'clientes:listar_contactos' %}">
+                        <div class="mb-3">
+                            <label for="q" class="form-label">{% trans "Pesquisar" %}</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" name="q" id="q" value="{{ search_query }}" placeholder="{% trans 'Nome, contacto, cargo...' %}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">{% trans "Tipo de Contacto" %}</label>
+                            <select class="form-select" name="tipo" id="tipo">
+                                <option value="">{% trans "Todos os Tipos" %}</option>
+                                {% for tipo in tipos_contacto %}
+                                <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == tipo_id %}selected{% endif %}>{{ tipo.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="orderby" class="form-label">{% trans "Ordenar Por" %}</label>
+                            <select class="form-select" name="orderby" id="orderby">
+                                <option value="nome_contacto" {% if order_by == 'nome_contacto' %}selected{% endif %}>{% trans "Nome (A-Z)" %}</option>
+                                <option value="-nome_contacto" {% if order_by == '-nome_contacto' %}selected{% endif %}>{% trans "Nome (Z-A)" %}</option>
+                                <option value="cliente__nome" {% if order_by == 'cliente__nome' %}selected{% endif %}>{% trans "Cliente (A-Z)" %}</option>
+                                <option value="-cliente__nome" {% if order_by == '-cliente__nome' %}selected{% endif %}>{% trans "Cliente (Z-A)" %}</option>
+                                <option value="tipo__nome" {% if order_by == 'tipo__nome' %}selected{% endif %}>{% trans "Tipo de Contacto" %}</option>
+                            </select>
+                        </div>
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{% url 'clientes:listar_contactos' %}" class="btn btn-secondary">{% trans "Limpar Filtros" %}</a>
+                            <button type="submit" class="btn btn-primary">{% trans "Aplicar Filtros" %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Contact Modal -->
+    <div class="modal fade" id="deleteContactModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-trash me-2"></i>{% trans "Excluir Contacto" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{% trans "Tem certeza que deseja excluir o contacto" %} <strong id="delete-contact-name"></strong>?</p>
+                    <p class="text-danger">{% trans "Esta ação não pode ser desfeita." %}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete">{% trans "Excluir" %}</button>
+                </div>
+                <form id="delete-contact-form" method="post" style="display:none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="contacto_id" id="delete-contact-id">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% include 'includes/sortable_tables.html' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete contact confirmation
+        const deleteButtons = document.querySelectorAll('.delete-contact-btn');
+        const contactName = document.getElementById('delete-contact-name');
+        const contactIdField = document.getElementById('delete-contact-id');
+        const deleteForm = document.getElementById('delete-contact-form');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-contacto-id');
+                const name = this.getAttribute('data-contacto-nome');
+
+                contactName.textContent = name;
+                contactIdField.value = id;
+            });
+        });
+
+        confirmDeleteBtn.addEventListener('click', function() {
+            // Submit the delete form via AJAX
+            fetch('{% url "clientes:excluir_contacto" %}', {
+                method: 'POST',
+                body: new FormData(deleteForm),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show updated list
+                    window.location.reload();
+                } else {
+                    alert("Erro: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Ocorreu um erro ao tentar excluir o contacto.");
+            });
+        });
+
+        // Alphabet navigation
+        const letterLinks = document.querySelectorAll('.letter-link');
+        letterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const letter = this.getAttribute('data-letter');
+                const target = document.getElementById('letter-' + letter);
+
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 100, // Offset for fixed headers
+                        behavior: 'smooth'
+                    });
+
+                    // Highlight the letter section briefly
+                    target.classList.add('highlight-section');
+                    setTimeout(() => {
+                        target.classList.remove('highlight-section');
+                    }, 1500);
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Contact display styling */
+    .contact-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #555;
+    }
+
+    .contact-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #f0f0f0;
+    }
+
+    .contact-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .contact-type-icon {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 12px;
+        color: #495057;
+    }
+
+    /* Alphabet navigation styling */
+    .alphabet-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 8px;
+    }
+
+    .alphabet-nav .btn-group {
+        min-width: 100%;
+    }
+
+    .letter-separator {
+        background-color: #f8f9fa;
+    }
+
+    .letter-heading {
+        font-size: 16px;
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        border-radius: 50%;
+        background-color: #e9ecef;
+    }
+
+    .highlight-section {
+        animation: highlight-flash 1.5s;
+    }
+
+    @keyframes highlight-flash {
+        0%, 100% { background-color: transparent; }
+        20%, 80% { background-color: rgba(0, 123, 255, 0.1); }
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .contact-icon {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+
+    [data-bs-theme="dark"] .contact-avatar {
+        background-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .contact-type-icon {
+        background-color: #495057;
+        color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .letter-separator {
+        background-color: #343a40;
+    }
+
+    [data-bs-theme="dark"] .letter-heading {
+        background-color: #495057;
+        color: #e9ecef;
+    }
+</style>
+{% endblock %}
